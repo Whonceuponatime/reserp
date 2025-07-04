@@ -22,6 +22,10 @@
             <views:SystemsView />
         </DataTemplate>
         
+        <DataTemplate DataType="{x:Type viewModels:ComponentsViewModel}">
+            <views:ComponentsView />
+        </DataTemplate>
+        
         <DataTemplate DataType="{x:Type viewModels:PlaceholderViewModel}">
             <Border Background="White" Padding="40" CornerRadius="8" HorizontalAlignment="Center" VerticalAlignment="Center">
                 <Border.Effect>
