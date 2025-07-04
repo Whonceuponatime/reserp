@@ -79,7 +79,9 @@ namespace MaritimeERP.Services
                                 s.ImoNumber.Contains(term) ||
                                 s.Flag.ToLower().Contains(term) ||
                                 s.PortOfRegistry.ToLower().Contains(term) ||
-                                s.ClassNotation.ToLower().Contains(term)))
+                                s.Class.ToLower().Contains(term) ||
+                                s.ClassNotation.ToLower().Contains(term) ||
+                                s.Owner.ToLower().Contains(term)))
                     .OrderBy(s => s.ShipName)
                     .ToListAsync();
             }
@@ -187,30 +189,19 @@ namespace MaritimeERP.Services
                         throw new InvalidOperationException($"A ship with IMO number {ship.ImoNumber} already exists.");
                 }
 
-                // Update properties
+                // Update properties - only include fields that exist in the simplified Ship entity
                 existingShip.ShipName = ship.ShipName;
                 existingShip.ImoNumber = ship.ImoNumber;
                 existingShip.ShipType = ship.ShipType;
                 existingShip.Flag = ship.Flag;
                 existingShip.PortOfRegistry = ship.PortOfRegistry;
+                existingShip.Class = ship.Class;
                 existingShip.ClassNotation = ship.ClassNotation;
                 existingShip.BuildYear = ship.BuildYear;
                 existingShip.GrossTonnage = ship.GrossTonnage;
                 existingShip.NetTonnage = ship.NetTonnage;
                 existingShip.DeadweightTonnage = ship.DeadweightTonnage;
-                existingShip.Length = ship.Length;
-                existingShip.Breadth = ship.Breadth;
-                existingShip.Depth = ship.Depth;
-                existingShip.MaxDraft = ship.MaxDraft;
-                existingShip.ServiceSpeed = ship.ServiceSpeed;
-                existingShip.MaxSpeed = ship.MaxSpeed;
-                existingShip.FuelCapacity = ship.FuelCapacity;
-                existingShip.CrewCapacity = ship.CrewCapacity;
-                existingShip.PassengerCapacity = ship.PassengerCapacity;
-                existingShip.CargoCapacity = ship.CargoCapacity;
-                existingShip.HomePort = ship.HomePort;
-                existingShip.OwnerOperator = ship.OwnerOperator;
-                existingShip.ManagementCompany = ship.ManagementCompany;
+                existingShip.Owner = ship.Owner;
                 existingShip.IsActive = ship.IsActive;
                 existingShip.UpdatedAt = DateTime.UtcNow;
 

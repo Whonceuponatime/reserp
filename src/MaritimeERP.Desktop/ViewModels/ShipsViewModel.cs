@@ -298,14 +298,8 @@ namespace MaritimeERP.Desktop.ViewModels
         }
     }
 
-    // Placeholder ViewModels for dialogs (we'll implement these next)
-    public class ShipEditViewModel
-    {
-        public ShipEditViewModel(IShipService shipService, IServiceProvider serviceProvider, Ship? ship = null)
-        {
-            // TODO: Implement ship editing functionality
-        }
-    }
+    // Ship Edit ViewModel - moved to separate file
+    // See ShipEditViewModel.cs for implementation
 
     public class ShipDetailsViewModel
     {
