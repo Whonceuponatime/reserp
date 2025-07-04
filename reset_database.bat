@@ -6,9 +6,12 @@ echo This script will delete the existing database to allow
 echo recreation with the new simplified Ship schema.
 echo.
 echo Current database files to be deleted:
-if exist maritime_erp.db echo - maritime_erp.db
-if exist maritime_erp.db-shm echo - maritime_erp.db-shm  
-if exist maritime_erp.db-wal echo - maritime_erp.db-wal
+if exist maritime_erp.db echo - maritime_erp.db (root)
+if exist maritime_erp.db-shm echo - maritime_erp.db-shm (root)
+if exist maritime_erp.db-wal echo - maritime_erp.db-wal (root)
+if exist src\MaritimeERP.Desktop\maritime_erp.db echo - src\MaritimeERP.Desktop\maritime_erp.db
+if exist src\MaritimeERP.Desktop\maritime_erp.db-shm echo - src\MaritimeERP.Desktop\maritime_erp.db-shm
+if exist src\MaritimeERP.Desktop\maritime_erp.db-wal echo - src\MaritimeERP.Desktop\maritime_erp.db-wal
 echo.
 
 set /p confirm="Continue with database reset? (y/N): "
@@ -21,25 +24,48 @@ goto END
 echo.
 echo Deleting database files...
 
+REM Delete from root directory
 if exist maritime_erp.db (
     del maritime_erp.db
-    echo ✓ Deleted maritime_erp.db
+    echo ✓ Deleted maritime_erp.db (root)
 ) else (
-    echo - maritime_erp.db not found
+    echo - maritime_erp.db not found (root)
 )
 
 if exist maritime_erp.db-shm (
     del maritime_erp.db-shm
-    echo ✓ Deleted maritime_erp.db-shm
+    echo ✓ Deleted maritime_erp.db-shm (root)
 ) else (
-    echo - maritime_erp.db-shm not found
+    echo - maritime_erp.db-shm not found (root)
 )
 
 if exist maritime_erp.db-wal (
     del maritime_erp.db-wal
-    echo ✓ Deleted maritime_erp.db-wal
+    echo ✓ Deleted maritime_erp.db-wal (root)
 ) else (
-    echo - maritime_erp.db-wal not found
+    echo - maritime_erp.db-wal not found (root)
+)
+
+REM Delete from Desktop project directory
+if exist src\MaritimeERP.Desktop\maritime_erp.db (
+    del src\MaritimeERP.Desktop\maritime_erp.db
+    echo ✓ Deleted src\MaritimeERP.Desktop\maritime_erp.db
+) else (
+    echo - src\MaritimeERP.Desktop\maritime_erp.db not found
+)
+
+if exist src\MaritimeERP.Desktop\maritime_erp.db-shm (
+    del src\MaritimeERP.Desktop\maritime_erp.db-shm
+    echo ✓ Deleted src\MaritimeERP.Desktop\maritime_erp.db-shm
+) else (
+    echo - src\MaritimeERP.Desktop\maritime_erp.db-shm not found
+)
+
+if exist src\MaritimeERP.Desktop\maritime_erp.db-wal (
+    del src\MaritimeERP.Desktop\maritime_erp.db-wal
+    echo ✓ Deleted src\MaritimeERP.Desktop\maritime_erp.db-wal
+) else (
+    echo - src\MaritimeERP.Desktop\maritime_erp.db-wal not found
 )
 
 echo.
