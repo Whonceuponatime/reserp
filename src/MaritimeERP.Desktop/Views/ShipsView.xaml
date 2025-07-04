@@ -1,0 +1,206 @@
+<UserControl x:Class="MaritimeERP.Desktop.Views.ShipsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Background="#FAFAFA">
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header Section -->
+        <Border Grid.Row="0" 
+                Background="White" 
+                Padding="24"
+                BorderThickness="0,0,0,1"
+                BorderBrush="#E0E0E0">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                
+                <StackPanel Grid.Column="0">
+                    <TextBlock Text="🚢 Fleet Management" 
+                               FontSize="24" 
+                               FontWeight="Bold"
+                               Foreground="#1976D2"
+                               Margin="0,0,0,8"/>
+                    <TextBlock Text="Manage your fleet of ships and vessels" 
+                               FontSize="14" 
+                               Foreground="#757575"/>
+                </StackPanel>
+
+                <StackPanel Grid.Column="1" Orientation="Horizontal">
+                    <Button Content="➕ Add Ship" 
+                            Command="{Binding AddShipCommand}"
+                            Background="#1976D2"
+                            Foreground="White"
+                            BorderThickness="0"
+                            Height="36"
+                            Padding="16,0"
+                            Margin="8,0"/>
+                    <Button Content="🔄 Refresh" 
+                            Command="{Binding RefreshCommand}"
+                            Background="#757575"
+                            Foreground="White"
+                            BorderThickness="0"
+                            Height="36"
+                            Padding="16,0"
+                            Margin="8,0"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- Search and Filter Section -->
+        <Border Grid.Row="1" 
+                Background="#F5F5F5" 
+                Padding="24,16">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="300"/>
+                    <ColumnDefinition Width="200"/>
+                    <ColumnDefinition Width="200"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0">
+                    <TextBlock Text="Search Ships" FontSize="12" Foreground="#757575" Margin="0,0,0,4"/>
+                    <TextBox Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                             Height="32"
+                             Padding="8"
+                             BorderBrush="#E0E0E0"
+                             BorderThickness="1"/>
+                </StackPanel>
+
+                <StackPanel Grid.Column="1" Margin="16,0,0,0">
+                    <TextBlock Text="Ship Type" FontSize="12" Foreground="#757575" Margin="0,0,0,4"/>
+                    <ComboBox SelectedItem="{Binding SelectedShipType}"
+                              ItemsSource="{Binding ShipTypes}"
+                              Height="32"
+                              BorderBrush="#E0E0E0"
+                              BorderThickness="1">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding Name}"/>
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+                </StackPanel>
+
+                <StackPanel Grid.Column="2" Margin="16,0,0,0">
+                    <TextBlock Text="Status" FontSize="12" Foreground="#757575" Margin="0,0,0,4"/>
+                    <ComboBox SelectedItem="{Binding SelectedStatus}"
+                              Height="32"
+                              BorderBrush="#E0E0E0"
+                              BorderThickness="1">
+                        <ComboBoxItem Content="All"/>
+                        <ComboBoxItem Content="Active"/>
+                        <ComboBoxItem Content="Inactive"/>
+                    </ComboBox>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- Ships Data Grid -->
+        <DataGrid Grid.Row="2"
+                  ItemsSource="{Binding FilteredShips}"
+                  SelectedItem="{Binding SelectedShip}"
+                  AutoGenerateColumns="False"
+                  CanUserAddRows="False"
+                  CanUserDeleteRows="False"
+                  CanUserReorderColumns="True"
+                  CanUserResizeColumns="True"
+                  CanUserSortColumns="True"
+                  GridLinesVisibility="Horizontal"
+                  HorizontalGridLinesBrush="#E0E0E0"
+                  AlternatingRowBackground="#F9F9F9"
+                  RowBackground="White"
+                  HeadersVisibility="Column"
+                  IsReadOnly="True"
+                  SelectionMode="Single"
+                  Margin="24,16,24,0">
+            
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Ship Name" 
+                                    Binding="{Binding ShipName}" 
+                                    Width="200"
+                                    FontWeight="SemiBold"/>
+                <DataGridTextColumn Header="IMO Number" 
+                                    Binding="{Binding ImoNumber}" 
+                                    Width="120"/>
+                <DataGridTextColumn Header="Ship Type" 
+                                    Binding="{Binding ShipType}" 
+                                    Width="150"/>
+                <DataGridTextColumn Header="Flag State" 
+                                    Binding="{Binding Flag}" 
+                                    Width="120"/>
+                <DataGridTextColumn Header="Year Built" 
+                                    Binding="{Binding BuildYear}" 
+                                    Width="100"/>
+                <DataGridTextColumn Header="Length (m)" 
+                                    Binding="{Binding Length, StringFormat=F1}" 
+                                    Width="100"/>
+                <DataGridTextColumn Header="Gross Tonnage" 
+                                    Binding="{Binding GrossTonnage, StringFormat=N0}" 
+                                    Width="120"/>
+                <DataGridTextColumn Header="Status" 
+                                    Binding="{Binding IsActive}" 
+                                    Width="120"/>
+                <DataGridTextColumn Header="Last Updated" 
+                                    Binding="{Binding UpdatedAt, StringFormat=dd/MM/yyyy}" 
+                                    Width="120"/>
+            </DataGrid.Columns>
+
+            <DataGrid.RowStyle>
+                <Style TargetType="DataGridRow">
+                    <Style.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter Property="Background" Value="#E3F2FD"/>
+                        </Trigger>
+                    </Style.Triggers>
+                </Style>
+            </DataGrid.RowStyle>
+        </DataGrid>
+
+        <!-- Action Buttons -->
+        <Border Grid.Row="3" 
+                Background="White" 
+                Padding="24,16"
+                BorderThickness="0,1,0,0"
+                BorderBrush="#E0E0E0">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button Content="📝 Edit Ship" 
+                        Command="{Binding EditShipCommand}"
+                        IsEnabled="{Binding HasSelectedShip}"
+                        Background="#1976D2"
+                        Foreground="White"
+                        BorderThickness="0"
+                        Height="36"
+                        Padding="16,0"
+                        Margin="8,0"/>
+                <Button Content="🗑️ Delete Ship" 
+                        Command="{Binding DeleteShipCommand}"
+                        IsEnabled="{Binding HasSelectedShip}"
+                        Background="#D32F2F"
+                        Foreground="White"
+                        BorderThickness="0"
+                        Height="36"
+                        Padding="16,0"
+                        Margin="8,0"/>
+                <Button Content="📋 View Details" 
+                        Command="{Binding ViewDetailsCommand}"
+                        IsEnabled="{Binding HasSelectedShip}"
+                        Background="#388E3C"
+                        Foreground="White"
+                        BorderThickness="0"
+                        Height="36"
+                        Padding="16,0"
+                        Margin="8,0"/>
+            </StackPanel>
+        </Border>
+    </Grid>
+</UserControl> 

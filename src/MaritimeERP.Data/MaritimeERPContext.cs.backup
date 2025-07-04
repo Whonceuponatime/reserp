@@ -1,0 +1,516 @@
+using Microsoft.EntityFrameworkCore;
+using MaritimeERP.Core.Entities;
+
+namespace MaritimeERP.Data
+{
+    public class MaritimeERPContext : DbContext
+    {
+        public MaritimeERPContext(DbContextOptions<MaritimeERPContext> options) : base(options)
+        {
+        }
+
+        // Asset Hierarchy
+        public DbSet<Ship> Ships { get; set; }
+        public DbSet<ShipSystem> Systems { get; set; }
+        public DbSet<Component> Components { get; set; }
+        public DbSet<Software> Software { get; set; }
+
+        // Lookup Tables
+        public DbSet<SecurityZone> SecurityZones { get; set; }
+        public DbSet<SystemCategory> SystemCategories { get; set; }
+
+        // User Management
+        public DbSet<User> Users { get; set; }
+        public DbSet<Role> Roles { get; set; }
+
+        // Change Management
+        public DbSet<ChangeRequest> ChangeRequests { get; set; }
+        public DbSet<ChangeType> ChangeTypes { get; set; }
+        public DbSet<ChangeStatus> ChangeStatuses { get; set; }
+        public DbSet<HardwareChangeDetail> HardwareChangeDetails { get; set; }
+        public DbSet<SoftwareChangeDetail> SoftwareChangeDetails { get; set; }
+        public DbSet<SystemPlanDetail> SystemPlanDetails { get; set; }
+        public DbSet<SecurityReviewItem> SecurityReviewItems { get; set; }
+        public DbSet<Approval> Approvals { get; set; }
+
+        // Document Management
+        public DbSet<Document> Documents { get; set; }
+        public DbSet<DocumentVersion> DocumentVersions { get; set; }
+        public DbSet<DocumentCategory> DocumentCategories { get; set; }
+        public DbSet<DocumentStatus> DocumentStatuses { get; set; }
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            base.OnModelCreating(modelBuilder);
+
+            ConfigureShipHierarchy(modelBuilder);
+            ConfigureLookupTables(modelBuilder);
+            ConfigureUserManagement(modelBuilder);
+            ConfigureChangeManagement(modelBuilder);
+            ConfigureDocumentManagement(modelBuilder);
+            SeedData(modelBuilder);
+        }
+
+        private void ConfigureShipHierarchy(ModelBuilder modelBuilder)
+        {
+            // Ships
+            modelBuilder.Entity<Ship>(entity =>
+            {
+                entity.ToTable("ships");
+                entity.HasKey(e => e.Id);
+                
+                entity.Property(e => e.Id).HasColumnName("id");
+                entity.Property(e => e.ShipName).HasColumnName("ship_name").HasMaxLength(200).IsRequired();
+                entity.Property(e => e.ImoNumber).HasColumnName("imo_number").HasMaxLength(7).IsRequired();
+                entity.Property(e => e.ShipType).HasColumnName("ship_type").HasMaxLength(100);
+                entity.Property(e => e.Flag).HasColumnName("flag").HasMaxLength(100);
+                entity.Property(e => e.PortOfRegistry).HasColumnName("port_of_registry").HasMaxLength(200);
+                entity.Property(e => e.ClassNotation).HasColumnName("class_notation").HasMaxLength(100);
+                entity.Property(e => e.BuildYear).HasColumnName("build_year");
+                entity.Property(e => e.GrossTonnage).HasColumnName("gross_tonnage").HasColumnType("decimal(12,1)");
+                entity.Property(e => e.NetTonnage).HasColumnName("net_tonnage").HasColumnType("decimal(12,1)");
+                entity.Property(e => e.DeadweightTonnage).HasColumnName("deadweight_tonnage").HasColumnType("decimal(12,1)");
+                entity.Property(e => e.Length).HasColumnName("length").HasColumnType("decimal(8,2)");
+                entity.Property(e => e.Breadth).HasColumnName("breadth").HasColumnType("decimal(8,2)");
+                entity.Property(e => e.Depth).HasColumnName("depth").HasColumnType("decimal(8,2)");
+                entity.Property(e => e.MaxDraft).HasColumnName("max_draft").HasColumnType("decimal(8,2)");
+                entity.Property(e => e.ServiceSpeed).HasColumnName("service_speed").HasColumnType("decimal(5,2)");
+                entity.Property(e => e.MaxSpeed).HasColumnName("max_speed").HasColumnType("decimal(5,2)");
+                entity.Property(e => e.FuelCapacity).HasColumnName("fuel_capacity").HasColumnType("decimal(12,1)");
+                entity.Property(e => e.CrewCapacity).HasColumnName("crew_capacity");
+                entity.Property(e => e.PassengerCapacity).HasColumnName("passenger_capacity");
+                entity.Property(e => e.CargoCapacity).HasColumnName("cargo_capacity").HasColumnType("decimal(12,1)");
+                entity.Property(e => e.HomePort).HasColumnName("home_port").HasMaxLength(200);
+                entity.Property(e => e.OwnerOperator).HasColumnName("owner_operator").HasMaxLength(200);
+                entity.Property(e => e.ManagementCompany).HasColumnName("management_company").HasMaxLength(200);
+                entity.Property(e => e.IsActive).HasColumnName("is_active").HasDefaultValue(true);
+                entity.Property(e => e.IsDeleted).HasColumnName("is_deleted").HasDefaultValue(false);
+                entity.Property(e => e.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("NOW()");
+                entity.Property(e => e.UpdatedAt).HasColumnName("updated_at");
+
+                entity.HasIndex(e => e.ImoNumber).IsUnique().HasDatabaseName("idx_ships_imo_number");
+                entity.HasIndex(e => e.ShipName).HasDatabaseName("idx_ships_name");
+            });
+
+            // Systems
+            modelBuilder.Entity<ShipSystem>(entity =>
+            {
+                entity.ToTable("systems");
+                entity.HasKey(e => e.Id);
+                
+                entity.Property(e => e.Id).HasColumnName("id");
+                entity.Property(e => e.ShipId).HasColumnName("ship_id");
+                entity.Property(e => e.ShipName).HasColumnName("name").HasMaxLength(200).IsRequired();
+                entity.Property(e => e.Manufacturer).HasColumnName("manufacturer").HasMaxLength(100).IsRequired();
+                entity.Property(e => e.Model).HasColumnName("model").HasMaxLength(100).IsRequired();
+                entity.Property(e => e.SerialNumber).HasColumnName("serial_number").HasMaxLength(100).IsRequired();
+                entity.Property(e => e.Description).HasColumnName("description").HasMaxLength(500);
+                entity.Property(e => e.SecurityZoneId).HasColumnName("security_zone_id");
+                entity.Property(e => e.CategoryId).HasColumnName("category_id");
+                entity.Property(e => e.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("NOW()");
+                entity.Property(e => e.UpdatedAt).HasColumnName("updated_at");
+
+                entity.HasOne(d => d.Ship).WithMany(p => p.Systems)
+                    .HasForeignKey(d => d.ShipId).OnDelete(DeleteBehavior.Cascade);
+                entity.HasOne(d => d.SecurityZone).WithMany(p => p.Systems)
+                    .HasForeignKey(d => d.SecurityZoneId).OnDelete(DeleteBehavior.Restrict);
+                entity.HasOne(d => d.Category).WithMany(p => p.Systems)
+                    .HasForeignKey(d => d.CategoryId).OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasIndex(e => e.ShipId).HasDatabaseName("idx_systems_ship_id");
+            });
+
+            // Components
+            modelBuilder.Entity<Component>(entity =>
+            {
+                entity.ToTable("components");
+                entity.HasKey(e => e.Id);
+                
+                entity.Property(e => e.Id).HasColumnName("id");
+                entity.Property(e => e.SystemId).HasColumnName("system_id");
+                entity.Property(e => e.ShipName).HasColumnName("name").HasMaxLength(200).IsRequired();
+                entity.Property(e => e.MakerModel).HasColumnName("maker_model").HasMaxLength(200).IsRequired();
+                entity.Property(e => e.UsbPorts).HasColumnName("usb_ports").HasDefaultValue(0);
+                entity.Property(e => e.LanPorts).HasColumnName("lan_ports").HasDefaultValue(0);
+                entity.Property(e => e.SerialPorts).HasColumnName("serial_ports").HasDefaultValue(0);
+                entity.Property(e => e.ConnectedCbs).HasColumnName("connected_cbs").HasMaxLength(500);
+                entity.Property(e => e.HasRemoteConnection).HasColumnName("has_remote_conn").HasDefaultValue(false);
+                entity.Property(e => e.InstalledLocation).HasColumnName("installed_location").HasMaxLength(200).IsRequired();
+                entity.Property(e => e.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("NOW()");
+                entity.Property(e => e.UpdatedAt).HasColumnName("updated_at");
+
+                entity.HasOne(d => d.System).WithMany(p => p.Components)
+                    .HasForeignKey(d => d.SystemId).OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasIndex(e => e.SystemId).HasDatabaseName("idx_components_system_id");
+            });
+
+            // Software
+            modelBuilder.Entity<Software>(entity =>
+            {
+                entity.ToTable("software");
+                entity.HasKey(e => e.Id);
+                
+                entity.Property(e => e.Id).HasColumnName("id");
+                entity.Property(e => e.ComponentId).HasColumnName("component_id");
+                entity.Property(e => e.ShipName).HasColumnName("name").HasMaxLength(200).IsRequired();
+                entity.Property(e => e.ProductName).HasColumnName("product_name").HasMaxLength(200).IsRequired();
+                entity.Property(e => e.Manufacturer).HasColumnName("manufacturer").HasMaxLength(100).IsRequired();
+                entity.Property(e => e.Version).HasColumnName("version").HasMaxLength(50).IsRequired();
+                entity.Property(e => e.Purpose).HasColumnName("purpose").HasMaxLength(500).IsRequired();
+                entity.Property(e => e.LastUpdated).HasColumnName("last_updated");
+                entity.Property(e => e.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("NOW()");
+                entity.Property(e => e.UpdatedAt).HasColumnName("updated_at");
+
+                entity.HasOne(d => d.Component).WithMany(p => p.Software)
+                    .HasForeignKey(d => d.ComponentId).OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasIndex(e => e.ComponentId).HasDatabaseName("idx_software_component_id");
+            });
+        }
+
+        private void ConfigureLookupTables(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<SecurityZone>(entity =>
+            {
+                entity.ToTable("security_zones");
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Id).HasColumnName("id");
+                entity.Property(e => e.ShipName).HasColumnName("name").HasMaxLength(100).IsRequired();
+                entity.Property(e => e.Description).HasColumnName("description").HasMaxLength(500);
+                entity.HasIndex(e => e.Name).IsUnique();
+            });
+
+            modelBuilder.Entity<SystemCategory>(entity =>
+            {
+                entity.ToTable("system_categories");
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Id).HasColumnName("id");
+                entity.Property(e => e.ShipName).HasColumnName("name").HasMaxLength(100).IsRequired();
+                entity.Property(e => e.Description).HasColumnName("description").HasMaxLength(500);
+                entity.HasIndex(e => e.Name).IsUnique();
+            });
+        }
+
+        private void ConfigureUserManagement(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<Role>(entity =>
+            {
+                entity.ToTable("roles");
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Id).HasColumnName("id");
+                entity.Property(e => e.ShipName).HasColumnName("name").HasMaxLength(100).IsRequired();
+                entity.Property(e => e.Description).HasColumnName("description").HasMaxLength(500);
+                entity.HasIndex(e => e.Name).IsUnique();
+            });
+
+            modelBuilder.Entity<User>(entity =>
+            {
+                entity.ToTable("users");
+                entity.HasKey(e => e.Id);
+                
+                entity.Property(e => e.Id).HasColumnName("id");
+                entity.Property(e => e.Username).HasColumnName("username").HasMaxLength(100).IsRequired();
+                entity.Property(e => e.PasswordHash).HasColumnName("password_hash").HasMaxLength(255).IsRequired();
+                entity.Property(e => e.FullName).HasColumnName("full_name").HasMaxLength(200).IsRequired();
+                entity.Property(e => e.Email).HasColumnName("email").HasMaxLength(200).IsRequired();
+                entity.Property(e => e.RoleId).HasColumnName("role_id");
+                entity.Property(e => e.LastLoginAt).HasColumnName("last_login_at");
+                entity.Property(e => e.IsActive).HasColumnName("is_active").HasDefaultValue(true);
+                entity.Property(e => e.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("NOW()");
+                entity.Property(e => e.UpdatedAt).HasColumnName("updated_at");
+
+                entity.HasOne(d => d.Role).WithMany(p => p.Users)
+                    .HasForeignKey(d => d.RoleId).OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasIndex(e => e.Username).IsUnique().HasDatabaseName("idx_users_username");
+                entity.HasIndex(e => e.Email).IsUnique().HasDatabaseName("idx_users_email");
+            });
+        }
+
+        private void ConfigureChangeManagement(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<ChangeType>(entity =>
+            {
+                entity.ToTable("change_types");
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Id).HasColumnName("id");
+                entity.Property(e => e.ShipName).HasColumnName("name").HasMaxLength(100).IsRequired();
+                entity.Property(e => e.Description).HasColumnName("description").HasMaxLength(500);
+                entity.HasIndex(e => e.Name).IsUnique();
+            });
+
+            modelBuilder.Entity<ChangeStatus>(entity =>
+            {
+                entity.ToTable("change_statuses");
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Id).HasColumnName("id");
+                entity.Property(e => e.ShipName).HasColumnName("name").HasMaxLength(100).IsRequired();
+                entity.Property(e => e.Description).HasColumnName("description").HasMaxLength(500);
+                entity.Property(e => e.Color).HasColumnName("color").HasMaxLength(20);
+                entity.HasIndex(e => e.Name).IsUnique();
+            });
+
+            modelBuilder.Entity<ChangeRequest>(entity =>
+            {
+                entity.ToTable("change_requests");
+                entity.HasKey(e => e.Id);
+                
+                entity.Property(e => e.Id).HasColumnName("id");
+                entity.Property(e => e.RequestNo).HasColumnName("request_no").HasMaxLength(50).IsRequired();
+                entity.Property(e => e.ShipId).HasColumnName("ship_id");
+                entity.Property(e => e.RequestTypeId).HasColumnName("request_type_id");
+                entity.Property(e => e.StatusId).HasColumnName("status_id");
+                entity.Property(e => e.RequestedById).HasColumnName("requested_by_id");
+                entity.Property(e => e.RequestedAt).HasColumnName("requested_at");
+                entity.Property(e => e.Purpose).HasColumnName("purpose").HasMaxLength(500).IsRequired();
+                entity.Property(e => e.Description).HasColumnName("description").HasMaxLength(2000);
+                entity.Property(e => e.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("NOW()");
+                entity.Property(e => e.UpdatedAt).HasColumnName("updated_at");
+
+                entity.HasOne(d => d.Ship).WithMany(p => p.ChangeRequests)
+                    .HasForeignKey(d => d.ShipId).OnDelete(DeleteBehavior.SetNull);
+                entity.HasOne(d => d.RequestType).WithMany(p => p.ChangeRequests)
+                    .HasForeignKey(d => d.RequestTypeId).OnDelete(DeleteBehavior.Restrict);
+                entity.HasOne(d => d.Status).WithMany(p => p.ChangeRequests)
+                    .HasForeignKey(d => d.StatusId).OnDelete(DeleteBehavior.Restrict);
+                entity.HasOne(d => d.RequestedBy).WithMany(p => p.ChangeRequests)
+                    .HasForeignKey(d => d.RequestedById).OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasIndex(e => e.RequestNo).IsUnique().HasDatabaseName("idx_change_requests_request_no");
+            });
+
+            // Change detail tables with one-to-one relationships
+            modelBuilder.Entity<HardwareChangeDetail>(entity =>
+            {
+                entity.ToTable("hw_change_details");
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Id).HasColumnName("id");
+                entity.Property(e => e.PreHardwareModel).HasColumnName("pre_hw_model").HasMaxLength(200);
+                entity.Property(e => e.PreOperatingSystem).HasColumnName("pre_os").HasMaxLength(200);
+                entity.Property(e => e.PostHardwareModel).HasColumnName("post_hw_model").HasMaxLength(200);
+                entity.Property(e => e.PostOperatingSystem).HasColumnName("post_os").HasMaxLength(200);
+                entity.Property(e => e.WorkDetails).HasColumnName("work_details").HasMaxLength(2000);
+
+                entity.HasOne(d => d.ChangeRequest).WithOne(p => p.HardwareChangeDetail)
+                    .HasForeignKey<HardwareChangeDetail>(d => d.Id).OnDelete(DeleteBehavior.Cascade);
+            });
+
+            modelBuilder.Entity<SoftwareChangeDetail>(entity =>
+            {
+                entity.ToTable("sw_change_details");
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Id).HasColumnName("id");
+                entity.Property(e => e.PreSoftwareName).HasColumnName("pre_sw_name").HasMaxLength(200);
+                entity.Property(e => e.PreSoftwareVersion).HasColumnName("pre_sw_version").HasMaxLength(50);
+                entity.Property(e => e.PostSoftwareName).HasColumnName("post_sw_name").HasMaxLength(200);
+                entity.Property(e => e.PostSoftwareVersion).HasColumnName("post_sw_version").HasMaxLength(50);
+                entity.Property(e => e.WorkDetails).HasColumnName("work_details").HasMaxLength(2000);
+
+                entity.HasOne(d => d.ChangeRequest).WithOne(p => p.SoftwareChangeDetail)
+                    .HasForeignKey<SoftwareChangeDetail>(d => d.Id).OnDelete(DeleteBehavior.Cascade);
+            });
+
+            modelBuilder.Entity<SystemPlanDetail>(entity =>
+            {
+                entity.ToTable("system_plan_details");
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Id).HasColumnName("id");
+                entity.Property(e => e.PlanDetails).HasColumnName("plan_details").HasMaxLength(5000);
+
+                entity.HasOne(d => d.ChangeRequest).WithOne(p => p.SystemPlanDetail)
+                    .HasForeignKey<SystemPlanDetail>(d => d.Id).OnDelete(DeleteBehavior.Cascade);
+            });
+
+            modelBuilder.Entity<SecurityReviewItem>(entity =>
+            {
+                entity.ToTable("security_review_items");
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Id).HasColumnName("id");
+                entity.Property(e => e.ChangeId).HasColumnName("change_id");
+                entity.Property(e => e.Category).HasColumnName("category").HasMaxLength(200).IsRequired();
+                entity.Property(e => e.CheckItem).HasColumnName("check_item").HasMaxLength(500).IsRequired();
+                entity.Property(e => e.Result).HasColumnName("result").HasMaxLength(100).IsRequired();
+                entity.Property(e => e.Note).HasColumnName("note").HasMaxLength(1000);
+
+                entity.HasOne(d => d.ChangeRequest).WithMany(p => p.SecurityReviewItems)
+                    .HasForeignKey(d => d.ChangeId).OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasIndex(e => e.ChangeId).HasDatabaseName("idx_security_review_items_change_id");
+            });
+
+            modelBuilder.Entity<Approval>(entity =>
+            {
+                entity.ToTable("approvals");
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Id).HasColumnName("id");
+                entity.Property(e => e.ChangeId).HasColumnName("change_id");
+                entity.Property(e => e.Stage).HasColumnName("stage");
+                entity.Property(e => e.Action).HasColumnName("action").HasMaxLength(100).IsRequired();
+                entity.Property(e => e.ActionById).HasColumnName("action_by_id");
+                entity.Property(e => e.ActionAt).HasColumnName("action_at").HasDefaultValueSql("NOW()");
+                entity.Property(e => e.Comment).HasColumnName("comment").HasMaxLength(1000);
+
+                entity.HasOne(d => d.ChangeRequest).WithMany(p => p.Approvals)
+                    .HasForeignKey(d => d.ChangeId).OnDelete(DeleteBehavior.Cascade);
+                entity.HasOne(d => d.ActionBy).WithMany(p => p.Approvals)
+                    .HasForeignKey(d => d.ActionById).OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasIndex(e => e.ChangeId).HasDatabaseName("idx_approvals_change_id");
+            });
+        }
+
+        private void ConfigureDocumentManagement(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<DocumentCategory>(entity =>
+            {
+                entity.ToTable("document_categories");
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Id).HasColumnName("id");
+                entity.Property(e => e.ShipName).HasColumnName("name").HasMaxLength(100).IsRequired();
+                entity.Property(e => e.Description).HasColumnName("description").HasMaxLength(500);
+                entity.HasIndex(e => e.Name).IsUnique();
+            });
+
+            modelBuilder.Entity<DocumentStatus>(entity =>
+            {
+                entity.ToTable("document_statuses");
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Id).HasColumnName("id");
+                entity.Property(e => e.ShipName).HasColumnName("name").HasMaxLength(100).IsRequired();
+                entity.Property(e => e.Description).HasColumnName("description").HasMaxLength(500);
+                entity.Property(e => e.Color).HasColumnName("color").HasMaxLength(20);
+                entity.HasIndex(e => e.Name).IsUnique();
+            });
+
+            modelBuilder.Entity<Document>(entity =>
+            {
+                entity.ToTable("documents");
+                entity.HasKey(e => e.Id);
+                
+                entity.Property(e => e.Id).HasColumnName("id");
+                entity.Property(e => e.ShipId).HasColumnName("ship_id");
+                entity.Property(e => e.Filename).HasColumnName("filename").HasMaxLength(255).IsRequired();
+                entity.Property(e => e.StoragePath).HasColumnName("storage_path").HasMaxLength(500).IsRequired();
+                entity.Property(e => e.CategoryId).HasColumnName("category_id");
+                entity.Property(e => e.StatusId).HasColumnName("status_id");
+                entity.Property(e => e.Comments).HasColumnName("comments").HasMaxLength(1000);
+                entity.Property(e => e.IsDeleted).HasColumnName("is_deleted").HasDefaultValue(false);
+                entity.Property(e => e.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("NOW()");
+                entity.Property(e => e.UpdatedAt).HasColumnName("updated_at");
+
+                entity.HasOne(d => d.Ship).WithMany(p => p.Documents)
+                    .HasForeignKey(d => d.ShipId).OnDelete(DeleteBehavior.Cascade);
+                entity.HasOne(d => d.Category).WithMany(p => p.Documents)
+                    .HasForeignKey(d => d.CategoryId).OnDelete(DeleteBehavior.Restrict);
+                entity.HasOne(d => d.Status).WithMany(p => p.Documents)
+                    .HasForeignKey(d => d.StatusId).OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasIndex(e => e.ShipId).HasDatabaseName("idx_documents_ship_id");
+            });
+
+            modelBuilder.Entity<DocumentVersion>(entity =>
+            {
+                entity.ToTable("document_versions");
+                entity.HasKey(e => e.Id);
+                
+                entity.Property(e => e.Id).HasColumnName("id");
+                entity.Property(e => e.DocumentId).HasColumnName("document_id");
+                entity.Property(e => e.VersionNo).HasColumnName("version_no");
+                entity.Property(e => e.FilePath).HasColumnName("file_path").HasMaxLength(500).IsRequired();
+                entity.Property(e => e.UploadedById).HasColumnName("uploaded_by_id");
+                entity.Property(e => e.UploadedAt).HasColumnName("uploaded_at").HasDefaultValueSql("NOW()");
+                entity.Property(e => e.ChangeNote).HasColumnName("change_note").HasMaxLength(1000);
+                entity.Property(e => e.StatusId).HasColumnName("status_id");
+
+                entity.HasOne(d => d.Document).WithMany(p => p.Versions)
+                    .HasForeignKey(d => d.DocumentId).OnDelete(DeleteBehavior.Cascade);
+                entity.HasOne(d => d.UploadedBy).WithMany(p => p.DocumentVersions)
+                    .HasForeignKey(d => d.UploadedById).OnDelete(DeleteBehavior.Restrict);
+                entity.HasOne(d => d.Status).WithMany(p => p.DocumentVersions)
+                    .HasForeignKey(d => d.StatusId).OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasIndex(e => new { e.DocumentId, e.VersionNo }).IsUnique()
+                    .HasDatabaseName("idx_document_versions_unique");
+            });
+        }
+
+        private void SeedData(ModelBuilder modelBuilder)
+        {
+            // Seed Roles
+            modelBuilder.Entity<Role>().HasData(
+                new Role { Id = 1, Name = "Administrator", Description = "Full system access" },
+                new Role { Id = 2, Name = "Manager", Description = "Management oversight and approvals" },
+                new Role { Id = 3, Name = "Engineer", Description = "Technical operations and changes" },
+                new Role { Id = 4, Name = "Reviewer", Description = "Review and validation" }
+            );
+
+            // Seed Security Zones
+            modelBuilder.Entity<SecurityZone>().HasData(
+                new SecurityZone { Id = 1, Name = "Critical Systems", Description = "Mission-critical ship operations" },
+                new SecurityZone { Id = 2, Name = "Navigation", Description = "Navigation and positioning systems" },
+                new SecurityZone { Id = 3, Name = "Communication", Description = "Internal and external communication" },
+                new SecurityZone { Id = 4, Name = "Cargo Control", Description = "Cargo handling and monitoring" },
+                new SecurityZone { Id = 5, Name = "General Systems", Description = "Non-critical general systems" }
+            );
+
+            // Seed System Categories
+            modelBuilder.Entity<SystemCategory>().HasData(
+                new SystemCategory { Id = 1, Name = "Navigation", Description = "Navigation and positioning equipment" },
+                new SystemCategory { Id = 2, Name = "Engine Control", Description = "Engine and propulsion systems" },
+                new SystemCategory { Id = 3, Name = "Cargo Management", Description = "Cargo handling systems" },
+                new SystemCategory { Id = 4, Name = "Communication", Description = "Communication equipment" },
+                new SystemCategory { Id = 5, Name = "Safety Systems", Description = "Safety and emergency systems" },
+                new SystemCategory { Id = 6, Name = "Entertainment", Description = "Crew entertainment systems" }
+            );
+
+            // Seed Change Types
+            modelBuilder.Entity<ChangeType>().HasData(
+                new ChangeType { Id = 1, Name = "Hardware", Description = "Hardware component changes" },
+                new ChangeType { Id = 2, Name = "Software", Description = "Software updates and installations" },
+                new ChangeType { Id = 3, Name = "System Plan", Description = "System architecture changes" },
+                new ChangeType { Id = 4, Name = "Security Review", Description = "Security assessment and review" }
+            );
+
+            // Seed Change Statuses
+            modelBuilder.Entity<ChangeStatus>().HasData(
+                new ChangeStatus { Id = 1, Name = "Draft", Description = "Initial draft status", Color = "#6c757d" },
+                new ChangeStatus { Id = 2, Name = "Under Review", Description = "Currently being reviewed", Color = "#fd7e14" },
+                new ChangeStatus { Id = 3, Name = "Approved", Description = "Approved for implementation", Color = "#198754" },
+                new ChangeStatus { Id = 4, Name = "Rejected", Description = "Rejected and not approved", Color = "#dc3545" },
+                new ChangeStatus { Id = 5, Name = "Implemented", Description = "Successfully implemented", Color = "#0d6efd" }
+            );
+
+            // Seed Document Categories
+            modelBuilder.Entity<DocumentCategory>().HasData(
+                new DocumentCategory { Id = 1, Name = "Technical Manual", Description = "Technical documentation and manuals" },
+                new DocumentCategory { Id = 2, Name = "Certificate", Description = "Certificates and compliance documents" },
+                new DocumentCategory { Id = 3, Name = "Maintenance Record", Description = "Maintenance and service records" },
+                new DocumentCategory { Id = 4, Name = "Change Request", Description = "Change request documentation" },
+                new DocumentCategory { Id = 5, Name = "Inspection Report", Description = "Inspection and audit reports" }
+            );
+
+            // Seed Document Statuses
+            modelBuilder.Entity<DocumentStatus>().HasData(
+                new DocumentStatus { Id = 1, Name = "Active", Description = "Current and active document", Color = "#198754" },
+                new DocumentStatus { Id = 2, Name = "Superseded", Description = "Replaced by newer version", Color = "#fd7e14" },
+                new DocumentStatus { Id = 3, Name = "Archived", Description = "Archived for historical reference", Color = "#6c757d" },
+                new DocumentStatus { Id = 4, Name = "Under Review", Description = "Currently being reviewed", Color = "#0d6efd" }
+            );
+        }
+
+        public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+        {
+            // Update timestamps for modified entities
+            var entries = ChangeTracker.Entries()
+                .Where(e => e.State == EntityState.Modified && e.Entity.GetType().GetProperty("UpdatedAt") != null);
+
+            foreach (var entry in entries)
+            {
+                entry.Property("UpdatedAt").CurrentValue = DateTime.UtcNow;
+            }
+
+            return await base.SaveChangesAsync(cancellationToken);
+        }
+    }
+} 
