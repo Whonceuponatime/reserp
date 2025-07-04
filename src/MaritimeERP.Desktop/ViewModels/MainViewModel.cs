@@ -191,7 +191,7 @@ namespace MaritimeERP.Desktop.ViewModels
 
         private object CreateComponentsViewModel()
         {
-            return new PlaceholderViewModel("Components Management", "Manage system components", "🔧");
+            return _serviceProvider.GetRequiredService<ComponentsViewModel>();
         }
 
         private object CreateSoftwareViewModel()

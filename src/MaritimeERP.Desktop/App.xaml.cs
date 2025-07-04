@@ -103,6 +103,7 @@ namespace MaritimeERP.Desktop
             services.AddScoped<IAuthenticationService, AuthenticationService>();
             services.AddScoped<IShipService, ShipService>();
             services.AddScoped<ISystemService, SystemService>();
+            services.AddScoped<IComponentService, ComponentService>();
             // Add other services here as they are implemented
 
             // ViewModels
@@ -111,6 +112,7 @@ namespace MaritimeERP.Desktop
             services.AddTransient<DashboardViewModel>();
             services.AddTransient<ShipsViewModel>();
             services.AddTransient<SystemsViewModel>();
+            services.AddTransient<ComponentsViewModel>();
 
             // Views
             services.AddTransient<LoginWindow>();
@@ -276,4 +278,4 @@ namespace MaritimeERP.Desktop
             base.OnExit(e);
         }
     }
-} 
+}

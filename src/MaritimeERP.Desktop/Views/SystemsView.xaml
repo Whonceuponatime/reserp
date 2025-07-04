@@ -11,12 +11,54 @@
         <!-- Converters -->
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
         
+        <!-- Styles -->
+        <Style x:Key="ActionButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="#2196F3"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="12,6"/>
+            <Setter Property="Height" Value="32"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" 
+                                CornerRadius="4" 
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" 
+                                            VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="#1976D2"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter Property="Background" Value="#1565C0"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="DangerButtonStyle" TargetType="Button" BasedOn="{StaticResource ActionButtonStyle}">
+            <Setter Property="Background" Value="#F44336"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#D32F2F"/>
+                </Trigger>
+                <Trigger Property="IsPressed" Value="True">
+                    <Setter Property="Background" Value="#C62828"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
         <!-- Inverse Boolean to Visibility Converter -->
         <Style x:Key="InverseVisibilityStyle" TargetType="FrameworkElement">
+            <Setter Property="Visibility" Value="Collapsed"/>
             <Style.Triggers>
-                <DataTrigger Binding="{Binding IsEditing}" Value="True">
-                    <Setter Property="Visibility" Value="Collapsed"/>
-                </DataTrigger>
                 <DataTrigger Binding="{Binding IsEditing}" Value="False">
                     <Setter Property="Visibility" Value="Visible"/>
                 </DataTrigger>
@@ -69,7 +111,7 @@
                     <TextBlock Text="Search Systems" FontSize="12" Foreground="#757575" Margin="0,0,0,4"/>
                     <TextBox Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
                              Height="32"
-                             Padding="8"
+                             Margin="8"
                              BorderBrush="#E0E0E0"
                              BorderThickness="1"/>
                 </StackPanel>

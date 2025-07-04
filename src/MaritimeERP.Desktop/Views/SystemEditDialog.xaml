@@ -1,0 +1,287 @@
+<Window x:Class="MaritimeERP.Desktop.Views.SystemEditDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d"
+        Title="System Details" Height="600" Width="500"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize"
+        ShowInTaskbar="False">
+
+    <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+        
+        <!-- Styles -->
+        <Style x:Key="PrimaryButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="#4CAF50"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="16,8"/>
+            <Setter Property="Height" Value="36"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" 
+                                CornerRadius="4" 
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" 
+                                            VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="#45A049"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter Property="Background" Value="#3E8E41"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        
+        <Style x:Key="SecondaryButtonStyle" TargetType="Button" BasedOn="{StaticResource PrimaryButtonStyle}">
+            <Setter Property="Background" Value="#9E9E9E"/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#757575"/>
+                </Trigger>
+                <Trigger Property="IsPressed" Value="True">
+                    <Setter Property="Background" Value="#616161"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="DangerButtonStyle" TargetType="Button" BasedOn="{StaticResource PrimaryButtonStyle}">
+            <Setter Property="Background" Value="#F44336"/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#D32F2F"/>
+                </Trigger>
+                <Trigger Property="IsPressed" Value="True">
+                    <Setter Property="Background" Value="#C62828"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="DataGridStyle" TargetType="DataGrid">
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="GridLinesVisibility" Value="Horizontal"/>
+            <Setter Property="HorizontalGridLinesBrush" Value="#E0E0E0"/>
+            <Setter Property="AlternatingRowBackground" Value="#F9F9F9"/>
+            <Setter Property="RowBackground" Value="White"/>
+            <Setter Property="HeadersVisibility" Value="Column"/>
+            <Setter Property="SelectionMode" Value="Single"/>
+        </Style>
+    </Window.Resources>
+
+    <Grid Margin="24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <Border Grid.Row="0" Background="#F5F5F5" Padding="16,12" Margin="-24,-24,-24,16" CornerRadius="4,4,0,0">
+            <StackPanel>
+                <TextBlock Text="⚙️ System Details" 
+                           FontSize="18" 
+                           FontWeight="Bold"
+                           Foreground="#1976D2"
+                           Margin="0,0,0,4"/>
+                <TextBlock Text="Manage system information and components" 
+                           FontSize="12" 
+                           Foreground="#757575"/>
+            </StackPanel>
+        </Border>
+
+        <!-- Form Content -->
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+            <StackPanel>
+                <!-- Basic Information -->
+                <GroupBox Header="System Information" Margin="0,0,0,16" Padding="16,12">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <!-- Ship Selection -->
+                        <StackPanel Grid.Column="0" Grid.Row="0" Margin="0,0,8,12">
+                            <TextBlock Text="Ship" FontSize="12" Foreground="#757575" Margin="0,0,0,4"/>
+                            <ComboBox ItemsSource="{Binding Ships}"
+                                      SelectedItem="{Binding SelectedShip}"
+                                      DisplayMemberPath="ShipName"
+                                      Height="32"
+                                      BorderBrush="#E0E0E0"
+                                      BorderThickness="1"/>
+                        </StackPanel>
+
+                        <!-- System Name -->
+                        <StackPanel Grid.Column="1" Grid.Row="0" Margin="8,0,0,12">
+                            <TextBlock Text="System Name" FontSize="12" Foreground="#757575" Margin="0,0,0,4"/>
+                            <TextBox Text="{Binding SystemName}"
+                                     Height="32"
+                                     Padding="8"
+                                     BorderBrush="#E0E0E0"
+                                     BorderThickness="1"/>
+                        </StackPanel>
+
+                        <!-- Manufacturer -->
+                        <StackPanel Grid.Column="0" Grid.Row="1" Margin="0,0,8,12">
+                            <TextBlock Text="Manufacturer" FontSize="12" Foreground="#757575" Margin="0,0,0,4"/>
+                            <TextBox Text="{Binding Manufacturer}"
+                                     Height="32"
+                                     Padding="8"
+                                     BorderBrush="#E0E0E0"
+                                     BorderThickness="1"/>
+                        </StackPanel>
+
+                        <!-- Model -->
+                        <StackPanel Grid.Column="1" Grid.Row="1" Margin="8,0,0,12">
+                            <TextBlock Text="Model" FontSize="12" Foreground="#757575" Margin="0,0,0,4"/>
+                            <TextBox Text="{Binding Model}"
+                                     Height="32"
+                                     Padding="8"
+                                     BorderBrush="#E0E0E0"
+                                     BorderThickness="1"/>
+                        </StackPanel>
+
+                        <!-- Serial Number -->
+                        <StackPanel Grid.Column="0" Grid.Row="2" Margin="0,0,8,12">
+                            <TextBlock Text="Serial Number" FontSize="12" Foreground="#757575" Margin="0,0,0,4"/>
+                            <TextBox Text="{Binding SerialNumber}"
+                                     Height="32"
+                                     Padding="8"
+                                     BorderBrush="#E0E0E0"
+                                     BorderThickness="1"/>
+                        </StackPanel>
+
+                        <!-- Category -->
+                        <StackPanel Grid.Column="1" Grid.Row="2" Margin="8,0,0,12">
+                            <TextBlock Text="Category" FontSize="12" Foreground="#757575" Margin="0,0,0,4"/>
+                            <ComboBox ItemsSource="{Binding Categories}"
+                                      SelectedItem="{Binding SelectedCategory}"
+                                      DisplayMemberPath="Name"
+                                      Height="32"
+                                      BorderBrush="#E0E0E0"
+                                      BorderThickness="1"/>
+                        </StackPanel>
+
+                        <!-- Security Zone -->
+                        <StackPanel Grid.Column="0" Grid.Row="3" Margin="0,0,8,0">
+                            <TextBlock Text="Security Zone" FontSize="12" Foreground="#757575" Margin="0,0,0,4"/>
+                            <ComboBox ItemsSource="{Binding SecurityZones}"
+                                      SelectedItem="{Binding SelectedSecurityZone}"
+                                      DisplayMemberPath="Name"
+                                      Height="32"
+                                      BorderBrush="#E0E0E0"
+                                      BorderThickness="1"/>
+                        </StackPanel>
+
+                        <!-- Description -->
+                        <StackPanel Grid.Column="1" Grid.Row="3" Margin="8,0,0,0">
+                            <TextBlock Text="Description" FontSize="12" Foreground="#757575" Margin="0,0,0,4"/>
+                            <TextBox Text="{Binding Description}"
+                                     Height="60"
+                                     Padding="8"
+                                     BorderBrush="#E0E0E0"
+                                     BorderThickness="1"
+                                     TextWrapping="Wrap"
+                                     AcceptsReturn="True"
+                                     VerticalScrollBarVisibility="Auto"/>
+                        </StackPanel>
+                    </Grid>
+                </GroupBox>
+
+                <!-- Components Section -->
+                <GroupBox Header="Components" Margin="0,0,0,16" Padding="16,12"
+                         Visibility="{Binding IsEditing, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+
+                        <!-- Component Toolbar -->
+                        <StackPanel Grid.Row="0" 
+                                  Orientation="Horizontal" 
+                                  HorizontalAlignment="Right"
+                                  Margin="0,8,0,8">
+                            <Button Content="Add Component"
+                                    Command="{Binding AddComponentCommand}"
+                                    Style="{StaticResource PrimaryButtonStyle}"
+                                    Width="120"
+                                    Margin="0,0,8,0"/>
+                            <Button Content="Edit Component"
+                                    Command="{Binding EditComponentCommand}"
+                                    Style="{StaticResource SecondaryButtonStyle}"
+                                    Width="120"
+                                    Margin="0,0,8,0"/>
+                            <Button Content="Delete Component"
+                                    Command="{Binding DeleteComponentCommand}"
+                                    Style="{StaticResource DangerButtonStyle}"
+                                    Width="120"/>
+                        </StackPanel>
+
+                        <!-- Components DataGrid -->
+                        <DataGrid Grid.Row="1"
+                                 ItemsSource="{Binding Components}"
+                                 SelectedItem="{Binding SelectedComponent}"
+                                 AutoGenerateColumns="False"
+                                 CanUserAddRows="False"
+                                 CanUserDeleteRows="False"
+                                 IsReadOnly="True"
+                                 SelectionMode="Single"
+                                 Style="{StaticResource DataGridStyle}"
+                                 Height="200">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Name" 
+                                                  Binding="{Binding Name}" 
+                                                  Width="*"/>
+                                <DataGridTextColumn Header="Maker/Model" 
+                                                  Binding="{Binding MakerModel}" 
+                                                  Width="*"/>
+                                <DataGridTextColumn Header="Location" 
+                                                  Binding="{Binding InstalledLocation}" 
+                                                  Width="*"/>
+                                <DataGridTextColumn Header="Ports" 
+                                                  Binding="{Binding PortsInfo}" 
+                                                  Width="*"/>
+                                <DataGridCheckBoxColumn Header="Remote" 
+                                                      Binding="{Binding HasRemoteConnection}" 
+                                                      Width="80"/>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </Grid>
+                </GroupBox>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- Action Buttons -->
+        <Border Grid.Row="2" Background="#F5F5F5" Padding="16,12" Margin="-24,16,-24,-24" CornerRadius="0,0,4,4">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button x:Name="SaveButton"
+                        Content="💾 Save System"
+                        Style="{StaticResource PrimaryButtonStyle}"
+                        Click="SaveButton_Click"
+                        Margin="0,0,8,0"/>
+                <Button x:Name="CancelButton"
+                        Content="❌ Cancel"
+                        Style="{StaticResource SecondaryButtonStyle}"
+                        Click="CancelButton_Click"/>
+            </StackPanel>
+        </Border>
+    </Grid>
+</Window> 
