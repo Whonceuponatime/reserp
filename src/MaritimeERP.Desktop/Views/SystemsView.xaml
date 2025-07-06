@@ -66,388 +66,406 @@
         </Style>
     </UserControl.Resources>
     
-    <Grid Margin="24">
+    <Grid Margin="8">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
-            <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <!-- Header -->
-        <Border Grid.Row="0" Background="White" Padding="24" CornerRadius="8" Margin="0,0,0,16">
-            <Border.Effect>
-                <DropShadowEffect Color="Gray" Direction="270" ShadowDepth="2" Opacity="0.3" BlurRadius="5"/>
-            </Border.Effect>
-            <StackPanel>
-                <TextBlock Text="⚙️ Systems Management" 
-                           FontSize="28" 
-                           FontWeight="Bold"
-                           Foreground="#1976D2"
-                           Margin="0,0,0,8"/>
-                <TextBlock Text="Manage ship systems, components, and equipment" 
-                           FontSize="14" 
-                           Foreground="#757575"/>
-            </StackPanel>
-        </Border>
-
-        <!-- Search and Filter Controls -->
-        <Border Grid.Row="1" Background="White" Padding="20" CornerRadius="8" Margin="0,0,0,16">
-            <Border.Effect>
-                <DropShadowEffect Color="Gray" Direction="270" ShadowDepth="1" Opacity="0.2" BlurRadius="3"/>
-            </Border.Effect>
+        <!-- Compact Header -->
+        <Border Grid.Row="0" 
+                Background="White" 
+                Padding="16,10"
+                BorderThickness="0,0,0,1"
+                BorderBrush="#E0E0E0">
             <Grid>
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="300"/>
-                    <ColumnDefinition Width="200"/>
-                    <ColumnDefinition Width="200"/>
-                    <ColumnDefinition Width="200"/>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
-                <!-- Search -->
                 <StackPanel Grid.Column="0">
-                    <TextBlock Text="Search Systems" FontSize="12" Foreground="#757575" Margin="0,0,0,4"/>
-                    <TextBox Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
-                             Height="32"
-                             Margin="8"
-                             BorderBrush="#E0E0E0"
-                             BorderThickness="1"/>
+                    <TextBlock Text="Systems" 
+                               FontSize="20" 
+                               FontWeight="SemiBold"
+                               Foreground="#1976D2"/>
+                    <TextBlock Text="Manage ship systems and equipment"
+                               FontSize="12"
+                               Foreground="#757575"
+                               Margin="0,2,0,0"/>
                 </StackPanel>
 
-                <!-- Ship Filter -->
-                <StackPanel Grid.Column="1" Margin="16,0,0,0">
-                    <TextBlock Text="Filter by Ship" FontSize="12" Foreground="#757575" Margin="0,0,0,4"/>
-                    <ComboBox ItemsSource="{Binding Ships}"
-                              SelectedValue="{Binding FilterShipId}"
-                              SelectedValuePath="Id"
-                              DisplayMemberPath="ShipName"
-                              Height="32"
-                              BorderBrush="#E0E0E0"
-                              BorderThickness="1"/>
-                </StackPanel>
-
-                <!-- Category Filter -->
-                <StackPanel Grid.Column="2" Margin="16,0,0,0">
-                    <TextBlock Text="Filter by Category" FontSize="12" Foreground="#757575" Margin="0,0,0,4"/>
-                    <ComboBox ItemsSource="{Binding Categories}"
-                              SelectedValue="{Binding FilterCategoryId}"
-                              SelectedValuePath="Id"
-                              DisplayMemberPath="Name"
-                              Height="32"
-                              BorderBrush="#E0E0E0"
-                              BorderThickness="1"/>
-                </StackPanel>
-
-                <!-- Manufacturer Filter -->
-                <StackPanel Grid.Column="3" Margin="16,0,0,0">
-                    <TextBlock Text="Filter by Manufacturer" FontSize="12" Foreground="#757575" Margin="0,0,0,4"/>
-                    <ComboBox ItemsSource="{Binding Manufacturers}"
-                              SelectedItem="{Binding FilterManufacturer}"
-                              Height="32"
-                              BorderBrush="#E0E0E0"
-                              BorderThickness="1"/>
-                </StackPanel>
-
-                <!-- Action Buttons -->
-                <StackPanel Grid.Column="5" Orientation="Horizontal" VerticalAlignment="Bottom">
-                    <Button Command="{Binding ClearFiltersCommand}"
-                            Content="Clear Filters"
-                            Background="#757575"
-                            Foreground="White"
-                            BorderThickness="0"
-                            Height="32"
-                            Padding="12,0"
-                            Margin="8,0"/>
-                    <Button Command="{Binding AddSystemCommand}"
-                            Content="➕ Add System"
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Button Content="+ Add System" 
+                            Command="{Binding AddSystemCommand}"
                             Background="#1976D2"
                             Foreground="White"
                             BorderThickness="0"
                             Height="32"
+                            Padding="16,0"
+                            FontSize="12"
+                            Margin="0,0,8,0"/>
+                    <Button Content="🗂️ Import" 
+                            Background="#424242"
+                            Foreground="White"
+                            BorderThickness="0"
+                            Height="32"
                             Padding="12,0"
-                            Margin="8,0"/>
+                            FontSize="12"
+                            Margin="0,0,8,0"/>
+                    <Button Content="📊 Export" 
+                            Background="#424242"
+                            Foreground="White"
+                            BorderThickness="0"
+                            Height="32"
+                            Padding="12,0"
+                            FontSize="12"/>
                 </StackPanel>
             </Grid>
         </Border>
 
-        <!-- Main Content -->
-        <Grid Grid.Row="2">
+        <!-- Main Content Split View -->
+        <Grid Grid.Row="1">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="2*"/>
-                <ColumnDefinition Width="16"/>
-                <ColumnDefinition Width="1*"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="300"/>
             </Grid.ColumnDefinitions>
 
             <!-- Systems List -->
-            <Border Grid.Column="0" Background="White" CornerRadius="8">
-                <Border.Effect>
-                    <DropShadowEffect Color="Gray" Direction="270" ShadowDepth="2" Opacity="0.3" BlurRadius="5"/>
-                </Border.Effect>
+            <Border Grid.Column="0" 
+                    Background="White"
+                    Padding="8,0,0,0">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
 
-                    <!-- List Header -->
+                    <!-- Search and Filter -->
                     <Border Grid.Row="0" 
-                            Background="#1976D2"
-                            Padding="16,12"
-                            CornerRadius="8,8,0,0">
-                        <TextBlock Text="Systems List" 
-                                   FontWeight="Medium" 
-                                   FontSize="16"
-                                   Foreground="White"/>
+                            Background="#F5F5F5" 
+                            Padding="12,8"
+                            Margin="0,0,8,0">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="200"/>
+                                <ColumnDefinition Width="150"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+
+                            <TextBox Grid.Column="0" 
+                                     Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                                     Height="24"
+                                     Padding="6,0"
+                                     FontSize="12"
+                                     Background="White"
+                                     BorderThickness="1"
+                                     BorderBrush="#E0E0E0"/>
+                            
+                            <ComboBox Grid.Column="1" 
+                                      ItemsSource="{Binding Ships}"
+                                      SelectedItem="{Binding SelectedShip}"
+                                      DisplayMemberPath="ShipName"
+                                      Height="24"
+                                      Padding="6,0"
+                                      FontSize="12"
+                                      Background="White"
+                                      BorderThickness="1"
+                                      BorderBrush="#E0E0E0"
+                                      Margin="8,0,0,0"/>
+
+                            <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center">
+                                <TextBlock Text="Active Only" 
+                                           FontSize="11"
+                                           Foreground="#757575"
+                                           VerticalAlignment="Center"/>
+                                <CheckBox IsChecked="{Binding ShowActiveOnly}"
+                                          Margin="6,0,0,0"/>
+                            </StackPanel>
+                        </Grid>
                     </Border>
 
-                    <!-- DataGrid -->
-                    <DataGrid Grid.Row="1" 
+                    <!-- Systems DataGrid -->
+                    <DataGrid Grid.Row="1"
                               ItemsSource="{Binding Systems}"
                               SelectedItem="{Binding SelectedSystem}"
                               AutoGenerateColumns="False"
+                              CanUserAddRows="False"
                               IsReadOnly="True"
-                              GridLinesVisibility="Horizontal"
-                              HorizontalGridLinesBrush="#E0E0E0"
-                              AlternatingRowBackground="#F9F9F9"
-                              RowBackground="White"
+                              GridLinesVisibility="None"
                               HeadersVisibility="Column"
-                              SelectionMode="Single">
+                              SelectionMode="Single"
+                              Background="White"
+                              BorderThickness="0"
+                              RowHeight="26"
+                              FontSize="12"
+                              Margin="0,0,8,0">
+                        
+                        <DataGrid.ColumnHeaderStyle>
+                            <Style TargetType="DataGridColumnHeader">
+                                <Setter Property="Background" Value="#F5F5F5"/>
+                                <Setter Property="Foreground" Value="#424242"/>
+                                <Setter Property="FontWeight" Value="SemiBold"/>
+                                <Setter Property="FontSize" Value="11"/>
+                                <Setter Property="Height" Value="32"/>
+                                <Setter Property="Padding" Value="8,0"/>
+                                <Setter Property="BorderThickness" Value="0,0,1,0"/>
+                                <Setter Property="BorderBrush" Value="#E0E0E0"/>
+                            </Style>
+                        </DataGrid.ColumnHeaderStyle>
+                        
+                        <DataGrid.RowStyle>
+                            <Style TargetType="DataGridRow">
+                                <Setter Property="Background" Value="White"/>
+                                <Style.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter Property="Background" Value="#F8F9FA"/>
+                                    </Trigger>
+                                    <Trigger Property="IsSelected" Value="True">
+                                        <Setter Property="Background" Value="#E3F2FD"/>
+                                    </Trigger>
+                                </Style.Triggers>
+                            </Style>
+                        </DataGrid.RowStyle>
+
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="System Name" 
-                                                Binding="{Binding Name}" 
-                                                Width="*"/>
-                            <DataGridTextColumn Header="Ship" 
-                                                Binding="{Binding Ship.ShipName}" 
-                                                Width="150"/>
-                            <DataGridTextColumn Header="Category" 
-                                                Binding="{Binding Category.Name}" 
-                                                Width="120"/>
-                            <DataGridTextColumn Header="Manufacturer" 
-                                                Binding="{Binding Manufacturer}" 
-                                                Width="120"/>
-                            <DataGridTextColumn Header="Model" 
-                                                Binding="{Binding Model}" 
-                                                Width="100"/>
-                            <DataGridTextColumn Header="Serial Number" 
-                                                Binding="{Binding SerialNumber}" 
-                                                Width="120"/>
+                                                Binding="{Binding Name}"
+                                                Width="150"
+                                                MinWidth="120"/>
+                            <DataGridTextColumn Header="Ship"
+                                                Binding="{Binding Ship.ShipName}"
+                                                Width="120"
+                                                MinWidth="100"/>
+                            <DataGridTextColumn Header="Manufacturer"
+                                                Binding="{Binding Manufacturer}"
+                                                Width="100"
+                                                MinWidth="80"/>
+                            <DataGridTextColumn Header="Model"
+                                                Binding="{Binding Model}"
+                                                Width="100"
+                                                MinWidth="80"/>
+                            <DataGridTextColumn Header="Serial Number"
+                                                Binding="{Binding SerialNumber}"
+                                                Width="120"
+                                                MinWidth="100"/>
+                            <DataGridTextColumn Header="Category"
+                                                Binding="{Binding Category.Name}"
+                                                Width="100"
+                                                MinWidth="80"/>
+                            <DataGridTextColumn Header="Updated"
+                                                Binding="{Binding UpdatedAt, StringFormat='{}{0:MM/dd/yyyy}'}"
+                                                Width="*"
+                                                MinWidth="90"/>
                         </DataGrid.Columns>
                     </DataGrid>
+
+                    <!-- Status Bar -->
+                    <Border Grid.Row="2" 
+                            Background="#F5F5F5" 
+                            Padding="12,6"
+                            Margin="0,0,8,0">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+
+                            <TextBlock Grid.Column="0"
+                                       Text="{Binding StatusMessage}"
+                                       FontSize="11"
+                                       Foreground="#757575"
+                                       VerticalAlignment="Center"/>
+
+                            <ProgressBar Grid.Column="1" 
+                                         Width="80" 
+                                         Height="12" 
+                                         IsIndeterminate="True" 
+                                         Visibility="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                         Margin="0,0,8,0"/>
+
+                            <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                                <TextBlock Text="Total: " 
+                                           FontSize="11"
+                                           Foreground="#757575"/>
+                                <TextBlock Text="{Binding TotalSystems}" 
+                                           FontSize="11"
+                                           FontWeight="SemiBold"
+                                           Foreground="#1976D2"/>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
                 </Grid>
             </Border>
 
-            <!-- System Details Form -->
-            <Border Grid.Column="2" Background="White" CornerRadius="8">
-                <Border.Effect>
-                    <DropShadowEffect Color="Gray" Direction="270" ShadowDepth="2" Opacity="0.3" BlurRadius="5"/>
-                </Border.Effect>
-                <Grid>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="*"/>
-                        <RowDefinition Height="Auto"/>
-                    </Grid.RowDefinitions>
-
-                    <!-- Form Header -->
-                    <Border Grid.Row="0" 
-                            Background="#FF9800"
-                            Padding="16,12"
-                            CornerRadius="8,8,0,0">
+            <!-- System Details Panel -->
+            <Border Grid.Column="1" 
+                    Background="White"
+                    BorderThickness="1,0,0,0"
+                    BorderBrush="#E0E0E0"
+                    Padding="16">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel>
                         <TextBlock Text="System Details" 
-                                   FontWeight="Medium" 
-                                   FontSize="16"
-                                   Foreground="White"/>
-                    </Border>
+                                   FontSize="16" 
+                                   FontWeight="SemiBold"
+                                   Foreground="#1976D2"
+                                   Margin="0,0,0,16"/>
 
-                    <!-- Form Content -->
-                    <ScrollViewer Grid.Row="1" Padding="16" VerticalScrollBarVisibility="Auto">
-                        <StackPanel>
+                        <!-- System Form -->
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+
+                            <!-- System Name -->
+                            <StackPanel Grid.Row="0" Margin="0,0,0,12">
+                                <TextBlock Text="System Name" FontSize="11" FontWeight="SemiBold" Foreground="#424242" Margin="0,0,0,4"/>
+                                <TextBox Text="{Binding SystemName}"
+                                         IsEnabled="{Binding IsEditing}"
+                                         Height="24"
+                                         Padding="8,0"
+                                         FontSize="12"
+                                         Background="#F5F5F5"
+                                         BorderThickness="1"
+                                         BorderBrush="#E0E0E0"/>
+                            </StackPanel>
+
                             <!-- Ship Selection -->
-                            <StackPanel Margin="0,0,0,16">
-                                <TextBlock Text="Ship" FontSize="12" Foreground="#757575" Margin="0,0,0,4"/>
+                            <StackPanel Grid.Row="1" Margin="0,0,0,12">
+                                <TextBlock Text="Ship" FontSize="11" FontWeight="SemiBold" Foreground="#424242" Margin="0,0,0,4"/>
                                 <ComboBox ItemsSource="{Binding Ships}"
                                           SelectedItem="{Binding SelectedShip}"
                                           DisplayMemberPath="ShipName"
                                           IsEnabled="{Binding IsEditing}"
-                                          Height="32"
-                                          BorderBrush="#E0E0E0"
-                                          BorderThickness="1"/>
-                            </StackPanel>
-
-                            <!-- System Name -->
-                            <StackPanel Margin="0,0,0,16">
-                                <TextBlock Text="System Name" FontSize="12" Foreground="#757575" Margin="0,0,0,4"/>
-                                <TextBox Text="{Binding SystemName}"
-                                         IsEnabled="{Binding IsEditing}"
-                                         Height="32"
-                                         Padding="8"
-                                         BorderBrush="#E0E0E0"
-                                         BorderThickness="1"/>
+                                          Height="24"
+                                          Padding="8,0"
+                                          FontSize="12"
+                                          Background="#F5F5F5"
+                                          BorderThickness="1"
+                                          BorderBrush="#E0E0E0"/>
                             </StackPanel>
 
                             <!-- Manufacturer -->
-                            <StackPanel Margin="0,0,0,16">
-                                <TextBlock Text="Manufacturer" FontSize="12" Foreground="#757575" Margin="0,0,0,4"/>
-                                <TextBox Text="{Binding Manufacturer}"
-                                         IsEnabled="{Binding IsEditing}"
-                                         Height="32"
-                                         Padding="8"
-                                         BorderBrush="#E0E0E0"
-                                         BorderThickness="1"/>
+                            <StackPanel Grid.Row="2" Margin="0,0,0,12">
+                                <TextBlock Text="Manufacturer" FontSize="11" FontWeight="SemiBold" Foreground="#424242" Margin="0,0,0,4"/>
+                                <ComboBox ItemsSource="{Binding Manufacturers}"
+                                          SelectedItem="{Binding Manufacturer}"
+                                          IsEditable="True"
+                                          IsEnabled="{Binding IsEditing}"
+                                          Height="24"
+                                          Padding="8,0"
+                                          FontSize="12"
+                                          Background="#F5F5F5"
+                                          BorderThickness="1"
+                                          BorderBrush="#E0E0E0"/>
                             </StackPanel>
 
                             <!-- Model -->
-                            <StackPanel Margin="0,0,0,16">
-                                <TextBlock Text="Model" FontSize="12" Foreground="#757575" Margin="0,0,0,4"/>
+                            <StackPanel Grid.Row="3" Margin="0,0,0,12">
+                                <TextBlock Text="Model" FontSize="11" FontWeight="SemiBold" Foreground="#424242" Margin="0,0,0,4"/>
                                 <TextBox Text="{Binding Model}"
                                          IsEnabled="{Binding IsEditing}"
-                                         Height="32"
-                                         Padding="8"
-                                         BorderBrush="#E0E0E0"
-                                         BorderThickness="1"/>
+                                         Height="24"
+                                         Padding="8,0"
+                                         FontSize="12"
+                                         Background="#F5F5F5"
+                                         BorderThickness="1"
+                                         BorderBrush="#E0E0E0"/>
                             </StackPanel>
 
                             <!-- Serial Number -->
-                            <StackPanel Margin="0,0,0,16">
-                                <TextBlock Text="Serial Number" FontSize="12" Foreground="#757575" Margin="0,0,0,4"/>
+                            <StackPanel Grid.Row="4" Margin="0,0,0,12">
+                                <TextBlock Text="Serial Number" FontSize="11" FontWeight="SemiBold" Foreground="#424242" Margin="0,0,0,4"/>
                                 <TextBox Text="{Binding SerialNumber}"
                                          IsEnabled="{Binding IsEditing}"
-                                         Height="32"
-                                         Padding="8"
+                                         Height="24"
+                                         Padding="8,0"
+                                         FontSize="12"
+                                         Background="#F5F5F5"
+                                         BorderThickness="1"
+                                         BorderBrush="#E0E0E0"/>
+                            </StackPanel>
+
+                            <!-- Description -->
+                            <StackPanel Grid.Row="5" Margin="0,0,0,12">
+                                <TextBlock Text="Description" FontSize="11" FontWeight="SemiBold" Foreground="#424242" Margin="0,0,0,4"/>
+                                <TextBox Text="{Binding Description}"
+                                         IsEnabled="{Binding IsEditing}"
+                                         Height="60"
+                                         Padding="8,4"
+                                         FontSize="12"
+                                         Background="#F5F5F5"
+                                         BorderThickness="1"
                                          BorderBrush="#E0E0E0"
-                                         BorderThickness="1"/>
+                                         TextWrapping="Wrap"
+                                         AcceptsReturn="True"/>
                             </StackPanel>
 
                             <!-- Category -->
-                            <StackPanel Margin="0,0,0,16">
-                                <TextBlock Text="Category" FontSize="12" Foreground="#757575" Margin="0,0,0,4"/>
+                            <StackPanel Grid.Row="6" Margin="0,0,0,12">
+                                <TextBlock Text="Category" FontSize="11" FontWeight="SemiBold" Foreground="#424242" Margin="0,0,0,4"/>
                                 <ComboBox ItemsSource="{Binding Categories}"
                                           SelectedItem="{Binding SelectedCategory}"
                                           DisplayMemberPath="Name"
                                           IsEnabled="{Binding IsEditing}"
-                                          Height="32"
-                                          BorderBrush="#E0E0E0"
-                                          BorderThickness="1"/>
+                                          Height="24"
+                                          Padding="8,0"
+                                          FontSize="12"
+                                          Background="#F5F5F5"
+                                          BorderThickness="1"
+                                          BorderBrush="#E0E0E0"/>
                             </StackPanel>
 
-                            <!-- Security Zone -->
-                            <StackPanel Margin="0,0,0,16">
-                                <TextBlock Text="Security Zone" FontSize="12" Foreground="#757575" Margin="0,0,0,4"/>
-                                <ComboBox ItemsSource="{Binding SecurityZones}"
-                                          SelectedItem="{Binding SelectedSecurityZone}"
-                                          DisplayMemberPath="Name"
-                                          IsEnabled="{Binding IsEditing}"
-                                          Height="32"
-                                          BorderBrush="#E0E0E0"
-                                          BorderThickness="1"/>
+                            <!-- Action Buttons -->
+                            <StackPanel Grid.Row="7" Orientation="Vertical" Margin="0,12,0,0">
+                                <Button Content="Save System" 
+                                        Command="{Binding SaveSystemCommand}"
+                                        Background="#4CAF50"
+                                        Foreground="White"
+                                        BorderThickness="0"
+                                        Height="32"
+                                        FontSize="12"
+                                        Margin="0,0,0,6"/>
+                                <Button Content="Edit System" 
+                                        Command="{Binding EditSystemCommand}"
+                                        Background="#1976D2"
+                                        Foreground="White"
+                                        BorderThickness="0"
+                                        Height="32"
+                                        FontSize="12"
+                                        Margin="0,0,0,6"/>
+                                <Button Content="Delete System" 
+                                        Command="{Binding DeleteSystemCommand}"
+                                        Background="#D32F2F"
+                                        Foreground="White"
+                                        BorderThickness="0"
+                                        Height="32"
+                                        FontSize="12"
+                                        Margin="0,0,0,6"/>
+                                <Button Content="Cancel" 
+                                        Command="{Binding CancelEditCommand}"
+                                        Background="#757575"
+                                        Foreground="White"
+                                        BorderThickness="0"
+                                        Height="32"
+                                        FontSize="12"/>
                             </StackPanel>
-
-                            <!-- Description -->
-                            <StackPanel>
-                                <TextBlock Text="Description" FontSize="12" Foreground="#757575" Margin="0,0,0,4"/>
-                                <TextBox Text="{Binding Description}"
-                                         IsEnabled="{Binding IsEditing}"
-                                         AcceptsReturn="True"
-                                         MinHeight="60"
-                                         Padding="8"
-                                         BorderBrush="#E0E0E0"
-                                         BorderThickness="1"
-                                         VerticalScrollBarVisibility="Auto"/>
-                            </StackPanel>
-                        </StackPanel>
-                    </ScrollViewer>
-
-                    <!-- Form Actions -->
-                    <Border Grid.Row="2" 
-                            Background="#F5F5F5"
-                            Padding="16"
-                            CornerRadius="0,0,8,8">
-                        <StackPanel Orientation="Horizontal" 
-                                    HorizontalAlignment="Right">
-                            <!-- Edit Button -->
-                            <Button Command="{Binding EditSystemCommand}"
-                                    Content="📝 Edit"
-                                    Background="#1976D2"
-                                    Foreground="White"
-                                    BorderThickness="0"
-                                    Height="32"
-                                    Padding="12,0"
-                                    Margin="4,0"
-                                    Style="{StaticResource InverseVisibilityStyle}"/>
-
-                            <!-- Save Button -->
-                            <Button Command="{Binding SaveSystemCommand}"
-                                    Content="💾 Save"
-                                    Background="#4CAF50"
-                                    Foreground="White"
-                                    BorderThickness="0"
-                                    Height="32"
-                                    Padding="12,0"
-                                    Margin="4,0"
-                                    Visibility="{Binding IsEditing, Converter={StaticResource BooleanToVisibilityConverter}}"/>
-
-                            <!-- Cancel Button -->
-                            <Button Command="{Binding CancelEditCommand}"
-                                    Content="❌ Cancel"
-                                    Background="#757575"
-                                    Foreground="White"
-                                    BorderThickness="0"
-                                    Height="32"
-                                    Padding="12,0"
-                                    Margin="4,0"
-                                    Visibility="{Binding IsEditing, Converter={StaticResource BooleanToVisibilityConverter}}"/>
-
-                            <!-- Delete Button -->
-                            <Button Command="{Binding DeleteSystemCommand}"
-                                    Content="🗑️ Delete"
-                                    Background="#D32F2F"
-                                    Foreground="White"
-                                    BorderThickness="0"
-                                    Height="32"
-                                    Padding="12,0"
-                                    Margin="4,0"
-                                    Style="{StaticResource InverseVisibilityStyle}"/>
-                        </StackPanel>
-                    </Border>
-                </Grid>
+                        </Grid>
+                    </StackPanel>
+                </ScrollViewer>
             </Border>
         </Grid>
-
-        <!-- Status Bar -->
-        <Border Grid.Row="3" Background="White" Padding="16,8" CornerRadius="8" Margin="0,16,0,0">
-            <Border.Effect>
-                <DropShadowEffect Color="Gray" Direction="270" ShadowDepth="1" Opacity="0.2" BlurRadius="3"/>
-            </Border.Effect>
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
-
-                <!-- Status Message -->
-                <TextBlock Grid.Column="0" 
-                           Text="{Binding StatusMessage}" 
-                           VerticalAlignment="Center"
-                           FontSize="14"
-                           Foreground="#757575"/>
-
-                <!-- Loading Indicator -->
-                <StackPanel Grid.Column="1" 
-                            Orientation="Horizontal"
-                            Visibility="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}}">
-                    <ProgressBar IsIndeterminate="True" 
-                                 Width="100" 
-                                 Height="4"
-                                 Margin="16,0,0,0"/>
-                    <TextBlock Text="Loading..." 
-                               FontSize="12" 
-                               Foreground="#757575" 
-                               VerticalAlignment="Center"
-                               Margin="8,0,0,0"/>
-                </StackPanel>
-            </Grid>
-        </Border>
     </Grid>
 </UserControl> 

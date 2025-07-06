@@ -3,7 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              Background="#FAFAFA">
 
-    <Grid>
+    <Grid Margin="8">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
@@ -11,10 +11,10 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <!-- Header Section -->
+        <!-- Compact Header -->
         <Border Grid.Row="0" 
                 Background="White" 
-                Padding="24"
+                Padding="16,10"
                 BorderThickness="0,0,0,1"
                 BorderBrush="#E0E0E0">
             <Grid>
@@ -22,185 +22,220 @@
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
-                
+
                 <StackPanel Grid.Column="0">
-                    <TextBlock Text="🚢 Fleet Management" 
-                               FontSize="24" 
-                               FontWeight="Bold"
-                               Foreground="#1976D2"
-                               Margin="0,0,0,8"/>
-                    <TextBlock Text="Manage your fleet of ships and vessels" 
-                               FontSize="14" 
-                               Foreground="#757575"/>
+                    <TextBlock Text="Ships" 
+                               FontSize="20" 
+                               FontWeight="SemiBold"
+                               Foreground="#1976D2"/>
+                    <TextBlock Text="Manage fleet ships and vessels"
+                               FontSize="12"
+                               Foreground="#757575"
+                               Margin="0,2,0,0"/>
                 </StackPanel>
 
-                <StackPanel Grid.Column="1" Orientation="Horizontal">
-                    <Button Content="➕ Add Ship" 
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Button Content="+ Add Ship" 
                             Command="{Binding AddShipCommand}"
                             Background="#1976D2"
                             Foreground="White"
                             BorderThickness="0"
-                            Height="36"
+                            Height="32"
                             Padding="16,0"
-                            Margin="8,0"/>
-                    <Button Content="🔄 Refresh" 
-                            Command="{Binding RefreshCommand}"
-                            Background="#757575"
+                            FontSize="12"
+                            Margin="0,0,8,0"/>
+                    <Button Content="🗂️ Import" 
+                            Background="#424242"
                             Foreground="White"
                             BorderThickness="0"
-                            Height="36"
-                            Padding="16,0"
-                            Margin="8,0"/>
+                            Height="32"
+                            Padding="12,0"
+                            FontSize="12"
+                            Margin="0,0,8,0"/>
+                    <Button Content="📊 Export" 
+                            Background="#424242"
+                            Foreground="White"
+                            BorderThickness="0"
+                            Height="32"
+                            Padding="12,0"
+                            FontSize="12"/>
                 </StackPanel>
             </Grid>
         </Border>
 
-        <!-- Search and Filter Section -->
+        <!-- Compact Filters -->
         <Border Grid.Row="1" 
-                Background="#F5F5F5" 
-                Padding="24,16">
+                Background="White" 
+                Padding="16,8"
+                BorderThickness="0,0,0,1"
+                BorderBrush="#E0E0E0">
             <Grid>
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="300"/>
                     <ColumnDefinition Width="200"/>
-                    <ColumnDefinition Width="200"/>
+                    <ColumnDefinition Width="150"/>
+                    <ColumnDefinition Width="150"/>
                     <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
-                <StackPanel Grid.Column="0">
-                    <TextBlock Text="Search Ships" FontSize="12" Foreground="#757575" Margin="0,0,0,4"/>
-                    <TextBox Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
-                             Height="32"
-                             Padding="8"
-                             BorderBrush="#E0E0E0"
-                             BorderThickness="1"/>
-                </StackPanel>
+                <TextBox Grid.Column="0" 
+                         Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                         Height="26"
+                         Padding="8,0"
+                         FontSize="12"
+                         Background="#F5F5F5"
+                         BorderThickness="0"/>
+                
+                <ComboBox Grid.Column="1" 
+                          ItemsSource="{Binding ShipTypes}"
+                          SelectedItem="{Binding SelectedShipType}"
+                          Height="26"
+                          Padding="8,0"
+                          FontSize="12"
+                          Background="#F5F5F5"
+                          BorderThickness="0"
+                          Margin="8,0,0,0"/>
+                
+                <ComboBox Grid.Column="2" 
+                          ItemsSource="{Binding Flags}"
+                          SelectedItem="{Binding SelectedFlag}"
+                          Height="26"
+                          Padding="8,0"
+                          FontSize="12"
+                          Background="#F5F5F5"
+                          BorderThickness="0"
+                          Margin="8,0,0,0"/>
 
-                <StackPanel Grid.Column="1" Margin="16,0,0,0">
-                    <TextBlock Text="Ship Type" FontSize="12" Foreground="#757575" Margin="0,0,0,4"/>
-                    <ComboBox SelectedItem="{Binding SelectedShipType}"
-                              ItemsSource="{Binding ShipTypes}"
-                              Height="32"
-                              BorderBrush="#E0E0E0"
-                              BorderThickness="1">
-                        <ComboBox.ItemTemplate>
-                            <DataTemplate>
-                                <TextBlock Text="{Binding Name}"/>
-                            </DataTemplate>
-                        </ComboBox.ItemTemplate>
-                    </ComboBox>
-                </StackPanel>
-
-                <StackPanel Grid.Column="2" Margin="16,0,0,0">
-                    <TextBlock Text="Status" FontSize="12" Foreground="#757575" Margin="0,0,0,4"/>
-                    <ComboBox SelectedItem="{Binding SelectedStatus}"
-                              Height="32"
-                              BorderBrush="#E0E0E0"
-                              BorderThickness="1">
-                        <ComboBoxItem Content="All"/>
-                        <ComboBoxItem Content="Active"/>
-                        <ComboBoxItem Content="Inactive"/>
-                    </ComboBox>
+                <StackPanel Grid.Column="4" Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="Active Only" 
+                               FontSize="11"
+                               Foreground="#757575"
+                               VerticalAlignment="Center"/>
+                    <CheckBox IsChecked="{Binding ShowActiveOnly}"
+                              Margin="6,0,0,0"/>
                 </StackPanel>
             </Grid>
         </Border>
 
-        <!-- Ships Data Grid -->
+        <!-- Ships DataGrid -->
         <DataGrid Grid.Row="2"
                   ItemsSource="{Binding FilteredShips}"
                   SelectedItem="{Binding SelectedShip}"
                   AutoGenerateColumns="False"
                   CanUserAddRows="False"
                   CanUserDeleteRows="False"
-                  CanUserReorderColumns="True"
-                  CanUserResizeColumns="True"
-                  CanUserSortColumns="True"
-                  GridLinesVisibility="Horizontal"
-                  HorizontalGridLinesBrush="#E0E0E0"
-                  AlternatingRowBackground="#F9F9F9"
-                  RowBackground="White"
-                  HeadersVisibility="Column"
                   IsReadOnly="True"
+                  GridLinesVisibility="None"
+                  HeadersVisibility="Column"
                   SelectionMode="Single"
-                  Margin="24,16,24,0">
+                  Background="White"
+                  BorderThickness="0"
+                  RowHeight="26"
+                  FontSize="12">
             
-            <DataGrid.Columns>
-                <DataGridTextColumn Header="Ship Name" 
-                                    Binding="{Binding ShipName}" 
-                                    Width="200"
-                                    FontWeight="SemiBold"/>
-                <DataGridTextColumn Header="IMO Number" 
-                                    Binding="{Binding ImoNumber}" 
-                                    Width="120"/>
-                <DataGridTextColumn Header="Ship Type" 
-                                    Binding="{Binding ShipType}" 
-                                    Width="150"/>
-                <DataGridTextColumn Header="Flag State" 
-                                    Binding="{Binding Flag}" 
-                                    Width="120"/>
-                <DataGridTextColumn Header="Year Built" 
-                                    Binding="{Binding BuildYear}" 
-                                    Width="100"/>
-                <DataGridTextColumn Header="Length (m)" 
-                                    Binding="{Binding Length, StringFormat=F1}" 
-                                    Width="100"/>
-                <DataGridTextColumn Header="Gross Tonnage" 
-                                    Binding="{Binding GrossTonnage, StringFormat=N0}" 
-                                    Width="120"/>
-                <DataGridTextColumn Header="Status" 
-                                    Binding="{Binding IsActive}" 
-                                    Width="120"/>
-                <DataGridTextColumn Header="Last Updated" 
-                                    Binding="{Binding UpdatedAt, StringFormat=dd/MM/yyyy}" 
-                                    Width="120"/>
-            </DataGrid.Columns>
-
+            <DataGrid.ColumnHeaderStyle>
+                <Style TargetType="DataGridColumnHeader">
+                    <Setter Property="Background" Value="#F5F5F5"/>
+                    <Setter Property="Foreground" Value="#424242"/>
+                    <Setter Property="FontWeight" Value="SemiBold"/>
+                    <Setter Property="FontSize" Value="11"/>
+                    <Setter Property="Height" Value="32"/>
+                    <Setter Property="Padding" Value="8,0"/>
+                    <Setter Property="BorderThickness" Value="0,0,1,0"/>
+                    <Setter Property="BorderBrush" Value="#E0E0E0"/>
+                </Style>
+            </DataGrid.ColumnHeaderStyle>
+            
             <DataGrid.RowStyle>
                 <Style TargetType="DataGridRow">
+                    <Setter Property="Background" Value="White"/>
                     <Style.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
+                            <Setter Property="Background" Value="#F8F9FA"/>
+                        </Trigger>
+                        <Trigger Property="IsSelected" Value="True">
                             <Setter Property="Background" Value="#E3F2FD"/>
                         </Trigger>
                     </Style.Triggers>
                 </Style>
             </DataGrid.RowStyle>
+
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Ship Name" 
+                                    Binding="{Binding ShipName}"
+                                    Width="150"
+                                    MinWidth="120"/>
+                <DataGridTextColumn Header="IMO Number"
+                                    Binding="{Binding ImoNumber}"
+                                    Width="120"
+                                    MinWidth="100"/>
+                <DataGridTextColumn Header="Ship Type"
+                                    Binding="{Binding ShipType}"
+                                    Width="100"
+                                    MinWidth="80"/>
+                <DataGridTextColumn Header="Flag"
+                                    Binding="{Binding Flag}"
+                                    Width="100"
+                                    MinWidth="80"/>
+                <DataGridTextColumn Header="Built Year"
+                                    Binding="{Binding BuildYear}"
+                                    Width="80"
+                                    MinWidth="70"/>
+                <DataGridTextColumn Header="Owner"
+                                    Binding="{Binding Owner}"
+                                    Width="120"
+                                    MinWidth="100"/>
+                <DataGridTextColumn Header="Tonnage"
+                                    Binding="{Binding GrossTonnage}"
+                                    Width="80"
+                                    MinWidth="70"/>
+                <DataGridCheckBoxColumn Header="Active"
+                                        Binding="{Binding IsActive}"
+                                        Width="60"
+                                        MinWidth="50"/>
+                <DataGridTextColumn Header="Last Updated"
+                                    Binding="{Binding UpdatedAt, StringFormat='{}{0:MM/dd/yyyy}'}"
+                                    Width="100"
+                                    MinWidth="90"/>
+            </DataGrid.Columns>
         </DataGrid>
 
-        <!-- Action Buttons -->
+        <!-- Compact Status Bar -->
         <Border Grid.Row="3" 
                 Background="White" 
-                Padding="24,16"
+                Padding="16,6"
                 BorderThickness="0,1,0,0"
                 BorderBrush="#E0E0E0">
-            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                <Button Content="📝 Edit Ship" 
-                        Command="{Binding EditShipCommand}"
-                        IsEnabled="{Binding HasSelectedShip}"
-                        Background="#1976D2"
-                        Foreground="White"
-                        BorderThickness="0"
-                        Height="36"
-                        Padding="16,0"
-                        Margin="8,0"/>
-                <Button Content="🗑️ Delete Ship" 
-                        Command="{Binding DeleteShipCommand}"
-                        IsEnabled="{Binding HasSelectedShip}"
-                        Background="#D32F2F"
-                        Foreground="White"
-                        BorderThickness="0"
-                        Height="36"
-                        Padding="16,0"
-                        Margin="8,0"/>
-                <Button Content="📋 View Details" 
-                        Command="{Binding ViewDetailsCommand}"
-                        IsEnabled="{Binding HasSelectedShip}"
-                        Background="#388E3C"
-                        Foreground="White"
-                        BorderThickness="0"
-                        Height="36"
-                        Padding="16,0"
-                        Margin="8,0"/>
-            </StackPanel>
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <TextBlock Grid.Column="0"
+                           Text="{Binding StatusMessage}"
+                           FontSize="11"
+                           Foreground="#757575"
+                           VerticalAlignment="Center"/>
+
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="Total Ships: " 
+                               FontSize="11"
+                               Foreground="#757575"/>
+                    <TextBlock Text="{Binding TotalShips}" 
+                               FontSize="11"
+                               FontWeight="SemiBold"
+                               Foreground="#1976D2"/>
+                    <TextBlock Text=" | Active: " 
+                               FontSize="11"
+                               Foreground="#757575"
+                               Margin="8,0,0,0"/>
+                    <TextBlock Text="{Binding ActiveShips}" 
+                               FontSize="11"
+                               FontWeight="SemiBold"
+                               Foreground="#4CAF50"/>
+                </StackPanel>
+            </Grid>
         </Border>
     </Grid>
 </UserControl> 

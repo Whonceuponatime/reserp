@@ -6,6 +6,7 @@
         Title="Maritime ERP System" 
         Height="700" Width="1200"
         WindowStartupLocation="CenterScreen"
+        WindowState="Maximized"
         Background="#FAFAFA">
 
     <Window.Resources>
@@ -51,14 +52,14 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="250"/>
+            <ColumnDefinition Width="200"/>
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
 
-        <!-- Top Header -->
+        <!-- Compact Top Header -->
         <Border Grid.Row="0" Grid.ColumnSpan="2" 
                 Background="#1976D2"
-                Padding="20,12">
+                Padding="12,6">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
@@ -66,69 +67,59 @@
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
-                <!-- Logo and Title -->
+                <!-- Compact Logo and Title -->
                 <StackPanel Grid.Column="0" Orientation="Horizontal">
-                    <TextBlock Text="🚢" FontSize="24" VerticalAlignment="Center" Foreground="White"/>
-                    <StackPanel Margin="12,0,0,0" VerticalAlignment="Center">
-                        <TextBlock Text="Maritime ERP System"
-                                   FontSize="18" 
-                                   FontWeight="SemiBold"
-                                   Foreground="White"/>
-                        <TextBlock Text="Enterprise Resource Planning"
-                                   FontSize="12"
-                                   Foreground="#E3F2FD"/>
-                    </StackPanel>
+                    <TextBlock Text="🚢" FontSize="18" VerticalAlignment="Center" Foreground="White"/>
+                    <TextBlock Text="Maritime ERP"
+                               FontSize="16" 
+                               FontWeight="SemiBold"
+                               Foreground="White"
+                               Margin="8,0,0,0"
+                               VerticalAlignment="Center"/>
                 </StackPanel>
 
-                <!-- Page Title -->
+                <!-- Compact Page Title -->
                 <TextBlock Grid.Column="1"
                            Text="{Binding PageTitle}"
-                           FontSize="16"
+                           FontSize="14"
                            FontWeight="Medium"
-                           Foreground="White"
+                           Foreground="#E3F2FD"
                            HorizontalAlignment="Center"
                            VerticalAlignment="Center"/>
 
-                <!-- User Info and Actions -->
-                <StackPanel Grid.Column="2" Orientation="Horizontal">
-                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="8,0">
-                        <TextBlock Text="👤" FontSize="16" VerticalAlignment="Center" Foreground="White"/>
-                        <StackPanel Margin="8,0">
-                            <TextBlock Text="{Binding CurrentUser.FullName}" 
-                                       FontWeight="Medium"
-                                       FontSize="14"
-                                       Foreground="White"/>
-                            <TextBlock Text="{Binding CurrentUser.Role.Name}"
-                                       FontSize="12" 
-                                       Foreground="#E3F2FD"/>
-                        </StackPanel>
-                    </StackPanel>
-
+                <!-- Compact User Info -->
+                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding CurrentUser.FullName}" 
+                               FontWeight="Medium"
+                               FontSize="13"
+                               Foreground="White"
+                               VerticalAlignment="Center"/>
                     <Button Content="Logout" 
                             Command="{Binding LogoutCommand}"
                             Background="#0D47A1"
                             Foreground="White"
                             BorderThickness="0"
-                            Height="32"
-                            Padding="12,0"
-                            Margin="16,0,0,0"/>
+                            Height="26"
+                            Padding="10,0"
+                            FontSize="12"
+                            Margin="12,0,0,0"/>
                 </StackPanel>
             </Grid>
         </Border>
         
-        <!-- Sidebar Navigation -->
+        <!-- Compact Sidebar Navigation -->
         <Border Grid.Row="1" Grid.Column="0"
                 Background="White"
                 BorderThickness="0,0,1,0"
                 BorderBrush="#E0E0E0">
             <ScrollViewer VerticalScrollBarVisibility="Auto"
-                          Padding="16">
+                          Padding="8">
                 <StackPanel>
                     <TextBlock Text="NAVIGATION"
-                               FontSize="12"
+                               FontSize="11"
                                FontWeight="SemiBold"
                                Foreground="#757575"
-                               Margin="16,0,0,8"/>
+                               Margin="12,0,0,6"/>
                     
                     <ListBox ItemsSource="{Binding NavigationItems}"
                              SelectedItem="{Binding SelectedNavigation}"
@@ -138,16 +129,16 @@
                         <ListBox.ItemTemplate>
                             <DataTemplate>
                                 <Border Background="Transparent" 
-                                        Padding="16,12"
-                                        Margin="8,2"
+                                        Padding="12,8"
+                                        Margin="4,1"
                                         CornerRadius="4">
                                     <StackPanel Orientation="Horizontal">
                                         <TextBlock Text="{Binding Icon}" 
-                                                   FontSize="16"
+                                                   FontSize="15"
                                                    VerticalAlignment="Center"
-                                                   Margin="0,0,12,0"/>
+                                                   Margin="0,0,8,0"/>
                                         <TextBlock Text="{Binding Title}"
-                                                   FontSize="14"
+                                                   FontSize="13"
                                                    VerticalAlignment="Center"/>
                                     </StackPanel>
                                 </Border>
@@ -177,19 +168,19 @@
             </ScrollViewer>
         </Border>
 
-        <!-- Main Content Area -->
+        <!-- Main Content Area with Less Padding -->
         <Border Grid.Row="1" Grid.Column="1"
                 Background="#FAFAFA"
-                Padding="24">
+                Padding="12">
             <ContentControl Content="{Binding CurrentViewModel}"/>
         </Border>
 
-        <!-- Status Bar -->
+        <!-- Compact Status Bar -->
         <Border Grid.Row="2" Grid.ColumnSpan="2"
                 Background="White"
                 BorderThickness="0,1,0,0"
                 BorderBrush="#E0E0E0"
-                Padding="24,8">
+                Padding="12,4">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
@@ -198,20 +189,15 @@
 
                 <TextBlock Grid.Column="0"
                            Text="Ready"
-                           FontSize="12"
+                           FontSize="11"
                            Foreground="#757575"
                            VerticalAlignment="Center"/>
 
-                <StackPanel Grid.Column="1" Orientation="Horizontal">
-                    <TextBlock Text="© 2024 Maritime Solutions"
-                               FontSize="12"
-                               Foreground="#757575"
-                               VerticalAlignment="Center"/>
-                    <TextBlock Text=" | Version 1.0.0"
-                               FontSize="12"
-                               Foreground="#757575"
-                               VerticalAlignment="Center"/>
-                </StackPanel>
+                <TextBlock Grid.Column="1"
+                           Text="© 2024 Maritime Solutions | v1.0.0"
+                           FontSize="11"
+                           Foreground="#757575"
+                           VerticalAlignment="Center"/>
             </Grid>
         </Border>
     </Grid>

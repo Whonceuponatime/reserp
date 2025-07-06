@@ -18,11 +18,15 @@ namespace MaritimeERP.Desktop.ViewModels
         private ObservableCollection<Ship> _ships = new();
         private ObservableCollection<Ship> _filteredShips = new();
         private ObservableCollection<ShipType> _shipTypes = new();
+        private ObservableCollection<string> _flags = new();
         private Ship? _selectedShip;
         private ShipType? _selectedShipType;
+        private string? _selectedFlag;
         private string _searchText = string.Empty;
         private string _selectedStatus = "All";
+        private bool _showActiveOnly = false;
         private bool _isLoading = false;
+        private string _statusMessage = "Ready";
 
         public ShipsViewModel(IShipService shipService, IServiceProvider serviceProvider)
         {
@@ -52,6 +56,12 @@ namespace MaritimeERP.Desktop.ViewModels
             set => SetProperty(ref _shipTypes, value);
         }
 
+        public ObservableCollection<string> Flags
+        {
+            get => _flags;
+            set => SetProperty(ref _flags, value);
+        }
+
         public Ship? SelectedShip
         {
             get => _selectedShip;
@@ -68,6 +78,16 @@ namespace MaritimeERP.Desktop.ViewModels
             set
             {
                 SetProperty(ref _selectedShipType, value);
+                ApplyFilters();
+            }
+        }
+
+        public string? SelectedFlag
+        {
+            get => _selectedFlag;
+            set
+            {
+                SetProperty(ref _selectedFlag, value);
                 ApplyFilters();
             }
         }
@@ -92,13 +112,33 @@ namespace MaritimeERP.Desktop.ViewModels
             }
         }
 
+        public bool ShowActiveOnly
+        {
+            get => _showActiveOnly;
+            set
+            {
+                SetProperty(ref _showActiveOnly, value);
+                ApplyFilters();
+            }
+        }
+
         public bool IsLoading
         {
             get => _isLoading;
             set => SetProperty(ref _isLoading, value);
         }
 
+        public string StatusMessage
+        {
+            get => _statusMessage;
+            set => SetProperty(ref _statusMessage, value);
+        }
+
         public bool HasSelectedShip => SelectedShip != null;
+        
+        public int TotalShips => Ships.Count;
+        
+        public int ActiveShips => Ships.Count(s => s.IsActive);
 
         // Commands
         public ICommand AddShipCommand { get; private set; } = null!;
@@ -121,6 +161,7 @@ namespace MaritimeERP.Desktop.ViewModels
             try
             {
                 IsLoading = true;
+                StatusMessage = "Loading ships...";
                 
                 // Load ships and ship types
                 var ships = await _shipService.GetAllShipsAsync();
@@ -132,6 +173,7 @@ namespace MaritimeERP.Desktop.ViewModels
                     Ships.Add(ship);
                 }
 
+                // Populate ShipTypes dropdown
                 ShipTypes.Clear();
                 ShipTypes.Add(new ShipType { Id = 0, Name = "All Types" }); // Add "All" option
                 foreach (var shipType in shipTypes)
@@ -139,10 +181,29 @@ namespace MaritimeERP.Desktop.ViewModels
                     ShipTypes.Add(shipType);
                 }
 
+                // Populate Flags dropdown with unique flags from ships
+                Flags.Clear();
+                Flags.Add("All Flags"); // Add "All" option
+                var uniqueFlags = ships.Where(s => !string.IsNullOrEmpty(s.Flag))
+                                      .Select(s => s.Flag)
+                                      .Distinct()
+                                      .OrderBy(f => f);
+                foreach (var flag in uniqueFlags)
+                {
+                    Flags.Add(flag);
+                }
+
                 ApplyFilters();
+                
+                // Notify property changes for computed properties
+                OnPropertyChanged(nameof(TotalShips));
+                OnPropertyChanged(nameof(ActiveShips));
+                
+                StatusMessage = $"Loaded {TotalShips} ships successfully";
             }
             catch (Exception ex)
             {
+                StatusMessage = $"Error loading ships: {ex.Message}";
                 MessageBox.Show($"Error loading ships: {ex.Message}", "Error", 
                     MessageBoxButton.OK, MessageBoxImage.Error);
             }
@@ -164,7 +225,8 @@ namespace MaritimeERP.Desktop.ViewModels
                     s.ShipName.ToLower().Contains(searchLower) ||
                     s.ImoNumber.ToLower().Contains(searchLower) ||
                     s.Flag.ToLower().Contains(searchLower) ||
-                    (s.ShipType?.ToLower().Contains(searchLower) ?? false));
+                    (s.ShipType?.ToLower().Contains(searchLower) ?? false) ||
+                    (s.Owner?.ToLower().Contains(searchLower) ?? false));
             }
 
             // Apply ship type filter
@@ -173,7 +235,19 @@ namespace MaritimeERP.Desktop.ViewModels
                 filtered = filtered.Where(s => s.ShipType == SelectedShipType.Name);
             }
 
-            // Apply status filter
+            // Apply flag filter
+            if (!string.IsNullOrEmpty(SelectedFlag) && SelectedFlag != "All Flags")
+            {
+                filtered = filtered.Where(s => s.Flag == SelectedFlag);
+            }
+
+            // Apply active only filter
+            if (ShowActiveOnly)
+            {
+                filtered = filtered.Where(s => s.IsActive);
+            }
+
+            // Apply status filter (legacy support)
             if (SelectedStatus != "All")
             {
                 filtered = filtered.Where(s => 
@@ -186,6 +260,12 @@ namespace MaritimeERP.Desktop.ViewModels
             {
                 FilteredShips.Add(ship);
             }
+            
+            // Update status message
+            var totalFiltered = FilteredShips.Count;
+            StatusMessage = totalFiltered == Ships.Count 
+                ? $"Showing all {totalFiltered} ships" 
+                : $"Showing {totalFiltered} of {Ships.Count} ships";
         }
 
         private async Task AddShipAsync()
