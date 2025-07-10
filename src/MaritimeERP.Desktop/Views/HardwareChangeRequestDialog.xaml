@@ -77,6 +77,23 @@
                     </Grid>
                 </Border>
                 
+                <!-- Ship Selection -->
+                <Border BorderBrush="#BDC3C7" BorderThickness="1" Margin="0,0,0,10">
+                    <StackPanel>
+                        <TextBlock Text="Target Ship" 
+                                  Background="#34495E" 
+                                  Foreground="White"
+                                  Padding="15" 
+                                  FontWeight="Bold" 
+                                  FontSize="14"/>
+                        
+                        <ComboBox ItemsSource="{Binding Ships}" 
+                                  SelectedItem="{Binding SelectedShip}"
+                                  DisplayMemberPath="ShipName"
+                                  Padding="15" BorderThickness="0" FontSize="13" Margin="0"/>
+                    </StackPanel>
+                </Border>
+                
                 <!-- Requester Information -->
                 <Border BorderBrush="#BDC3C7" BorderThickness="1" Margin="0,0,0,10">
                     <StackPanel>

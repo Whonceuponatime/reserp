@@ -63,6 +63,7 @@
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
                 
                 <!-- Basic Information -->
@@ -89,8 +90,27 @@
                     </Grid>
                 </Border>
                 
-                <!-- Requester Information Header -->
+                <!-- Ship Selection -->
                 <Border Grid.Row="1" BorderBrush="#BDC3C7" BorderThickness="0,0,0,1">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="150"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        
+                        <TextBlock Grid.Column="0" Text="Target Ship" 
+                                  Background="#ECF0F1" Padding="15" 
+                                  VerticalAlignment="Center" FontWeight="Bold" FontSize="13"/>
+                        <ComboBox Grid.Column="1" 
+                                  ItemsSource="{Binding Ships}" 
+                                  SelectedItem="{Binding SelectedShip}"
+                                  DisplayMemberPath="ShipName"
+                                  Padding="15" BorderThickness="0" FontSize="13"/>
+                    </Grid>
+                </Border>
+                
+                <!-- Requester Information Header -->
+                <Border Grid.Row="2" BorderBrush="#BDC3C7" BorderThickness="0,0,0,1">
                     <TextBlock Text="Requester" 
                               Background="#34495E" 
                               Foreground="White"
@@ -100,7 +120,7 @@
                 </Border>
                 
                 <!-- Requester Information Details -->
-                <Border Grid.Row="2" BorderBrush="#BDC3C7" BorderThickness="0,0,0,1">
+                <Border Grid.Row="3" BorderBrush="#BDC3C7" BorderThickness="0,0,0,1">
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="150"/>
@@ -132,7 +152,7 @@
                 </Border>
                 
                 <!-- Installation Details -->
-                <Border Grid.Row="3" BorderBrush="#BDC3C7" BorderThickness="0,0,0,1">
+                <Border Grid.Row="4" BorderBrush="#BDC3C7" BorderThickness="0,0,0,1">
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="150"/>
@@ -156,7 +176,7 @@
                 </Border>
                 
                 <!-- Reason -->
-                <Border Grid.Row="4" BorderBrush="#BDC3C7" BorderThickness="0,0,0,1">
+                <Border Grid.Row="5" BorderBrush="#BDC3C7" BorderThickness="0,0,0,1">
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="150"/>
@@ -175,7 +195,7 @@
                 </Border>
                 
                 <!-- Software Before Change Header -->
-                <Border Grid.Row="5" BorderBrush="#BDC3C7" BorderThickness="0,0,0,1">
+                <Border Grid.Row="6" BorderBrush="#BDC3C7" BorderThickness="0,0,0,1">
                     <TextBlock Text="Current Software (Before Change)" 
                               Background="#34495E" 
                               Foreground="White"
@@ -185,7 +205,7 @@
                 </Border>
                 
                 <!-- Software Before Change Details -->
-                <Border Grid.Row="6" BorderBrush="#BDC3C7" BorderThickness="0,0,0,1">
+                <Border Grid.Row="7" BorderBrush="#BDC3C7" BorderThickness="0,0,0,1">
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="200"/>
@@ -217,7 +237,7 @@
                 </Border>
                 
                 <!-- Software After Change Header -->
-                <Border Grid.Row="7" BorderBrush="#BDC3C7" BorderThickness="0,0,0,1">
+                <Border Grid.Row="8" BorderBrush="#BDC3C7" BorderThickness="0,0,0,1">
                     <TextBlock Text="New Software (After Change)" 
                               Background="#34495E" 
                               Foreground="White"
@@ -227,7 +247,7 @@
                 </Border>
                 
                 <!-- Software After Change Details -->
-                <Border Grid.Row="8" BorderBrush="#BDC3C7" BorderThickness="0,0,0,1">
+                <Border Grid.Row="9" BorderBrush="#BDC3C7" BorderThickness="0,0,0,1">
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="200"/>
@@ -259,7 +279,7 @@
                 </Border>
                 
                 <!-- Work Description -->
-                <Border Grid.Row="9" BorderBrush="#BDC3C7" BorderThickness="0,0,0,1">
+                <Border Grid.Row="10" BorderBrush="#BDC3C7" BorderThickness="0,0,0,1">
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="150"/>
@@ -278,7 +298,7 @@
                 </Border>
                 
                 <!-- Security Review -->
-                <Border Grid.Row="10" BorderBrush="#BDC3C7" BorderThickness="0,0,0,1">
+                <Border Grid.Row="11" BorderBrush="#BDC3C7" BorderThickness="0,0,0,1">
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="180"/>

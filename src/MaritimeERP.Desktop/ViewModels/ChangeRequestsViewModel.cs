@@ -19,6 +19,7 @@ namespace MaritimeERP.Desktop.ViewModels
         private readonly ISoftwareService _softwareService;
         private readonly ISystemChangePlanService _systemChangePlanService;
         private readonly IHardwareChangeRequestService _hardwareChangeRequestService;
+        private readonly ISoftwareChangeRequestService _softwareChangeRequestService;
         private readonly ILogger<ChangeRequestsViewModel> _logger;
 
         // Collections
@@ -261,6 +262,7 @@ namespace MaritimeERP.Desktop.ViewModels
             ISoftwareService softwareService,
             ISystemChangePlanService systemChangePlanService,
             IHardwareChangeRequestService hardwareChangeRequestService,
+            ISoftwareChangeRequestService softwareChangeRequestService,
             ILogger<ChangeRequestsViewModel> logger)
         {
             _changeRequestService = changeRequestService ?? throw new ArgumentNullException(nameof(changeRequestService));
@@ -269,6 +271,7 @@ namespace MaritimeERP.Desktop.ViewModels
             _softwareService = softwareService ?? throw new ArgumentNullException(nameof(softwareService));
             _systemChangePlanService = systemChangePlanService ?? throw new ArgumentNullException(nameof(systemChangePlanService));
             _hardwareChangeRequestService = hardwareChangeRequestService ?? throw new ArgumentNullException(nameof(hardwareChangeRequestService));
+            _softwareChangeRequestService = softwareChangeRequestService ?? throw new ArgumentNullException(nameof(softwareChangeRequestService));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
             // Initialize commands
@@ -437,7 +440,7 @@ namespace MaritimeERP.Desktop.ViewModels
 
         private void OpenHardwareChangeRequestForm()
         {
-            var viewModel = new HardwareChangeRequestDialogViewModel(_authenticationService, _hardwareChangeRequestService, _changeRequestService);
+            var viewModel = new HardwareChangeRequestDialogViewModel(_authenticationService, _hardwareChangeRequestService, _changeRequestService, _shipService);
             var dialog = new HardwareChangeRequestDialog(viewModel);
             var result = dialog.ShowDialog();
 
@@ -450,51 +453,27 @@ namespace MaritimeERP.Desktop.ViewModels
 
         private void OpenSoftwareChangeRequestForm()
         {
-            var viewModel = new SoftwareChangeRequestDialogViewModel(_softwareService, _authenticationService);
+            var viewModel = new SoftwareChangeRequestDialogViewModel(_softwareChangeRequestService, _authenticationService, _changeRequestService, _shipService);
             var dialog = new SoftwareChangeRequestDialog(viewModel);
             var result = dialog.ShowDialog();
 
             if (result == true)
             {
-                // Create new change request with the form data
-                var changeRequest = new ChangeRequest
-                {
-                    RequestNo = viewModel.RequestNumber,
-                    RequestTypeId = 2, // Software Change
-                    StatusId = 1, // Draft
-                    RequestedById = _authenticationService.CurrentUser?.Id ?? 1,
-                    Purpose = viewModel.Reason,
-                    Description = $"Software Change: {viewModel.BeforeSwName} → {viewModel.AfterSwName}",
-                    RequestedAt = DateTime.UtcNow
-                };
-
-                // Save to database
-                _ = SaveNewChangeRequestAsync(changeRequest);
+                // Refresh the change requests list to show the new entry
+                _ = LoadDataAsync();
             }
         }
 
         private void OpenSystemPlanChangeRequestForm()
         {
-            var viewModel = new SystemChangePlanDialogViewModel(_systemChangePlanService, _authenticationService);
+            var viewModel = new SystemChangePlanDialogViewModel(_systemChangePlanService, _authenticationService, _shipService, _changeRequestService);
             var dialog = new SystemChangePlanDialog(viewModel);
             var result = dialog.ShowDialog();
 
             if (result == true)
             {
-                // Create new change request with the form data
-                var changeRequest = new ChangeRequest
-                {
-                    RequestNo = viewModel.RequestNumber,
-                    RequestTypeId = 3, // System Plan
-                    StatusId = 1, // Draft
-                    RequestedById = _authenticationService.CurrentUser?.Id ?? 1,
-                    Purpose = viewModel.Reason,
-                    Description = $"System Plan: {viewModel.BeforeHwSwName} → {viewModel.AfterHwSwName}",
-                    RequestedAt = DateTime.UtcNow
-                };
-
-                // Save to database
-                _ = SaveNewChangeRequestAsync(changeRequest);
+                // Refresh the change requests list to show the new entry
+                _ = LoadDataAsync();
             }
         }
 
@@ -865,11 +844,21 @@ namespace MaritimeERP.Desktop.ViewModels
                 var hardwareRequests = await _hardwareChangeRequestService.GetAllAsync();
                 var hardwareRequest = hardwareRequests.FirstOrDefault(hr => hr.RequestNumber == SelectedChangeRequest.RequestNo);
                 
-                var viewModel = new HardwareChangeRequestDialogViewModel(_authenticationService, _hardwareChangeRequestService, _changeRequestService);
+                var viewModel = new HardwareChangeRequestDialogViewModel(_authenticationService, _hardwareChangeRequestService, _changeRequestService, _shipService);
                 
                 // Load hardware-specific data if found
                 if (hardwareRequest != null)
                 {
+                    // Set the selected ship from the main change request
+                    if (SelectedChangeRequest?.ShipId.HasValue == true)
+                    {
+                        var selectedShip = viewModel.Ships.FirstOrDefault(s => s.Id == SelectedChangeRequest.ShipId.Value);
+                        if (selectedShip != null)
+                        {
+                            viewModel.SelectedShip = selectedShip;
+                        }
+                    }
+                    
                     viewModel.Department = hardwareRequest.Department ?? "";
                     viewModel.PositionTitle = hardwareRequest.PositionTitle ?? "";
                     viewModel.RequesterName = hardwareRequest.RequesterName ?? "";
@@ -1048,11 +1037,21 @@ namespace MaritimeERP.Desktop.ViewModels
                 var hardwareRequests = await _hardwareChangeRequestService.GetAllAsync();
                 var hardwareRequest = hardwareRequests.FirstOrDefault(hr => hr.RequestNumber == changeRequest.RequestNo);
                 
-                var viewModel = new HardwareChangeRequestDialogViewModel(_authenticationService, _hardwareChangeRequestService, _changeRequestService);
+                var viewModel = new HardwareChangeRequestDialogViewModel(_authenticationService, _hardwareChangeRequestService, _changeRequestService, _shipService);
                 
                 // Pre-populate with existing data
                 viewModel.RequestNumber = changeRequest.RequestNo;
                 viewModel.Reason = changeRequest.Purpose;
+                
+                // Set the selected ship from the change request
+                if (changeRequest.ShipId.HasValue)
+                {
+                    var selectedShip = viewModel.Ships.FirstOrDefault(s => s.Id == changeRequest.ShipId.Value);
+                    if (selectedShip != null)
+                    {
+                        viewModel.SelectedShip = selectedShip;
+                    }
+                }
                 
                 // Load hardware-specific data if found
                 if (hardwareRequest != null)
@@ -1092,9 +1091,49 @@ namespace MaritimeERP.Desktop.ViewModels
             }
         }
 
-        private void EditSoftwareChangeRequest(ChangeRequest changeRequest)
+        private async void EditSoftwareChangeRequest(ChangeRequest changeRequest)
         {
-            MessageBox.Show("Software Change Request editing will be implemented soon.", "Coming Soon", MessageBoxButton.OK, MessageBoxImage.Information);
+            try
+            {
+                // Load the detailed software change request data
+                var softwareRequests = await _softwareChangeRequestService.GetAllAsync();
+                var softwareRequest = softwareRequests.FirstOrDefault(sr => sr.RequestNumber == changeRequest.RequestNo);
+                
+                var viewModel = new SoftwareChangeRequestDialogViewModel(_softwareChangeRequestService, _authenticationService, _changeRequestService, _shipService);
+                
+                // Pre-populate with existing data
+                viewModel.RequestNumber = changeRequest.RequestNo;
+                viewModel.Reason = changeRequest.Purpose;
+                
+                // Set the selected ship from the change request
+                if (changeRequest.ShipId.HasValue)
+                {
+                    var selectedShip = viewModel.Ships.FirstOrDefault(s => s.Id == changeRequest.ShipId.Value);
+                    if (selectedShip != null)
+                    {
+                        viewModel.SelectedShip = selectedShip;
+                    }
+                }
+                
+                // Load software-specific data if found
+                if (softwareRequest != null)
+                {
+                    viewModel.SetExistingSoftwareChangeRequest(softwareRequest);
+                }
+                
+                var dialog = new SoftwareChangeRequestDialog(viewModel);
+                var result = dialog.ShowDialog();
+
+                if (result == true)
+                {
+                    // Refresh the change requests list
+                    _ = LoadDataAsync();
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error loading software change request details: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
         private void EditSystemPlanChangeRequest(ChangeRequest changeRequest)
@@ -1112,7 +1151,7 @@ namespace MaritimeERP.Desktop.ViewModels
                     {
                         if (systemChangePlan != null)
                         {
-                            var viewModel = new SystemChangePlanDialogViewModel(_systemChangePlanService, _authenticationService);
+                            var viewModel = new SystemChangePlanDialogViewModel(_systemChangePlanService, _authenticationService, _shipService, _changeRequestService);
                             viewModel.SystemChangePlan = systemChangePlan;
                             viewModel.IsEditMode = true;
                             

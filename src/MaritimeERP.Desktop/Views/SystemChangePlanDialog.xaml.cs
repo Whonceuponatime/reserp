@@ -3,6 +3,9 @@ using System.Windows;
 
 namespace MaritimeERP.Desktop.Views
 {
+    /// <summary>
+    /// Interaction logic for SystemChangePlanDialog.xaml
+    /// </summary>
     public partial class SystemChangePlanDialog : Window
     {
         public SystemChangePlanDialog(SystemChangePlanDialogViewModel viewModel)
@@ -10,7 +13,12 @@ namespace MaritimeERP.Desktop.Views
             InitializeComponent();
             DataContext = viewModel;
             
-            viewModel.RequestClose += () => Close();
+            // Subscribe to the RequestClose event
+            viewModel.RequestClose += () =>
+            {
+                DialogResult = true;
+                Close();
+            };
         }
     }
 } 

@@ -5,6 +5,7 @@ using MaritimeERP.Desktop.Commands;
 using MaritimeERP.Services.Interfaces;
 using MaritimeERP.Core.Entities;
 using System.Windows;
+using System.Collections.ObjectModel;
 
 namespace MaritimeERP.Desktop.ViewModels
 {
@@ -13,17 +14,20 @@ namespace MaritimeERP.Desktop.ViewModels
         private readonly IAuthenticationService _authenticationService;
         private readonly IHardwareChangeRequestService _hardwareChangeRequestService;
         private readonly IChangeRequestService _changeRequestService;
+        private readonly IShipService _shipService;
         private HardwareChangeRequest? _hardwareChangeRequest;
         private bool _isEditMode;
 
         public HardwareChangeRequestDialogViewModel(
             IAuthenticationService authenticationService, 
             IHardwareChangeRequestService hardwareChangeRequestService,
-            IChangeRequestService changeRequestService)
+            IChangeRequestService changeRequestService,
+            IShipService shipService)
         {
             _authenticationService = authenticationService;
             _hardwareChangeRequestService = hardwareChangeRequestService;
             _changeRequestService = changeRequestService;
+            _shipService = shipService;
             
             // Initialize with current user data
             var currentUser = _authenticationService.CurrentUser;
@@ -35,7 +39,12 @@ namespace MaritimeERP.Desktop.ViewModels
             }
             
             CreatedDate = DateTime.Now;
-            RequestNumber = ""; // Will be generated when saving
+            
+            // Generate request number immediately
+            _ = GenerateRequestNumberAsync();
+            
+            // Load ships
+            LoadShips();
             
             // Initialize commands
             SaveCommand = new RelayCommand(async () => await SaveAsync(), CanSave);
@@ -44,6 +53,16 @@ namespace MaritimeERP.Desktop.ViewModels
         }
 
         #region Properties
+
+        // Ship selection properties
+        public ObservableCollection<Ship> Ships { get; } = new ObservableCollection<Ship>();
+        
+        private Ship? _selectedShip;
+        public Ship? SelectedShip
+        {
+            get => _selectedShip;
+            set => SetProperty(ref _selectedShip, value);
+        }
 
         private string _requestNumber = string.Empty;
         public string RequestNumber
@@ -207,6 +226,41 @@ namespace MaritimeERP.Desktop.ViewModels
             IsEditMode = true;
         }
 
+        private async Task GenerateRequestNumberAsync()
+        {
+            try
+            {
+                RequestNumber = await _hardwareChangeRequestService.GenerateRequestNumberAsync();
+            }
+            catch (Exception ex)
+            {
+                // Fallback to simple format if service fails
+                RequestNumber = GenerateRequestNumber();
+                System.Diagnostics.Debug.WriteLine($"Error generating request number: {ex.Message}");
+            }
+        }
+
+        private async void LoadShips()
+        {
+            try
+            {
+                Ships.Clear();
+                var ships = await _shipService.GetAllShipsAsync();
+                foreach (var ship in ships)
+                {
+                    Ships.Add(ship);
+                }
+                if (Ships.Count > 0)
+                {
+                    SelectedShip = Ships.First();
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error loading ships: {ex.Message}");
+            }
+        }
+
         private string GenerateRequestNumber()
         {
             var today = DateTime.Now;
@@ -251,6 +305,7 @@ namespace MaritimeERP.Desktop.ViewModels
                         RequestTypeId = 1, // Hardware Change
                         StatusId = 1, // Draft
                         RequestedById = _authenticationService.CurrentUser?.Id ?? 1,
+                        ShipId = SelectedShip?.Id, // Include selected ship
                         Purpose = Reason,
                         Description = $"Hardware Change: {BeforeHwName} → {AfterHwName}",
                         RequestedAt = DateTime.UtcNow,
@@ -285,6 +340,7 @@ namespace MaritimeERP.Desktop.ViewModels
                     var correspondingChangeRequest = changeRequests.FirstOrDefault(cr => cr.RequestNo == _hardwareChangeRequest.RequestNumber);
                     if (correspondingChangeRequest != null)
                     {
+                        correspondingChangeRequest.ShipId = SelectedShip?.Id; // Update selected ship
                         correspondingChangeRequest.Purpose = Reason;
                         correspondingChangeRequest.Description = $"Hardware Change: {BeforeHwName} → {AfterHwName}";
                         await _changeRequestService.UpdateChangeRequestAsync(correspondingChangeRequest);

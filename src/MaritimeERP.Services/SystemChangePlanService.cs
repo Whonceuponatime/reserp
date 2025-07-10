@@ -70,7 +70,7 @@ namespace MaritimeERP.Services
         public async Task<string> GenerateRequestNumberAsync()
         {
             var today = DateTime.Now;
-            var prefix = $"SCP-{today:yyyyMMdd}";
+            var prefix = $"SYS-{today:yyyyMM}";
             
             var lastRequest = await _context.SystemChangePlans
                 .Where(s => s.RequestNumber.StartsWith(prefix))

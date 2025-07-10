@@ -2,7 +2,9 @@ using MaritimeERP.Core.Entities;
 using MaritimeERP.Desktop.Commands;
 using MaritimeERP.Services.Interfaces;
 using System;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using System.Windows;
@@ -14,22 +16,47 @@ namespace MaritimeERP.Desktop.ViewModels
     {
         private readonly ISystemChangePlanService _systemChangePlanService;
         private readonly IAuthenticationService _authenticationService;
+        private readonly IShipService _shipService;
+        private readonly IChangeRequestService _changeRequestService;
         private SystemChangePlan _systemChangePlan;
         private bool _isEditMode;
 
         public SystemChangePlanDialogViewModel(
             ISystemChangePlanService systemChangePlanService,
-            IAuthenticationService authenticationService)
+            IAuthenticationService authenticationService,
+            IShipService shipService,
+            IChangeRequestService changeRequestService)
         {
             _systemChangePlanService = systemChangePlanService;
             _authenticationService = authenticationService;
+            _shipService = shipService;
+            _changeRequestService = changeRequestService;
             _systemChangePlan = new SystemChangePlan();
+            
+            Ships = new ObservableCollection<Ship>();
             
             SaveCommand = new RelayCommand(async () => await SaveAsync(), () => CanSave());
             SubmitCommand = new RelayCommand(async () => await SubmitAsync(), () => CanSubmit());
             CancelCommand = new RelayCommand(() => CloseDialog());
             
-            InitializeNewRequest();
+            // Initialize data asynchronously
+            _ = InitializeAsync();
+        }
+
+        // Collections
+        public ObservableCollection<Ship> Ships { get; }
+
+        // Selected Ship
+        private Ship? _selectedShip;
+        public Ship? SelectedShip
+        {
+            get => _selectedShip;
+            set
+            {
+                _selectedShip = value;
+                OnPropertyChanged();
+                _systemChangePlan.ShipId = value?.Id;
+            }
         }
 
         public SystemChangePlan SystemChangePlan
@@ -240,6 +267,55 @@ namespace MaritimeERP.Desktop.ViewModels
 
         public event Action? RequestClose;
 
+        private async Task InitializeAsync()
+        {
+            try
+            {
+                await LoadShips();
+                await GenerateRequestNumberAsync();
+                InitializeNewRequest();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error initializing system change plan dialog: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private async Task LoadShips()
+        {
+            try
+            {
+                var ships = await _shipService.GetAllShipsAsync();
+                Ships.Clear();
+                foreach (var ship in ships)
+                {
+                    Ships.Add(ship);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error loading ships: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private async Task GenerateRequestNumberAsync()
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(_systemChangePlan.RequestNumber))
+                {
+                    var requestNumber = await _systemChangePlanService.GenerateRequestNumberAsync();
+                    RequestNumber = requestNumber;
+                }
+            }
+            catch (Exception ex)
+            {
+                // Fallback to timestamp-based number if service fails
+                RequestNumber = $"SYS-{DateTime.Now:yyyyMM}-{DateTime.Now:HHmmss}";
+                System.Diagnostics.Debug.WriteLine($"Failed to generate request number: {ex.Message}");
+            }
+        }
+
         private void InitializeNewRequest()
         {
             var currentUser = _authenticationService.CurrentUser;
@@ -257,34 +333,45 @@ namespace MaritimeERP.Desktop.ViewModels
         {
             try
             {
-                // Debug: Log what we're trying to save
-                var debugInfo = $"Saving SystemChangePlan:\n" +
-                    $"RequestNumber: {_systemChangePlan.RequestNumber}\n" +
-                    $"Department: {_systemChangePlan.Department}\n" +
-                    $"RequesterName: {_systemChangePlan.RequesterName}\n" +
-                    $"Reason: {_systemChangePlan.Reason}\n" +
-                    $"BeforeHwSwName: {_systemChangePlan.BeforeHwSwName}\n" +
-                    $"AfterHwSwName: {_systemChangePlan.AfterHwSwName}\n" +
-                    $"PlanDetails: {_systemChangePlan.PlanDetails}\n" +
-                    $"SecurityReviewComments: {_systemChangePlan.SecurityReviewComments}";
-                
-                System.Diagnostics.Debug.WriteLine(debugInfo);
+                // Set the user ID
+                _systemChangePlan.UserId = _authenticationService.CurrentUser?.Id;
                 
                 if (IsEditMode)
                 {
                     await _systemChangePlanService.UpdateSystemChangePlanAsync(_systemChangePlan);
-                    MessageBox.Show($"System change plan saved successfully!\n\n{debugInfo}", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                    MessageBox.Show("System change plan saved successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
                 }
                 else
                 {
+                    // Create the detailed SystemChangePlan record
                     await _systemChangePlanService.CreateSystemChangePlanAsync(_systemChangePlan);
-                    MessageBox.Show($"System change plan created successfully!\n\n{debugInfo}", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                    
+                    // Create the main ChangeRequest record for the table
+                    var changeRequest = new ChangeRequest
+                    {
+                        RequestNo = _systemChangePlan.RequestNumber,
+                        ShipId = _systemChangePlan.ShipId,
+                        RequestTypeId = 3, // System Plan
+                        StatusId = 1, // Draft
+                        RequestedById = _authenticationService.CurrentUser?.Id ?? 1,
+                        Purpose = _systemChangePlan.Reason,
+                        Description = $"System Plan: {_systemChangePlan.BeforeHwSwName} → {_systemChangePlan.AfterHwSwName}",
+                        RequestedAt = DateTime.UtcNow,
+                        CreatedAt = DateTime.UtcNow
+                    };
+                    
+                    await _changeRequestService.CreateChangeRequestAsync(changeRequest);
+                    
+                    MessageBox.Show("System change plan created successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
                     IsEditMode = true;
                 }
+
+                // Close dialog after successful save
+                RequestClose?.Invoke();
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error saving system change plan: {ex.Message}\n\nStack Trace: {ex.StackTrace}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show($"Error saving system change plan: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -339,6 +426,12 @@ namespace MaritimeERP.Desktop.ViewModels
             OnPropertyChanged(nameof(AfterVersion));
             OnPropertyChanged(nameof(PlanDetails));
             OnPropertyChanged(nameof(SecurityReviewComments));
+            
+            // Load selected ship if editing
+            if (IsEditMode && _systemChangePlan.ShipId.HasValue)
+            {
+                SelectedShip = Ships.FirstOrDefault(s => s.Id == _systemChangePlan.ShipId.Value);
+            }
         }
 
         public event PropertyChangedEventHandler? PropertyChanged;

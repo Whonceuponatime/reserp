@@ -14,9 +14,10 @@ namespace MaritimeERP.Desktop.Views
         {
             DataContext = viewModel;
             
-            // Subscribe to dialog close events
+            // Subscribe to dialog events
             if (viewModel != null)
             {
+                viewModel.RequestSave += (sender, e) => this.DialogResult = true;
                 viewModel.RequestClose += (sender, e) => this.Close();
             }
         }

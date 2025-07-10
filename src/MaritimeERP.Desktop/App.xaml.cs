@@ -115,6 +115,7 @@ namespace MaritimeERP.Desktop
             services.AddScoped<IChangeRequestService, ChangeRequestService>();
             services.AddScoped<ISystemChangePlanService, SystemChangePlanService>();
             services.AddScoped<IHardwareChangeRequestService, HardwareChangeRequestService>();
+            services.AddScoped<ISoftwareChangeRequestService, SoftwareChangeRequestService>();
             services.AddSingleton<INavigationService, NavigationService>();
             services.AddSingleton<ViewLocator>();
             // Add other services here as they are implemented
@@ -205,6 +206,7 @@ namespace MaritimeERP.Desktop
                             RequestNumber TEXT NOT NULL UNIQUE,
                             CreatedDate DATETIME NOT NULL,
                             RequesterUserId INTEGER NOT NULL,
+                            ShipId INTEGER,
                             Department TEXT,
                             PositionTitle TEXT,
                             RequesterName TEXT,
@@ -229,7 +231,8 @@ namespace MaritimeERP.Desktop
                             FOREIGN KEY (RequesterUserId) REFERENCES Users(Id),
                             FOREIGN KEY (PreparedByUserId) REFERENCES Users(Id),
                             FOREIGN KEY (ReviewedByUserId) REFERENCES Users(Id),
-                            FOREIGN KEY (ApprovedByUserId) REFERENCES Users(Id)
+                            FOREIGN KEY (ApprovedByUserId) REFERENCES Users(Id),
+                            FOREIGN KEY (ShipId) REFERENCES Ships(Id) ON DELETE SET NULL
                         );";
                     await command.ExecuteNonQueryAsync();
                     
@@ -243,11 +246,201 @@ namespace MaritimeERP.Desktop
                     command.CommandText = "CREATE INDEX IX_HardwareChangeRequests_Status ON HardwareChangeRequests(Status);";
                     await command.ExecuteNonQueryAsync();
                     
+                    command.CommandText = "CREATE INDEX IX_HardwareChangeRequests_ShipId ON HardwareChangeRequests(ShipId);";
+                    await command.ExecuteNonQueryAsync();
+                    
                     Console.WriteLine("HardwareChangeRequests table created successfully");
                 }
                 else
                 {
                     Console.WriteLine("HardwareChangeRequests table already exists");
+                    
+                    // Check if ShipId column exists, if not add it
+                    command.CommandText = "PRAGMA table_info(HardwareChangeRequests)";
+                    using var hwReader = await command.ExecuteReaderAsync();
+                    var hwColumns = new List<string>();
+                    while (await hwReader.ReadAsync())
+                    {
+                        hwColumns.Add(hwReader.GetString(1)); // Column name is at index 1
+                    }
+                    await hwReader.CloseAsync();
+                    
+                    if (!hwColumns.Contains("ShipId"))
+                    {
+                        Console.WriteLine("Adding ShipId column to HardwareChangeRequests table...");
+                        command.CommandText = "ALTER TABLE HardwareChangeRequests ADD COLUMN ShipId INTEGER REFERENCES Ships(Id) ON DELETE SET NULL;";
+                        await command.ExecuteNonQueryAsync();
+                        
+                        command.CommandText = "CREATE INDEX IX_HardwareChangeRequests_ShipId ON HardwareChangeRequests(ShipId);";
+                        await command.ExecuteNonQueryAsync();
+                        
+                        Console.WriteLine("ShipId column added successfully to HardwareChangeRequests");
+                    }
+                }
+                
+                // Check if SoftwareChangeRequests table exists, if not create it
+                command.CommandText = "SELECT name FROM sqlite_master WHERE type='table' AND name='SoftwareChangeRequests'";
+                result = await command.ExecuteScalarAsync();
+                
+                if (result == null)
+                {
+                    Console.WriteLine("Creating SoftwareChangeRequests table...");
+                    
+                    // Create the table manually
+                    command.CommandText = @"
+                        CREATE TABLE SoftwareChangeRequests (
+                            Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                            RequestNumber TEXT NOT NULL UNIQUE,
+                            CreatedDate DATETIME NOT NULL,
+                            RequesterUserId INTEGER NOT NULL,
+                            ShipId INTEGER,
+                            Department TEXT,
+                            PositionTitle TEXT,
+                            RequesterName TEXT,
+                            InstalledCbs TEXT,
+                            InstalledComponent TEXT,
+                            Reason TEXT,
+                            BeforeSwManufacturer TEXT,
+                            BeforeSwName TEXT,
+                            BeforeSwVersion TEXT,
+                            AfterSwManufacturer TEXT,
+                            AfterSwName TEXT,
+                            AfterSwVersion TEXT,
+                            WorkDescription TEXT,
+                            SecurityReviewComment TEXT,
+                            PreparedByUserId INTEGER,
+                            ReviewedByUserId INTEGER,
+                            ApprovedByUserId INTEGER,
+                            PreparedAt DATETIME,
+                            ReviewedAt DATETIME,
+                            ApprovedAt DATETIME,
+                            Status TEXT NOT NULL DEFAULT 'Draft',
+                            FOREIGN KEY (RequesterUserId) REFERENCES Users(Id),
+                            FOREIGN KEY (PreparedByUserId) REFERENCES Users(Id),
+                            FOREIGN KEY (ReviewedByUserId) REFERENCES Users(Id),
+                            FOREIGN KEY (ApprovedByUserId) REFERENCES Users(Id),
+                            FOREIGN KEY (ShipId) REFERENCES Ships(Id) ON DELETE SET NULL
+                        );";
+                    await command.ExecuteNonQueryAsync();
+                    
+                    // Create indexes
+                    command.CommandText = "CREATE INDEX IX_SoftwareChangeRequests_RequestNumber ON SoftwareChangeRequests(RequestNumber);";
+                    await command.ExecuteNonQueryAsync();
+                    
+                    command.CommandText = "CREATE INDEX IX_SoftwareChangeRequests_RequesterUserId ON SoftwareChangeRequests(RequesterUserId);";
+                    await command.ExecuteNonQueryAsync();
+                    
+                    command.CommandText = "CREATE INDEX IX_SoftwareChangeRequests_Status ON SoftwareChangeRequests(Status);";
+                    await command.ExecuteNonQueryAsync();
+                    
+                    command.CommandText = "CREATE INDEX IX_SoftwareChangeRequests_ShipId ON SoftwareChangeRequests(ShipId);";
+                    await command.ExecuteNonQueryAsync();
+                    
+                    Console.WriteLine("SoftwareChangeRequests table created successfully");
+                }
+                else
+                {
+                    Console.WriteLine("SoftwareChangeRequests table already exists");
+                    
+                    // Check if ShipId column exists, if not add it
+                    command.CommandText = "PRAGMA table_info(SoftwareChangeRequests)";
+                    using var swReader = await command.ExecuteReaderAsync();
+                    var swColumns = new List<string>();
+                    while (await swReader.ReadAsync())
+                    {
+                        swColumns.Add(swReader.GetString(1)); // Column name is at index 1
+                    }
+                    await swReader.CloseAsync();
+                    
+                    if (!swColumns.Contains("ShipId"))
+                    {
+                        Console.WriteLine("Adding ShipId column to SoftwareChangeRequests table...");
+                        command.CommandText = "ALTER TABLE SoftwareChangeRequests ADD COLUMN ShipId INTEGER REFERENCES Ships(Id) ON DELETE SET NULL;";
+                        await command.ExecuteNonQueryAsync();
+                        
+                        command.CommandText = "CREATE INDEX IX_SoftwareChangeRequests_ShipId ON SoftwareChangeRequests(ShipId);";
+                        await command.ExecuteNonQueryAsync();
+                        
+                        Console.WriteLine("ShipId column added successfully to SoftwareChangeRequests");
+                    }
+                }
+                
+                // Check if SystemChangePlans table exists, if not create it
+                command.CommandText = "SELECT name FROM sqlite_master WHERE type='table' AND name='SystemChangePlans'";
+                result = await command.ExecuteScalarAsync();
+                
+                if (result == null)
+                {
+                    Console.WriteLine("Creating SystemChangePlans table...");
+                    
+                    // Create the table manually
+                    command.CommandText = @"
+                        CREATE TABLE SystemChangePlans (
+                            Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                            RequestNumber TEXT NOT NULL UNIQUE,
+                            CreatedDate DATETIME NOT NULL,
+                            ShipId INTEGER,
+                            IsCreated BOOLEAN NOT NULL DEFAULT 1,
+                            IsUnderReview BOOLEAN NOT NULL DEFAULT 0,
+                            IsApproved BOOLEAN NOT NULL DEFAULT 0,
+                            Department TEXT NOT NULL DEFAULT '',
+                            PositionTitle TEXT NOT NULL DEFAULT '',
+                            RequesterName TEXT NOT NULL DEFAULT '',
+                            InstalledCbs TEXT NOT NULL DEFAULT '',
+                            InstalledComponent TEXT NOT NULL DEFAULT '',
+                            Reason TEXT NOT NULL DEFAULT '',
+                            BeforeManufacturerModel TEXT NOT NULL DEFAULT '',
+                            BeforeHwSwName TEXT NOT NULL DEFAULT '',
+                            BeforeVersion TEXT NOT NULL DEFAULT '',
+                            AfterManufacturerModel TEXT NOT NULL DEFAULT '',
+                            AfterHwSwName TEXT NOT NULL DEFAULT '',
+                            AfterVersion TEXT NOT NULL DEFAULT '',
+                            PlanDetails TEXT NOT NULL DEFAULT '',
+                            SecurityReviewComments TEXT NOT NULL DEFAULT '',
+                            UserId INTEGER,
+                            UpdatedDate DATETIME NOT NULL,
+                            FOREIGN KEY (UserId) REFERENCES Users(Id) ON DELETE SET NULL,
+                            FOREIGN KEY (ShipId) REFERENCES Ships(Id) ON DELETE SET NULL
+                        );";
+                    await command.ExecuteNonQueryAsync();
+                    
+                    // Create indexes
+                    command.CommandText = "CREATE INDEX IX_SystemChangePlans_RequestNumber ON SystemChangePlans(RequestNumber);";
+                    await command.ExecuteNonQueryAsync();
+                    
+                    command.CommandText = "CREATE INDEX IX_SystemChangePlans_UserId ON SystemChangePlans(UserId);";
+                    await command.ExecuteNonQueryAsync();
+                    
+                    command.CommandText = "CREATE INDEX IX_SystemChangePlans_ShipId ON SystemChangePlans(ShipId);";
+                    await command.ExecuteNonQueryAsync();
+                    
+                    Console.WriteLine("SystemChangePlans table created successfully");
+                }
+                else
+                {
+                    Console.WriteLine("SystemChangePlans table already exists");
+                    
+                    // Check if ShipId column exists, if not add it
+                    command.CommandText = "PRAGMA table_info(SystemChangePlans)";
+                    using var sysReader = await command.ExecuteReaderAsync();
+                    var sysColumns = new List<string>();
+                    while (await sysReader.ReadAsync())
+                    {
+                        sysColumns.Add(sysReader.GetString(1)); // Column name is at index 1
+                    }
+                    await sysReader.CloseAsync();
+                    
+                    if (!sysColumns.Contains("ShipId"))
+                    {
+                        Console.WriteLine("Adding ShipId column to SystemChangePlans table...");
+                        command.CommandText = "ALTER TABLE SystemChangePlans ADD COLUMN ShipId INTEGER REFERENCES Ships(Id) ON DELETE SET NULL;";
+                        await command.ExecuteNonQueryAsync();
+                        
+                        command.CommandText = "CREATE INDEX IX_SystemChangePlans_ShipId ON SystemChangePlans(ShipId);";
+                        await command.ExecuteNonQueryAsync();
+                        
+                        Console.WriteLine("ShipId column added successfully");
+                    }
                 }
                 
                 await connection.CloseAsync();

@@ -31,6 +31,9 @@ namespace MaritimeERP.Data
         // Hardware Change Request form
         public DbSet<HardwareChangeRequest> HardwareChangeRequests { get; set; }
         
+        // Software Change Request form
+        public DbSet<SoftwareChangeRequest> SoftwareChangeRequests { get; set; }
+        
         // System Change Plan form
         public DbSet<SystemChangePlan> SystemChangePlans { get; set; }
 
@@ -214,6 +217,34 @@ namespace MaritimeERP.Data
                       .OnDelete(DeleteBehavior.SetNull);
             });
 
+            // Configure SoftwareChangeRequest relationships
+            modelBuilder.Entity<SoftwareChangeRequest>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.RequestNumber).HasMaxLength(50).IsRequired();
+                entity.HasIndex(e => e.RequestNumber).IsUnique();
+                
+                entity.HasOne(d => d.RequesterUser)
+                      .WithMany()
+                      .HasForeignKey(d => d.RequesterUserId)
+                      .OnDelete(DeleteBehavior.Restrict);
+                
+                entity.HasOne(d => d.PreparedByUser)
+                      .WithMany()
+                      .HasForeignKey(d => d.PreparedByUserId)
+                      .OnDelete(DeleteBehavior.SetNull);
+                
+                entity.HasOne(d => d.ReviewedByUser)
+                      .WithMany()
+                      .HasForeignKey(d => d.ReviewedByUserId)
+                      .OnDelete(DeleteBehavior.SetNull);
+                
+                entity.HasOne(d => d.ApprovedByUser)
+                      .WithMany()
+                      .HasForeignKey(d => d.ApprovedByUserId)
+                      .OnDelete(DeleteBehavior.SetNull);
+            });
+
             // Configure SystemChangePlan relationships
             modelBuilder.Entity<SystemChangePlan>(entity =>
             {
@@ -224,6 +255,11 @@ namespace MaritimeERP.Data
                 entity.HasOne(d => d.User)
                       .WithMany()
                       .HasForeignKey(d => d.UserId)
+                      .OnDelete(DeleteBehavior.SetNull);
+                      
+                entity.HasOne(d => d.Ship)
+                      .WithMany()
+                      .HasForeignKey(d => d.ShipId)
                       .OnDelete(DeleteBehavior.SetNull);
             });
 

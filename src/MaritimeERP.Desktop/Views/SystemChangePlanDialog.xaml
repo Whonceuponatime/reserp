@@ -102,32 +102,58 @@
                 <!-- Requester Information Details -->
                 <Border Grid.Row="2" BorderBrush="#BDC3C7" BorderThickness="0,0,0,1">
                     <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="150"/>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="150"/>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="150"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
                         
-                        <TextBlock Grid.Column="0" Text="Department" 
-                                  Background="#ECF0F1" Padding="15" 
-                                  VerticalAlignment="Center" FontWeight="Bold" FontSize="13"/>
-                        <TextBox Grid.Column="1" Text="{Binding Department}" 
-                                 Padding="15" BorderThickness="0" FontSize="13"/>
+                        <!-- First row: Department, Position, Full Name -->
+                        <Grid Grid.Row="0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="150"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="150"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="150"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            
+                            <TextBlock Grid.Column="0" Text="Department" 
+                                      Background="#ECF0F1" Padding="15" 
+                                      VerticalAlignment="Center" FontWeight="Bold" FontSize="13"/>
+                            <TextBox Grid.Column="1" Text="{Binding Department}" 
+                                     Padding="15" BorderThickness="0" FontSize="13"/>
+                            
+                            <TextBlock Grid.Column="2" Text="Position" 
+                                      Background="#ECF0F1" Padding="15" 
+                                      VerticalAlignment="Center" FontWeight="Bold" FontSize="13"/>
+                            <TextBox Grid.Column="3" Text="{Binding PositionTitle}" 
+                                     Padding="15" BorderThickness="0" FontSize="13"/>
+                            
+                            <TextBlock Grid.Column="4" Text="Full Name" 
+                                      Background="#ECF0F1" Padding="15" 
+                                      VerticalAlignment="Center" FontWeight="Bold" FontSize="13"/>
+                            <TextBox Grid.Column="5" Text="{Binding RequesterName}" 
+                                     Padding="15" BorderThickness="0" FontSize="13"/>
+                        </Grid>
                         
-                        <TextBlock Grid.Column="2" Text="Position" 
-                                  Background="#ECF0F1" Padding="15" 
-                                  VerticalAlignment="Center" FontWeight="Bold" FontSize="13"/>
-                        <TextBox Grid.Column="3" Text="{Binding PositionTitle}" 
-                                 Padding="15" BorderThickness="0" FontSize="13"/>
-                        
-                        <TextBlock Grid.Column="4" Text="Full Name" 
-                                  Background="#ECF0F1" Padding="15" 
-                                  VerticalAlignment="Center" FontWeight="Bold" FontSize="13"/>
-                        <TextBox Grid.Column="5" Text="{Binding RequesterName}" 
-                                 Padding="15" BorderThickness="0" FontSize="13"/>
+                        <!-- Second row: Ship Selection -->
+                        <Grid Grid.Row="1">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="150"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            
+                            <TextBlock Grid.Column="0" Text="Ship" 
+                                      Background="#ECF0F1" Padding="15" 
+                                      VerticalAlignment="Center" FontWeight="Bold" FontSize="13"/>
+                            <ComboBox Grid.Column="1" 
+                                     ItemsSource="{Binding Ships}"
+                                     SelectedItem="{Binding SelectedShip}"
+                                     DisplayMemberPath="ShipName"
+                                     Padding="15" BorderThickness="0" FontSize="13"
+                                     Background="White"/>
+                        </Grid>
                     </Grid>
                 </Border>
                 

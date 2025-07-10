@@ -13,6 +13,10 @@ namespace MaritimeERP.Core.Entities
         
         public DateTime CreatedDate { get; set; } = DateTime.Now;
         
+        // Ship association
+        public int? ShipId { get; set; }
+        public Ship? Ship { get; set; }
+        
         // Status tracking
         public bool IsCreated { get; set; } = true;
         public bool IsUnderReview { get; set; } = false;
