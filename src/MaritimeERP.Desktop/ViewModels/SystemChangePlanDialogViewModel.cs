@@ -427,10 +427,29 @@ namespace MaritimeERP.Desktop.ViewModels
             OnPropertyChanged(nameof(PlanDetails));
             OnPropertyChanged(nameof(SecurityReviewComments));
             
-            // Load selected ship if editing
+            // Load selected ship if editing - do this asynchronously to ensure ships are loaded
             if (IsEditMode && _systemChangePlan.ShipId.HasValue)
             {
-                SelectedShip = Ships.FirstOrDefault(s => s.Id == _systemChangePlan.ShipId.Value);
+                _ = SetSelectedShipAsync(_systemChangePlan.ShipId.Value);
+            }
+        }
+
+        private async Task SetSelectedShipAsync(int shipId)
+        {
+            // Wait for ships to be loaded if they haven't been loaded yet
+            var maxWaitTime = TimeSpan.FromSeconds(5);
+            var startTime = DateTime.Now;
+            
+            while (Ships.Count == 0 && DateTime.Now - startTime < maxWaitTime)
+            {
+                await Task.Delay(100);
+            }
+            
+            // Set the selected ship
+            var ship = Ships.FirstOrDefault(s => s.Id == shipId);
+            if (ship != null)
+            {
+                SelectedShip = ship;
             }
         }
 

@@ -116,6 +116,7 @@ namespace MaritimeERP.Desktop
             services.AddScoped<ISystemChangePlanService, SystemChangePlanService>();
             services.AddScoped<IHardwareChangeRequestService, HardwareChangeRequestService>();
             services.AddScoped<ISoftwareChangeRequestService, SoftwareChangeRequestService>();
+            services.AddScoped<ISecurityReviewStatementService, SecurityReviewStatementService>();
             services.AddSingleton<INavigationService, NavigationService>();
             services.AddSingleton<ViewLocator>();
             // Add other services here as they are implemented
@@ -132,6 +133,7 @@ namespace MaritimeERP.Desktop
             services.AddTransient<HardwareChangeRequestDialogViewModel>();
             services.AddTransient<SoftwareChangeRequestDialogViewModel>();
             services.AddTransient<SystemChangePlanDialogViewModel>();
+            services.AddTransient<SecurityReviewStatementDialogViewModel>();
 
             // Views
             services.AddTransient<LoginWindow>();
@@ -440,6 +442,79 @@ namespace MaritimeERP.Desktop
                         await command.ExecuteNonQueryAsync();
                         
                         Console.WriteLine("ShipId column added successfully");
+                    }
+                }
+                
+                // Check if SecurityReviewStatements table exists, if not create it
+                command.CommandText = "SELECT name FROM sqlite_master WHERE type='table' AND name='SecurityReviewStatements'";
+                result = await command.ExecuteScalarAsync();
+                
+                if (result == null)
+                {
+                    Console.WriteLine("Creating SecurityReviewStatements table...");
+                    
+                    // Create the table manually
+                    command.CommandText = @"
+                        CREATE TABLE SecurityReviewStatements (
+                            Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                            RequestNumber TEXT NOT NULL UNIQUE,
+                            CreatedDate DATETIME NOT NULL,
+                            ShipId INTEGER,
+                            IsCreated BOOLEAN NOT NULL DEFAULT 1,
+                            IsUnderReview BOOLEAN NOT NULL DEFAULT 0,
+                            IsApproved BOOLEAN NOT NULL DEFAULT 0,
+                            ReviewDate DATETIME NOT NULL,
+                            ReviewerDepartment TEXT NOT NULL DEFAULT '',
+                            ReviewerPosition TEXT NOT NULL DEFAULT '',
+                            ReviewerName TEXT NOT NULL DEFAULT '',
+                            ReviewItems TEXT NOT NULL DEFAULT '',
+                            ReviewResults TEXT NOT NULL DEFAULT '',
+                            ReviewNotes TEXT NOT NULL DEFAULT '',
+                            OverallResult TEXT NOT NULL DEFAULT '',
+                            ReviewOpinion TEXT NOT NULL DEFAULT '',
+                            UserId INTEGER,
+                            UpdatedDate DATETIME NOT NULL,
+                            FOREIGN KEY (UserId) REFERENCES Users(Id) ON DELETE SET NULL,
+                            FOREIGN KEY (ShipId) REFERENCES Ships(Id) ON DELETE SET NULL
+                        );";
+                    await command.ExecuteNonQueryAsync();
+                    
+                    // Create indexes
+                    command.CommandText = "CREATE INDEX IX_SecurityReviewStatements_RequestNumber ON SecurityReviewStatements(RequestNumber);";
+                    await command.ExecuteNonQueryAsync();
+                    
+                    command.CommandText = "CREATE INDEX IX_SecurityReviewStatements_UserId ON SecurityReviewStatements(UserId);";
+                    await command.ExecuteNonQueryAsync();
+                    
+                    command.CommandText = "CREATE INDEX IX_SecurityReviewStatements_ShipId ON SecurityReviewStatements(ShipId);";
+                    await command.ExecuteNonQueryAsync();
+                    
+                    Console.WriteLine("SecurityReviewStatements table created successfully");
+                }
+                else
+                {
+                    Console.WriteLine("SecurityReviewStatements table already exists");
+                    
+                    // Check if ShipId column exists, if not add it
+                    command.CommandText = "PRAGMA table_info(SecurityReviewStatements)";
+                    using var secReader = await command.ExecuteReaderAsync();
+                    var secColumns = new List<string>();
+                    while (await secReader.ReadAsync())
+                    {
+                        secColumns.Add(secReader.GetString(1)); // Column name is at index 1
+                    }
+                    await secReader.CloseAsync();
+                    
+                    if (!secColumns.Contains("ShipId"))
+                    {
+                        Console.WriteLine("Adding ShipId column to SecurityReviewStatements table...");
+                        command.CommandText = "ALTER TABLE SecurityReviewStatements ADD COLUMN ShipId INTEGER REFERENCES Ships(Id) ON DELETE SET NULL;";
+                        await command.ExecuteNonQueryAsync();
+                        
+                        command.CommandText = "CREATE INDEX IX_SecurityReviewStatements_ShipId ON SecurityReviewStatements(ShipId);";
+                        await command.ExecuteNonQueryAsync();
+                        
+                        Console.WriteLine("ShipId column added successfully to SecurityReviewStatements");
                     }
                 }
                 

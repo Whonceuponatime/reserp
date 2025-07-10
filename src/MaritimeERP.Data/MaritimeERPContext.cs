@@ -36,6 +36,9 @@ namespace MaritimeERP.Data
         
         // System Change Plan form
         public DbSet<SystemChangePlan> SystemChangePlans { get; set; }
+        
+        // Security Review Statement form
+        public DbSet<SecurityReviewStatement> SecurityReviewStatements { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -247,6 +250,24 @@ namespace MaritimeERP.Data
 
             // Configure SystemChangePlan relationships
             modelBuilder.Entity<SystemChangePlan>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.RequestNumber).HasMaxLength(50).IsRequired();
+                entity.HasIndex(e => e.RequestNumber).IsUnique();
+                
+                entity.HasOne(d => d.User)
+                      .WithMany()
+                      .HasForeignKey(d => d.UserId)
+                      .OnDelete(DeleteBehavior.SetNull);
+                      
+                entity.HasOne(d => d.Ship)
+                      .WithMany()
+                      .HasForeignKey(d => d.ShipId)
+                      .OnDelete(DeleteBehavior.SetNull);
+            });
+
+            // Configure SecurityReviewStatement relationships
+            modelBuilder.Entity<SecurityReviewStatement>(entity =>
             {
                 entity.HasKey(e => e.Id);
                 entity.Property(e => e.RequestNumber).HasMaxLength(50).IsRequired();

@@ -20,6 +20,7 @@ namespace MaritimeERP.Desktop.ViewModels
         private readonly ISystemChangePlanService _systemChangePlanService;
         private readonly IHardwareChangeRequestService _hardwareChangeRequestService;
         private readonly ISoftwareChangeRequestService _softwareChangeRequestService;
+        private readonly ISecurityReviewStatementService _securityReviewStatementService;
         private readonly ILogger<ChangeRequestsViewModel> _logger;
 
         // Collections
@@ -263,6 +264,7 @@ namespace MaritimeERP.Desktop.ViewModels
             ISystemChangePlanService systemChangePlanService,
             IHardwareChangeRequestService hardwareChangeRequestService,
             ISoftwareChangeRequestService softwareChangeRequestService,
+            ISecurityReviewStatementService securityReviewStatementService,
             ILogger<ChangeRequestsViewModel> logger)
         {
             _changeRequestService = changeRequestService ?? throw new ArgumentNullException(nameof(changeRequestService));
@@ -272,6 +274,7 @@ namespace MaritimeERP.Desktop.ViewModels
             _systemChangePlanService = systemChangePlanService ?? throw new ArgumentNullException(nameof(systemChangePlanService));
             _hardwareChangeRequestService = hardwareChangeRequestService ?? throw new ArgumentNullException(nameof(hardwareChangeRequestService));
             _softwareChangeRequestService = softwareChangeRequestService ?? throw new ArgumentNullException(nameof(softwareChangeRequestService));
+            _securityReviewStatementService = securityReviewStatementService ?? throw new ArgumentNullException(nameof(securityReviewStatementService));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
             // Initialize commands
@@ -479,8 +482,15 @@ namespace MaritimeERP.Desktop.ViewModels
 
         private void OpenSecurityReviewStatementForm()
         {
-            // TODO: Create security review statement form
-            MessageBox.Show("Security Review Statement form will be implemented soon.", "Coming Soon", MessageBoxButton.OK, MessageBoxImage.Information);
+            var viewModel = new SecurityReviewStatementDialogViewModel(_securityReviewStatementService, _authenticationService, _shipService);
+            var dialog = new SecurityReviewStatementDialog(viewModel);
+            var result = dialog.ShowDialog();
+
+            if (result == true)
+            {
+                // Refresh the change requests list to show the new entry
+                _ = LoadDataAsync();
+            }
         }
 
         private async Task SaveNewChangeRequestAsync(ChangeRequest changeRequest)
@@ -1152,8 +1162,20 @@ namespace MaritimeERP.Desktop.ViewModels
                         if (systemChangePlan != null)
                         {
                             var viewModel = new SystemChangePlanDialogViewModel(_systemChangePlanService, _authenticationService, _shipService, _changeRequestService);
+                            
+                            // Set the system change plan data
                             viewModel.SystemChangePlan = systemChangePlan;
                             viewModel.IsEditMode = true;
+                            
+                            // Set the selected ship from the change request
+                            if (changeRequest.ShipId.HasValue)
+                            {
+                                var selectedShip = viewModel.Ships.FirstOrDefault(s => s.Id == changeRequest.ShipId.Value);
+                                if (selectedShip != null)
+                                {
+                                    viewModel.SelectedShip = selectedShip;
+                                }
+                            }
                             
                             var dialog = new SystemChangePlanDialog(viewModel);
                             var result = dialog.ShowDialog();

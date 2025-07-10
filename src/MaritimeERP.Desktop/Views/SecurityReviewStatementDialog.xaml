@@ -1,0 +1,380 @@
+<Window x:Class="MaritimeERP.Desktop.Views.SecurityReviewStatementDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        mc:Ignorable="d" 
+        Title="Security Review Statement Form" 
+        Height="900" Width="1000"
+        WindowStartupLocation="CenterScreen"
+        ResizeMode="CanResize"
+        Background="White">
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        
+        <!-- Header Section -->
+        <Border Grid.Row="0" Background="#34495E" Padding="20">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                
+                <TextBlock Text="Security Review Statement Form (보안성 검토 소견서)" 
+                          FontSize="20" FontWeight="Bold" 
+                          Foreground="White" VerticalAlignment="Center"/>
+                
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="30,0">
+                    <TextBlock Text="Created (작성)" Foreground="White" VerticalAlignment="Center" Margin="0,0,10,0" FontSize="14"/>
+                    <CheckBox IsChecked="True" IsEnabled="False" VerticalAlignment="Center"/>
+                </StackPanel>
+                
+                <StackPanel Grid.Column="2" Orientation="Horizontal" Margin="30,0">
+                    <TextBlock Text="Under Review (검토)" Foreground="White" VerticalAlignment="Center" Margin="0,0,10,0" FontSize="14"/>
+                    <CheckBox IsChecked="{Binding IsUnderReview}" IsEnabled="False" VerticalAlignment="Center"/>
+                </StackPanel>
+                
+                <StackPanel Grid.Column="3" Orientation="Horizontal" Margin="30,0">
+                    <TextBlock Text="Approved (승인)" Foreground="White" VerticalAlignment="Center" Margin="0,0,10,0" FontSize="14"/>
+                    <CheckBox IsChecked="{Binding IsApproved}" IsEnabled="False" VerticalAlignment="Center"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+        
+        <!-- Form Content -->
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="0">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                
+                <!-- Basic Information -->
+                <Border Grid.Row="0" BorderBrush="#BDC3C7" BorderThickness="0,0,0,1">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="180"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="150"/>
+                            <ColumnDefinition Width="200"/>
+                        </Grid.ColumnDefinitions>
+                        
+                        <TextBlock Grid.Column="0" Text="Request Number&#x0a;(등록요청 번호)" 
+                                  Background="#ECF0F1" Padding="15" 
+                                  VerticalAlignment="Center" FontWeight="Bold" FontSize="13"/>
+                        <TextBox Grid.Column="1" Text="{Binding RequestNumber}" 
+                                 Padding="15" BorderThickness="0" IsReadOnly="True" FontSize="13"/>
+                        
+                        <TextBlock Grid.Column="2" Text="Created Date&#x0a;(작성 일자)" 
+                                  Background="#ECF0F1" Padding="15" 
+                                  VerticalAlignment="Center" FontWeight="Bold" FontSize="13"/>
+                        <DatePicker Grid.Column="3" SelectedDate="{Binding CreatedDate}" 
+                                   Padding="15" BorderThickness="0" FontSize="13"/>
+                    </Grid>
+                </Border>
+                
+                <!-- Ship Selection -->
+                <Border Grid.Row="1" BorderBrush="#BDC3C7" BorderThickness="0,0,0,1">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="180"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        
+                        <TextBlock Grid.Column="0" Text="Ship (선박)" 
+                                  Background="#ECF0F1" Padding="15" 
+                                  VerticalAlignment="Center" FontWeight="Bold" FontSize="13"/>
+                        <ComboBox Grid.Column="1" 
+                                 ItemsSource="{Binding Ships}"
+                                 SelectedItem="{Binding SelectedShip}"
+                                 DisplayMemberPath="ShipName"
+                                 Padding="15" BorderThickness="0" FontSize="13"
+                                 Background="White"/>
+                    </Grid>
+                </Border>
+                
+                <!-- Reviewer Information Header -->
+                <Border Grid.Row="2" BorderBrush="#BDC3C7" BorderThickness="0,0,0,1">
+                    <TextBlock Text="Reviewer Information (검토자)" 
+                              Background="#34495E" 
+                              Foreground="White"
+                              Padding="15" 
+                              FontWeight="Bold" 
+                              FontSize="14"/>
+                </Border>
+                
+                <!-- Reviewer Information Details -->
+                <Border Grid.Row="3" BorderBrush="#BDC3C7" BorderThickness="0,0,0,1">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        
+                        <!-- First row: Department, Position, Name -->
+                        <Grid Grid.Row="0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="150"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="150"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="150"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            
+                            <TextBlock Grid.Column="0" Text="Department&#x0a;(부서)" 
+                                      Background="#ECF0F1" Padding="15" 
+                                      VerticalAlignment="Center" FontWeight="Bold" FontSize="13"/>
+                            <TextBox Grid.Column="1" Text="{Binding ReviewerDepartment}" 
+                                     Padding="15" BorderThickness="0" FontSize="13"/>
+                            
+                            <TextBlock Grid.Column="2" Text="Position&#x0a;(직책)" 
+                                      Background="#ECF0F1" Padding="15" 
+                                      VerticalAlignment="Center" FontWeight="Bold" FontSize="13"/>
+                            <TextBox Grid.Column="3" Text="{Binding ReviewerPosition}" 
+                                     Padding="15" BorderThickness="0" FontSize="13"/>
+                            
+                            <TextBlock Grid.Column="4" Text="Name&#x0a;(성명)" 
+                                      Background="#ECF0F1" Padding="15" 
+                                      VerticalAlignment="Center" FontWeight="Bold" FontSize="13"/>
+                            <TextBox Grid.Column="5" Text="{Binding ReviewerName}" 
+                                     Padding="15" BorderThickness="0" FontSize="13"/>
+                        </Grid>
+                        
+                        <!-- Second row: Review Date -->
+                        <Grid Grid.Row="1">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="150"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            
+                            <TextBlock Grid.Column="0" Text="Review Date&#x0a;(검토 일자)" 
+                                      Background="#ECF0F1" Padding="15" 
+                                      VerticalAlignment="Center" FontWeight="Bold" FontSize="13"/>
+                            <DatePicker Grid.Column="1" SelectedDate="{Binding ReviewDate}" 
+                                       Padding="15" BorderThickness="0" FontSize="13"
+                                       Background="White"/>
+                        </Grid>
+                    </Grid>
+                </Border>
+                
+                <!-- Review Items Header -->
+                <Border Grid.Row="4" BorderBrush="#BDC3C7" BorderThickness="0,0,0,1">
+                    <TextBlock Text="Review Items (구분 - 검토 항목)" 
+                              Background="#34495E" 
+                              Foreground="White"
+                              Padding="15" 
+                              FontWeight="Bold" 
+                              FontSize="14"/>
+                </Border>
+                
+                <!-- Review Items Table -->
+                <Border Grid.Row="5" BorderBrush="#BDC3C7" BorderThickness="0,0,0,1">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        
+                        <!-- Header Row -->
+                        <Grid Grid.Row="0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            
+                            <TextBlock Grid.Column="0" Text="Review Item (검토 항목)" 
+                                      Background="#ECF0F1" Padding="15" 
+                                      VerticalAlignment="Center" FontWeight="Bold" FontSize="13"
+                                      BorderThickness="0,0,1,1" BorderBrush="#BDC3C7"/>
+                            <TextBlock Grid.Column="1" Text="Review Result (검토 결과)" 
+                                      Background="#ECF0F1" Padding="15" 
+                                      VerticalAlignment="Center" FontWeight="Bold" FontSize="13"
+                                      BorderThickness="0,0,1,1" BorderBrush="#BDC3C7"/>
+                            <TextBlock Grid.Column="2" Text="Remarks (비고)" 
+                                      Background="#ECF0F1" Padding="15" 
+                                      VerticalAlignment="Center" FontWeight="Bold" FontSize="13"
+                                      BorderThickness="0,0,0,1" BorderBrush="#BDC3C7"/>
+                        </Grid>
+                        
+                        <!-- Review Item 1 -->
+                        <Grid Grid.Row="1">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            
+                            <TextBox Grid.Column="0" Text="{Binding ReviewItem1}" 
+                                     Padding="15" BorderThickness="0,0,1,1" BorderBrush="#BDC3C7" FontSize="13"/>
+                            <TextBox Grid.Column="1" Text="{Binding ReviewResult1}" 
+                                     Padding="15" BorderThickness="0,0,1,1" BorderBrush="#BDC3C7" FontSize="13"/>
+                            <TextBox Grid.Column="2" Text="{Binding ReviewRemarks1}" 
+                                     Padding="15" BorderThickness="0,0,0,1" BorderBrush="#BDC3C7" FontSize="13"/>
+                        </Grid>
+                        
+                        <!-- Review Item 2 -->
+                        <Grid Grid.Row="2">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            
+                            <TextBox Grid.Column="0" Text="{Binding ReviewItem2}" 
+                                     Padding="15" BorderThickness="0,0,1,1" BorderBrush="#BDC3C7" FontSize="13"/>
+                            <TextBox Grid.Column="1" Text="{Binding ReviewResult2}" 
+                                     Padding="15" BorderThickness="0,0,1,1" BorderBrush="#BDC3C7" FontSize="13"/>
+                            <TextBox Grid.Column="2" Text="{Binding ReviewRemarks2}" 
+                                     Padding="15" BorderThickness="0,0,0,1" BorderBrush="#BDC3C7" FontSize="13"/>
+                        </Grid>
+                        
+                        <!-- Review Item 3 -->
+                        <Grid Grid.Row="3">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            
+                            <TextBox Grid.Column="0" Text="{Binding ReviewItem3}" 
+                                     Padding="15" BorderThickness="0,0,1,1" BorderBrush="#BDC3C7" FontSize="13"/>
+                            <TextBox Grid.Column="1" Text="{Binding ReviewResult3}" 
+                                     Padding="15" BorderThickness="0,0,1,1" BorderBrush="#BDC3C7" FontSize="13"/>
+                            <TextBox Grid.Column="2" Text="{Binding ReviewRemarks3}" 
+                                     Padding="15" BorderThickness="0,0,0,1" BorderBrush="#BDC3C7" FontSize="13"/>
+                        </Grid>
+                        
+                        <!-- Review Item 4 -->
+                        <Grid Grid.Row="4">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            
+                            <TextBox Grid.Column="0" Text="{Binding ReviewItem4}" 
+                                     Padding="15" BorderThickness="0,0,1,1" BorderBrush="#BDC3C7" FontSize="13"/>
+                            <TextBox Grid.Column="1" Text="{Binding ReviewResult4}" 
+                                     Padding="15" BorderThickness="0,0,1,1" BorderBrush="#BDC3C7" FontSize="13"/>
+                            <TextBox Grid.Column="2" Text="{Binding ReviewRemarks4}" 
+                                     Padding="15" BorderThickness="0,0,0,1" BorderBrush="#BDC3C7" FontSize="13"/>
+                        </Grid>
+                        
+                        <!-- Review Item 5 -->
+                        <Grid Grid.Row="5">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            
+                            <TextBox Grid.Column="0" Text="{Binding ReviewItem5}" 
+                                     Padding="15" BorderThickness="0,0,1,0" BorderBrush="#BDC3C7" FontSize="13"/>
+                            <TextBox Grid.Column="1" Text="{Binding ReviewResult5}" 
+                                     Padding="15" BorderThickness="0,0,1,0" BorderBrush="#BDC3C7" FontSize="13"/>
+                            <TextBox Grid.Column="2" Text="{Binding ReviewRemarks5}" 
+                                     Padding="15" BorderThickness="0" FontSize="13"/>
+                        </Grid>
+                    </Grid>
+                </Border>
+                
+                <!-- Overall Review Results -->
+                <Border Grid.Row="6" BorderBrush="#BDC3C7" BorderThickness="0,0,0,1">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="180"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        
+                        <TextBlock Grid.Column="0" Text="Overall Review Result&#x0a;(검토 결과)" 
+                                  Background="#ECF0F1" Padding="15" 
+                                  VerticalAlignment="Center" FontWeight="Bold" FontSize="13"
+                                  MinHeight="100"/>
+                        <TextBox Grid.Column="1" Text="{Binding OverallReviewResult}" 
+                                 Padding="15" BorderThickness="0" 
+                                 TextWrapping="Wrap" AcceptsReturn="True" 
+                                 MinHeight="100" FontSize="13"/>
+                    </Grid>
+                </Border>
+                
+                <!-- Review Opinion -->
+                <Border Grid.Row="7" BorderBrush="#BDC3C7" BorderThickness="0,0,0,1">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="180"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        
+                        <TextBlock Grid.Column="0" Text="Review Opinion&#x0a;(검토 의견)" 
+                                  Background="#ECF0F1" Padding="15" 
+                                  VerticalAlignment="Center" FontWeight="Bold" FontSize="13"
+                                  MinHeight="100"/>
+                        <TextBox Grid.Column="1" Text="{Binding ReviewOpinion}" 
+                                 Padding="15" BorderThickness="0" 
+                                 TextWrapping="Wrap" AcceptsReturn="True" 
+                                 MinHeight="100" FontSize="13"
+                                 VerticalScrollBarVisibility="Auto"/>
+                    </Grid>
+                </Border>
+            </Grid>
+        </ScrollViewer>
+        
+        <!-- Action Buttons -->
+        <Border Grid.Row="2" Background="#F8F9FA" Padding="20" BorderThickness="0,1,0,0" BorderBrush="#E0E0E0">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                <Button Content="Save" 
+                        Command="{Binding SaveCommand}"
+                        Background="#27AE60"
+                        Foreground="White"
+                        BorderThickness="0"
+                        Height="40"
+                        Padding="25,0"
+                        FontSize="14"
+                        FontWeight="SemiBold"
+                        Margin="10"/>
+                
+                <Button Content="Submit" 
+                        Command="{Binding SubmitCommand}"
+                        Background="#3498DB"
+                        Foreground="White"
+                        BorderThickness="0"
+                        Height="40"
+                        Padding="25,0"
+                        FontSize="14"
+                        FontWeight="SemiBold"
+                        Margin="10"/>
+                
+                <Button Content="Cancel" 
+                        Command="{Binding CancelCommand}"
+                        Background="#95A5A6"
+                        Foreground="White"
+                        BorderThickness="0"
+                        Height="40"
+                        Padding="25,0"
+                        FontSize="14"
+                        FontWeight="SemiBold"
+                        Margin="10"/>
+            </StackPanel>
+        </Border>
+    </Grid>
+</Window> 
