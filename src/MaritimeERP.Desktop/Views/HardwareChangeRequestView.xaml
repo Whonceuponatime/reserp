@@ -1,0 +1,197 @@
+<UserControl x:Class="MaritimeERP.Desktop.Views.HardwareChangeRequestView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             mc:Ignorable="d" 
+             d:DesignHeight="800" d:DesignWidth="1200">
+    
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        
+        <!-- Header -->
+        <Border Grid.Row="0" Background="#2C3E50" Padding="20">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                
+                <TextBlock Text="Hardware Change Request Form" 
+                          FontSize="24" FontWeight="Bold" 
+                          Foreground="White" VerticalAlignment="Center"/>
+                
+                <StackPanel Grid.Column="1" Orientation="Horizontal">
+                    <Button Content="New Request" Command="{Binding NewRequestCommand}" 
+                            Background="#3498DB" Foreground="White" 
+                            BorderThickness="0" Padding="15,8" Margin="5"/>
+                    <Button Content="Save" Command="{Binding SaveRequestCommand}" 
+                            Background="#27AE60" Foreground="White" 
+                            BorderThickness="0" Padding="15,8" Margin="5"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+        
+        <!-- Main Content -->
+        <Grid Grid.Row="1" Margin="20">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="300"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            
+            <!-- Request List -->
+            <Border Grid.Column="0" BorderBrush="#BDC3C7" BorderThickness="1" Margin="0,0,10,0">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    
+                    <TextBlock Text="Request List" FontSize="16" FontWeight="Bold" 
+                              Margin="10" Background="#ECF0F1" Padding="10"/>
+                    
+                    <ListBox Grid.Row="1" ItemsSource="{Binding HardwareChangeRequests}" 
+                             SelectedItem="{Binding SelectedRequest}" Margin="10">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel Margin="5">
+                                    <TextBlock Text="{Binding RequestNumber}" FontWeight="Bold"/>
+                                    <TextBlock Text="{Binding RequesterName}" FontSize="12" Foreground="Gray"/>
+                                    <TextBlock Text="{Binding Status}" FontSize="12" Foreground="Blue"/>
+                                    <TextBlock Text="{Binding CreatedDateDisplay}" FontSize="10" Foreground="Gray"/>
+                                </StackPanel>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </Grid>
+            </Border>
+            
+            <!-- Form Content -->
+            <ScrollViewer Grid.Column="1" VerticalScrollBarVisibility="Auto">
+                <Border BorderBrush="#BDC3C7" BorderThickness="1" Margin="10,0,0,0" Padding="20">
+                    <StackPanel IsEnabled="{Binding IsFormEnabled}">
+                        
+                        <!-- Basic Information -->
+                        <TextBlock Text="Basic Information" FontSize="18" FontWeight="Bold" Margin="0,0,0,10"/>
+                        
+                        <Grid Margin="0,0,0,20">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="150"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="150"/>
+                                <ColumnDefinition Width="200"/>
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            
+                            <TextBlock Grid.Row="0" Grid.Column="0" Text="Request Number:" VerticalAlignment="Center" FontWeight="Bold"/>
+                            <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding RequestNumber}" IsReadOnly="True" Margin="5"/>
+                            
+                            <TextBlock Grid.Row="0" Grid.Column="2" Text="Created Date:" VerticalAlignment="Center" FontWeight="Bold"/>
+                            <DatePicker Grid.Row="0" Grid.Column="3" SelectedDate="{Binding CreatedDate}" Margin="5"/>
+                            
+                            <TextBlock Grid.Row="1" Grid.Column="0" Text="Requester Name:" VerticalAlignment="Center" FontWeight="Bold"/>
+                            <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding RequesterName}" Margin="5"/>
+                            
+                            <TextBlock Grid.Row="1" Grid.Column="2" Text="Department:" VerticalAlignment="Center" FontWeight="Bold"/>
+                            <TextBox Grid.Row="1" Grid.Column="3" Text="{Binding Department}" Margin="5"/>
+                            
+                            <TextBlock Grid.Row="2" Grid.Column="0" Text="Position:" VerticalAlignment="Center" FontWeight="Bold"/>
+                            <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding PositionTitle}" Margin="5"/>
+                            
+                            <TextBlock Grid.Row="2" Grid.Column="2" Text="Status:" VerticalAlignment="Center" FontWeight="Bold"/>
+                            <TextBox Grid.Row="2" Grid.Column="3" Text="{Binding Status}" IsReadOnly="True" Margin="5"/>
+                        </Grid>
+                        
+                        <!-- Installation Details -->
+                        <TextBlock Text="Installation Details" FontSize="18" FontWeight="Bold" Margin="0,0,0,10"/>
+                        
+                        <Grid Margin="0,0,0,20">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="150"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            
+                            <TextBlock Grid.Row="0" Grid.Column="0" Text="Installed CBS:" VerticalAlignment="Center" FontWeight="Bold"/>
+                            <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding InstalledCbs}" Margin="5"/>
+                            
+                            <TextBlock Grid.Row="1" Grid.Column="0" Text="Installed Component:" VerticalAlignment="Center" FontWeight="Bold"/>
+                            <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding InstalledComponent}" Margin="5"/>
+                        </Grid>
+                        
+                        <!-- Reason -->
+                        <TextBlock Text="Change Reason" FontSize="18" FontWeight="Bold" Margin="0,0,0,10"/>
+                        <TextBox Text="{Binding Reason}" TextWrapping="Wrap" AcceptsReturn="True" MinHeight="80" Margin="0,0,0,20"/>
+                        
+                        <!-- Hardware Before Change -->
+                        <TextBlock Text="Hardware Before Change" FontSize="18" FontWeight="Bold" Margin="0,0,0,10"/>
+                        
+                        <Grid Margin="0,0,0,20">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="150"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            
+                            <TextBlock Grid.Row="0" Grid.Column="0" Text="Manufacturer/Model:" VerticalAlignment="Center" FontWeight="Bold"/>
+                            <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding BeforeHwManufacturerModel}" Margin="5"/>
+                            
+                            <TextBlock Grid.Row="1" Grid.Column="0" Text="Hardware Name:" VerticalAlignment="Center" FontWeight="Bold"/>
+                            <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding BeforeHwName}" Margin="5"/>
+                            
+                            <TextBlock Grid.Row="2" Grid.Column="0" Text="OS Name/Version:" VerticalAlignment="Center" FontWeight="Bold"/>
+                            <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding BeforeHwOs}" Margin="5"/>
+                        </Grid>
+                        
+                        <!-- Hardware After Change -->
+                        <TextBlock Text="Hardware After Change" FontSize="18" FontWeight="Bold" Margin="0,0,0,10"/>
+                        
+                        <Grid Margin="0,0,0,20">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="150"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            
+                            <TextBlock Grid.Row="0" Grid.Column="0" Text="Manufacturer/Model:" VerticalAlignment="Center" FontWeight="Bold"/>
+                            <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding AfterHwManufacturerModel}" Margin="5"/>
+                            
+                            <TextBlock Grid.Row="1" Grid.Column="0" Text="Hardware Name:" VerticalAlignment="Center" FontWeight="Bold"/>
+                            <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding AfterHwName}" Margin="5"/>
+                            
+                            <TextBlock Grid.Row="2" Grid.Column="0" Text="OS Name/Version:" VerticalAlignment="Center" FontWeight="Bold"/>
+                            <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding AfterHwOs}" Margin="5"/>
+                        </Grid>
+                        
+                        <!-- Work Description -->
+                        <TextBlock Text="Work Description" FontSize="18" FontWeight="Bold" Margin="0,0,0,10"/>
+                        <TextBox Text="{Binding WorkDescription}" TextWrapping="Wrap" AcceptsReturn="True" MinHeight="80" Margin="0,0,0,20"/>
+                        
+                        <!-- Security Review -->
+                        <TextBlock Text="Security Review Comments" FontSize="18" FontWeight="Bold" Margin="0,0,0,10"/>
+                        <TextBox Text="{Binding SecurityReviewComment}" TextWrapping="Wrap" AcceptsReturn="True" MinHeight="80" Margin="0,0,0,20"/>
+                        
+                    </StackPanel>
+                </Border>
+            </ScrollViewer>
+        </Grid>
+    </Grid>
+</UserControl> 

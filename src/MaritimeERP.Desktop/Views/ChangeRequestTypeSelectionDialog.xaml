@@ -1,0 +1,246 @@
+<Window x:Class="MaritimeERP.Desktop.Views.ChangeRequestTypeSelectionDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        mc:Ignorable="d" 
+        Title="Management System - Select Module" 
+        Height="600" Width="800"
+        WindowStartupLocation="CenterScreen"
+        ResizeMode="NoResize"
+        Background="White">
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        
+        <!-- Header -->
+        <Border Grid.Row="0" Background="#2C3E50" Padding="20">
+            <StackPanel>
+                <TextBlock Text="Maritime ERP Management System" 
+                          FontSize="22" FontWeight="Bold" 
+                          Foreground="White" 
+                          HorizontalAlignment="Center"/>
+                <TextBlock Text="Select Management Module" 
+                          FontSize="14" 
+                          Foreground="#BDC3C7" 
+                          HorizontalAlignment="Center"
+                          Margin="0,5,0,0"/>
+            </StackPanel>
+        </Border>
+        
+        <!-- Content -->
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="30">
+            <StackPanel VerticalAlignment="Top">
+                
+                <!-- Management of Change Section -->
+                <GroupBox Header="Management of Change" 
+                         FontSize="16" FontWeight="Bold" 
+                         Margin="0,0,0,20"
+                         Padding="15">
+                    <StackPanel>
+                        <TextBlock Text="Manage system changes, modifications, and updates" 
+                                  FontStyle="Italic" 
+                                  Foreground="#7F8C8D" 
+                                  Margin="0,0,0,15"/>
+                        
+                        <StackPanel Orientation="Vertical">
+                            <Button Content="🔧 System Hardware Change Request"
+                                    Name="HardwareButton"
+                                    Click="HardwareButton_Click"
+                                    Background="#E67E22"
+                                    Foreground="White"
+                                    BorderThickness="0"
+                                    Height="45"
+                                    Width="450"
+                                    FontSize="14"
+                                    FontWeight="SemiBold"
+                                    Margin="0,5"
+                                    HorizontalAlignment="Left"/>
+                            
+                            <Button Content="💻 System Software Change Request"
+                                    Name="SoftwareButton"
+                                    Click="SoftwareButton_Click"
+                                    Background="#3498DB"
+                                    Foreground="White"
+                                    BorderThickness="0"
+                                    Height="45"
+                                    Width="450"
+                                    FontSize="14"
+                                    FontWeight="SemiBold"
+                                    Margin="0,5"
+                                    HorizontalAlignment="Left"/>
+                            
+                            <Button Content="📋 System Change Plan"
+                                    Name="SystemPlanButton"
+                                    Click="SystemPlanButton_Click"
+                                    Background="#9B59B6"
+                                    Foreground="White"
+                                    BorderThickness="0"
+                                    Height="45"
+                                    Width="450"
+                                    FontSize="14"
+                                    FontWeight="SemiBold"
+                                    Margin="0,5"
+                                    HorizontalAlignment="Left"/>
+                            
+                            <Button Content="🛡️ Security Review Statement"
+                                    Name="SecurityReviewButton"
+                                    Click="SecurityReviewButton_Click"
+                                    Background="#16A085"
+                                    Foreground="White"
+                                    BorderThickness="0"
+                                    Height="45"
+                                    Width="450"
+                                    FontSize="14"
+                                    FontWeight="SemiBold"
+                                    Margin="0,5"
+                                    HorizontalAlignment="Left"/>
+                        </StackPanel>
+                    </StackPanel>
+                </GroupBox>
+                
+                <!-- Management of Firewalls Section -->
+                <GroupBox Header="Management of Firewalls" 
+                         FontSize="16" FontWeight="Bold" 
+                         Margin="0,0,0,20"
+                         Padding="15">
+                    <StackPanel>
+                        <TextBlock Text="Manage firewall policies, rules, and configurations" 
+                                  FontStyle="Italic" 
+                                  Foreground="#7F8C8D" 
+                                  Margin="0,0,0,15"/>
+                        
+                        <Button Content="🔥 Firewall Policy Change Request"
+                                Name="FirewallButton"
+                                Click="FirewallButton_Click"
+                                Background="#E74C3C"
+                                Foreground="White"
+                                BorderThickness="0"
+                                Height="45"
+                                Width="450"
+                                FontSize="14"
+                                FontWeight="SemiBold"
+                                Margin="0,5"
+                                HorizontalAlignment="Left"
+                                IsEnabled="False"
+                                ToolTip="Coming Soon"/>
+                    </StackPanel>
+                </GroupBox>
+                
+                <!-- Management of Malware Protection Section -->
+                <GroupBox Header="Management of Malware Protection" 
+                         FontSize="16" FontWeight="Bold" 
+                         Margin="0,0,0,20"
+                         Padding="15">
+                    <StackPanel>
+                        <TextBlock Text="Manage antivirus, anti-malware policies and updates" 
+                                  FontStyle="Italic" 
+                                  Foreground="#7F8C8D" 
+                                  Margin="0,0,0,15"/>
+                        
+                        <Button Content="🦠 Malware Protection Change Request"
+                                Name="MalwareButton"
+                                Click="MalwareButton_Click"
+                                Background="#8E44AD"
+                                Foreground="White"
+                                BorderThickness="0"
+                                Height="45"
+                                Width="450"
+                                FontSize="14"
+                                FontWeight="SemiBold"
+                                Margin="0,5"
+                                HorizontalAlignment="Left"
+                                IsEnabled="False"
+                                ToolTip="Coming Soon"/>
+                    </StackPanel>
+                </GroupBox>
+                
+                <!-- Management of Access Control Section -->
+                <GroupBox Header="Management of Access Control" 
+                         FontSize="16" FontWeight="Bold" 
+                         Margin="0,0,0,20"
+                         Padding="15">
+                    <StackPanel>
+                        <TextBlock Text="Manage user accounts, permissions, and access policies" 
+                                  FontStyle="Italic" 
+                                  Foreground="#7F8C8D" 
+                                  Margin="0,0,0,15"/>
+                        
+                        <StackPanel Orientation="Vertical">
+                            <Button Content="👤 Account Create/Remove Request"
+                                    Name="AccountButton"
+                                    Click="AccountButton_Click"
+                                    Background="#34495E"
+                                    Foreground="White"
+                                    BorderThickness="0"
+                                    Height="45"
+                                    Width="450"
+                                    FontSize="14"
+                                    FontWeight="SemiBold"
+                                    Margin="0,5"
+                                    HorizontalAlignment="Left"
+                                    IsEnabled="False"
+                                    ToolTip="Coming Soon"/>
+                            
+                            <Button Content="🔐 Access Control Change Request"
+                                    Name="AccessControlButton"
+                                    Click="AccessControlButton_Click"
+                                    Background="#2C3E50"
+                                    Foreground="White"
+                                    BorderThickness="0"
+                                    Height="45"
+                                    Width="450"
+                                    FontSize="14"
+                                    FontWeight="SemiBold"
+                                    Margin="0,5"
+                                    HorizontalAlignment="Left"
+                                    IsEnabled="False"
+                                    ToolTip="Coming Soon"/>
+                            
+                            <Button Content="✅ Access Control Checklist"
+                                    Name="ChecklistButton"
+                                    Click="ChecklistButton_Click"
+                                    Background="#27AE60"
+                                    Foreground="White"
+                                    BorderThickness="0"
+                                    Height="45"
+                                    Width="450"
+                                    FontSize="14"
+                                    FontWeight="SemiBold"
+                                    Margin="0,5"
+                                    HorizontalAlignment="Left"
+                                    IsEnabled="False"
+                                    ToolTip="Coming Soon"/>
+                        </StackPanel>
+                    </StackPanel>
+                </GroupBox>
+                
+            </StackPanel>
+        </ScrollViewer>
+        
+        <!-- Footer -->
+        <Border Grid.Row="2" Background="#F8F9FA" Padding="20" BorderThickness="0,1,0,0" BorderBrush="#E0E0E0">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                <TextBlock Text="💡 Tip: Only Management of Change modules are currently available" 
+                          FontStyle="Italic" 
+                          Foreground="#7F8C8D" 
+                          VerticalAlignment="Center"
+                          Margin="0,0,20,0"/>
+                <Button Content="Cancel" 
+                        Name="CancelButton"
+                        Click="CancelButton_Click"
+                        Background="#95A5A6"
+                        Foreground="White"
+                        BorderThickness="0"
+                        Height="40"
+                        Width="120"
+                        FontSize="14"
+                        HorizontalAlignment="Center"/>
+            </StackPanel>
+        </Border>
+    </Grid>
+</Window> 

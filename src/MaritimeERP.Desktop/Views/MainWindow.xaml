@@ -32,6 +32,9 @@
         
         <!-- BooleanToVisibilityConverter -->
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+        
+        <!-- StringToBooleanConverter -->
+        <services:StringToBooleanConverter x:Key="StringToBooleanConverter"/>
     </Window.Resources>
 
     <Grid>

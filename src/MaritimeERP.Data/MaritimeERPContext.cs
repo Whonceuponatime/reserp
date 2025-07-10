@@ -27,6 +27,9 @@ namespace MaritimeERP.Data
         public DbSet<SystemPlanDetail> SystemPlanDetails { get; set; }
         public DbSet<Approval> Approvals { get; set; }
         public DbSet<SecurityReviewItem> SecurityReviewItems { get; set; }
+        
+        // Hardware Change Request form
+        public DbSet<HardwareChangeRequest> HardwareChangeRequests { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -178,6 +181,34 @@ namespace MaritimeERP.Data
             {
                 entity.HasKey(e => e.Id);
                 entity.Property(e => e.PlanDetails).HasMaxLength(5000);
+            });
+
+            // Configure HardwareChangeRequest relationships
+            modelBuilder.Entity<HardwareChangeRequest>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.RequestNumber).HasMaxLength(50).IsRequired();
+                entity.HasIndex(e => e.RequestNumber).IsUnique();
+                
+                entity.HasOne(d => d.RequesterUser)
+                      .WithMany()
+                      .HasForeignKey(d => d.RequesterUserId)
+                      .OnDelete(DeleteBehavior.Restrict);
+                
+                entity.HasOne(d => d.PreparedByUser)
+                      .WithMany()
+                      .HasForeignKey(d => d.PreparedByUserId)
+                      .OnDelete(DeleteBehavior.SetNull);
+                
+                entity.HasOne(d => d.ReviewedByUser)
+                      .WithMany()
+                      .HasForeignKey(d => d.ReviewedByUserId)
+                      .OnDelete(DeleteBehavior.SetNull);
+                
+                entity.HasOne(d => d.ApprovedByUser)
+                      .WithMany()
+                      .HasForeignKey(d => d.ApprovedByUserId)
+                      .OnDelete(DeleteBehavior.SetNull);
             });
 
             // Seed data

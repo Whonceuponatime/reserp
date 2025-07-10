@@ -106,7 +106,7 @@ namespace MaritimeERP.Desktop
                 }
             });
 
-            // Services
+            // Register services
             services.AddScoped<IAuthenticationService, AuthenticationService>();
             services.AddScoped<IShipService, ShipService>();
             services.AddScoped<ISystemService, SystemService>();
@@ -126,6 +126,8 @@ namespace MaritimeERP.Desktop
             services.AddTransient<ComponentsViewModel>();
             services.AddTransient<SoftwareViewModel>();
             services.AddTransient<ChangeRequestsViewModel>();
+            services.AddTransient<HardwareChangeRequestDialogViewModel>();
+            services.AddTransient<SoftwareChangeRequestDialogViewModel>();
 
             // Views
             services.AddTransient<LoginWindow>();

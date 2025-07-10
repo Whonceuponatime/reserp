@@ -188,15 +188,8 @@
 
         <!-- Main Content -->
         <Grid Grid.Row="2">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="2*"/>
-                <ColumnDefinition Width="350"/>
-            </Grid.ColumnDefinitions>
-
-            <!-- Change Requests List -->
-            <Border Grid.Column="0" 
-                    Background="White"
-                    Margin="0,0,4,0">
+            <!-- Change Requests List - Full Width -->
+            <Border Background="White">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
@@ -381,6 +374,32 @@
                                                 Binding="{Binding CreatedAt, StringFormat='{}{0:yyyy-MM-dd}'}"
                                                 Width="90"
                                                 MinWidth="80"/>
+                            <DataGridTemplateColumn Header="Actions" Width="100" MinWidth="80">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                            <Button Content="✏️" 
+                                                    Command="{Binding DataContext.EditChangeRequestCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                    CommandParameter="{Binding}"
+                                                    ToolTip="Edit"
+                                                    Background="Transparent"
+                                                    BorderThickness="0"
+                                                    Width="25"
+                                                    Height="25"
+                                                    Margin="2"/>
+                                            <Button Content="🗑️" 
+                                                    Command="{Binding DataContext.DeleteChangeRequestCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                    CommandParameter="{Binding}"
+                                                    ToolTip="Delete"
+                                                    Background="Transparent"
+                                                    BorderThickness="0"
+                                                    Width="25"
+                                                    Height="25"
+                                                    Margin="2"/>
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
                         </DataGrid.Columns>
                     </DataGrid>
 
@@ -417,203 +436,6 @@
                         </Grid>
                     </Border>
                 </Grid>
-            </Border>
-
-            <!-- Change Request Details Panel -->
-            <Border Grid.Column="1" 
-                    Background="White"
-                    BorderThickness="1,0,0,0"
-                    BorderBrush="#E0E0E0"
-                    Padding="16">
-                <ScrollViewer VerticalScrollBarVisibility="Auto">
-                    <StackPanel>
-                        <TextBlock Text="Change Request Details" 
-                                   FontSize="16" 
-                                   FontWeight="SemiBold"
-                                   Foreground="#1976D2"
-                                   Margin="0,0,0,16"/>
-
-                        <!-- Form -->
-                        <Grid>
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="*"/>
-                            </Grid.RowDefinitions>
-
-                            <!-- Request Number -->
-                            <StackPanel Grid.Row="0" Margin="0,0,0,12">
-                                <TextBlock Text="Request Number" FontSize="12" Margin="0,0,0,4"/>
-                                <TextBox Text="{Binding RequestNo, UpdateSourceTrigger=PropertyChanged}"
-                                         Height="28"
-                                         Padding="8,0"
-                                         FontSize="12"
-                                         IsEnabled="{Binding IsEditing}"
-                                         VerticalContentAlignment="Center"/>
-                            </StackPanel>
-
-                            <!-- Ship -->
-                            <StackPanel Grid.Row="1" Margin="0,0,0,12">
-                                <TextBlock Text="Ship" FontSize="12" Margin="0,0,0,4"/>
-                                <ComboBox ItemsSource="{Binding Ships}"
-                                          SelectedItem="{Binding SelectedShip}"
-                                          DisplayMemberPath="ShipName"
-                                          Height="28"
-                                          Padding="8,0"
-                                          FontSize="12"
-                                          IsEnabled="{Binding IsEditing}"
-                                          VerticalContentAlignment="Center"/>
-                            </StackPanel>
-
-                            <!-- Change Type -->
-                            <StackPanel Grid.Row="2" Margin="0,0,0,12">
-                                <TextBlock Text="Change Type" FontSize="12" Margin="0,0,0,4"/>
-                                <ComboBox ItemsSource="{Binding ChangeTypes}"
-                                          SelectedItem="{Binding SelectedChangeType}"
-                                          DisplayMemberPath="Name"
-                                          Height="28"
-                                          Padding="8,0"
-                                          FontSize="12"
-                                          IsEnabled="{Binding IsEditing}"
-                                          VerticalContentAlignment="Center"/>
-                            </StackPanel>
-
-                            <!-- Status -->
-                            <StackPanel Grid.Row="3" Margin="0,0,0,12">
-                                <TextBlock Text="Status" FontSize="12" Margin="0,0,0,4"/>
-                                <ComboBox ItemsSource="{Binding ChangeStatuses}"
-                                          SelectedItem="{Binding SelectedStatus}"
-                                          DisplayMemberPath="Name"
-                                          Height="28"
-                                          Padding="8,0"
-                                          FontSize="12"
-                                          IsEnabled="False"
-                                          VerticalContentAlignment="Center"/>
-                            </StackPanel>
-
-                            <!-- Purpose -->
-                            <StackPanel Grid.Row="4" Margin="0,0,0,12">
-                                <TextBlock Text="Purpose *" FontSize="12" Margin="0,0,0,4"/>
-                                <TextBox Text="{Binding Purpose, UpdateSourceTrigger=PropertyChanged}"
-                                         Height="28"
-                                         Padding="8,0"
-                                         FontSize="12"
-                                         IsEnabled="{Binding IsEditing}"
-                                         VerticalContentAlignment="Center"/>
-                            </StackPanel>
-
-                            <!-- Description -->
-                            <StackPanel Grid.Row="5" Margin="0,0,0,12">
-                                <TextBlock Text="Description" FontSize="12" Margin="0,0,0,4"/>
-                                <TextBox Text="{Binding Description, UpdateSourceTrigger=PropertyChanged}"
-                                         Height="80"
-                                         TextWrapping="Wrap"
-                                         AcceptsReturn="True"
-                                         VerticalScrollBarVisibility="Auto"
-                                         Padding="8"
-                                         FontSize="12"
-                                         IsEnabled="{Binding IsEditing}"/>
-                            </StackPanel>
-
-                            <!-- Action Buttons -->
-                            <StackPanel Grid.Row="7" Orientation="Vertical" Margin="0,16,0,0">
-                                
-                                <!-- Edit/Save/Cancel -->
-                                <Button Content="Save" 
-                                        Command="{Binding SaveChangeRequestCommand}"
-                                        Background="#4CAF50"
-                                        Foreground="White"
-                                        BorderThickness="0"
-                                        Height="32"
-                                        FontSize="12"
-                                        Margin="0,0,0,6"
-                                        Visibility="{Binding IsEditing, Converter={StaticResource BooleanToVisibilityConverter}}"/>
-                                
-                                <Button Content="Edit" 
-                                        Command="{Binding EditChangeRequestCommand}"
-                                        Background="#1976D2"
-                                        Foreground="White"
-                                        BorderThickness="0"
-                                        Height="32"
-                                        FontSize="12"
-                                        Margin="0,0,0,6"/>
-                                
-                                <Button Content="Delete" 
-                                        Command="{Binding DeleteChangeRequestCommand}"
-                                        Background="#D32F2F"
-                                        Foreground="White"
-                                        BorderThickness="0"
-                                        Height="32"
-                                        FontSize="12"
-                                        Margin="0,0,0,6"/>
-                                
-                                <Button Content="Cancel" 
-                                        Command="{Binding CancelEditCommand}"
-                                        Background="#757575"
-                                        Foreground="White"
-                                        BorderThickness="0"
-                                        Height="32"
-                                        FontSize="12"
-                                        Margin="0,0,0,12"
-                                        Visibility="{Binding IsEditing, Converter={StaticResource BooleanToVisibilityConverter}}"/>
-
-                                <!-- Workflow Actions -->
-                                <Separator Margin="0,8"/>
-                                
-                                <Button Content="Submit for Approval" 
-                                        Command="{Binding SubmitForApprovalCommand}"
-                                        Background="#FF9800"
-                                        Foreground="White"
-                                        BorderThickness="0"
-                                        Height="32"
-                                        FontSize="12"
-                                        Margin="0,0,0,6"/>
-                                
-                                <Button Content="Approve" 
-                                        Command="{Binding ApproveCommand}"
-                                        Background="#4CAF50"
-                                        Foreground="White"
-                                        BorderThickness="0"
-                                        Height="32"
-                                        FontSize="12"
-                                        Margin="0,0,0,6"/>
-                                
-                                <Button Content="Reject" 
-                                        Command="{Binding RejectCommand}"
-                                        Background="#F44336"
-                                        Foreground="White"
-                                        BorderThickness="0"
-                                        Height="32"
-                                        FontSize="12"
-                                        Margin="0,0,0,6"/>
-                                
-                                <Button Content="Mark as Implemented" 
-                                        Command="{Binding ImplementCommand}"
-                                        Background="#9C27B0"
-                                        Foreground="White"
-                                        BorderThickness="0"
-                                        Height="32"
-                                        FontSize="12"
-                                        Margin="0,0,0,6"/>
-
-                                <Separator Margin="0,8"/>
-                                
-                                <Button Content="View Details" 
-                                        Command="{Binding ViewDetailsCommand}"
-                                        Background="#607D8B"
-                                        Foreground="White"
-                                        BorderThickness="0"
-                                        Height="32"
-                                        FontSize="12"/>
-                            </StackPanel>
-                        </Grid>
-                    </StackPanel>
-                </ScrollViewer>
             </Border>
         </Grid>
     </Grid>

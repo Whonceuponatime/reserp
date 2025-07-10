@@ -4,6 +4,7 @@ using System.Runtime.CompilerServices;
 using System.Windows.Input;
 using MaritimeERP.Core.Entities;
 using MaritimeERP.Desktop.Commands;
+using MaritimeERP.Desktop.Views;
 using MaritimeERP.Services.Interfaces;
 using Microsoft.Extensions.Logging;
 using System.Windows;
@@ -15,6 +16,7 @@ namespace MaritimeERP.Desktop.ViewModels
         private readonly IChangeRequestService _changeRequestService;
         private readonly IShipService _shipService;
         private readonly IAuthenticationService _authenticationService;
+        private readonly ISoftwareService _softwareService;
         private readonly ILogger<ChangeRequestsViewModel> _logger;
 
         // Collections
@@ -85,6 +87,77 @@ namespace MaritimeERP.Desktop.ViewModels
         {
             get => _description;
             set => SetProperty(ref _description, value);
+        }
+
+        // Hardware Change Request properties
+        private string _installedCbs = string.Empty;
+        public string InstalledCbs
+        {
+            get => _installedCbs;
+            set => SetProperty(ref _installedCbs, value);
+        }
+
+        private string _installedComponent = string.Empty;
+        public string InstalledComponent
+        {
+            get => _installedComponent;
+            set => SetProperty(ref _installedComponent, value);
+        }
+
+        private string _beforeHwModel = string.Empty;
+        public string BeforeHwModel
+        {
+            get => _beforeHwModel;
+            set => SetProperty(ref _beforeHwModel, value);
+        }
+
+        private string _beforeHwName = string.Empty;
+        public string BeforeHwName
+        {
+            get => _beforeHwName;
+            set => SetProperty(ref _beforeHwName, value);
+        }
+
+        private string _beforeHwOs = string.Empty;
+        public string BeforeHwOs
+        {
+            get => _beforeHwOs;
+            set => SetProperty(ref _beforeHwOs, value);
+        }
+
+        private string _afterHwModel = string.Empty;
+        public string AfterHwModel
+        {
+            get => _afterHwModel;
+            set => SetProperty(ref _afterHwModel, value);
+        }
+
+        private string _afterHwName = string.Empty;
+        public string AfterHwName
+        {
+            get => _afterHwName;
+            set => SetProperty(ref _afterHwName, value);
+        }
+
+        private string _afterHwOs = string.Empty;
+        public string AfterHwOs
+        {
+            get => _afterHwOs;
+            set => SetProperty(ref _afterHwOs, value);
+        }
+
+        private string _workDescription = string.Empty;
+        public string WorkDescription
+        {
+            get => _workDescription;
+            set => SetProperty(ref _workDescription, value);
+        }
+
+        private string _securityReviewComment = string.Empty;
+        public string SecurityReviewComment
+        {
+            get => _securityReviewComment;
+            set => SetProperty(ref _securityReviewComment, value);
         }
 
         // Filter properties
@@ -177,22 +250,25 @@ namespace MaritimeERP.Desktop.ViewModels
         public ICommand ImplementCommand { get; }
         public ICommand ClearFiltersCommand { get; }
         public ICommand ViewDetailsCommand { get; }
+        public ICommand OpenHardwareChangeRequestCommand { get; }
 
         public ChangeRequestsViewModel(
             IChangeRequestService changeRequestService,
             IShipService shipService,
             IAuthenticationService authenticationService,
+            ISoftwareService softwareService,
             ILogger<ChangeRequestsViewModel> logger)
         {
             _changeRequestService = changeRequestService ?? throw new ArgumentNullException(nameof(changeRequestService));
             _shipService = shipService ?? throw new ArgumentNullException(nameof(shipService));
             _authenticationService = authenticationService ?? throw new ArgumentNullException(nameof(authenticationService));
+            _softwareService = softwareService ?? throw new ArgumentNullException(nameof(softwareService));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
             // Initialize commands
             LoadDataCommand = new RelayCommand(async () => await LoadDataAsync(), () => !IsLoading);
             AddChangeRequestCommand = new RelayCommand(AddChangeRequest, () => !IsLoading && !IsEditing);
-            EditChangeRequestCommand = new RelayCommand(EditChangeRequest, () => SelectedChangeRequest != null && !IsLoading && !IsEditing);
+            EditChangeRequestCommand = new RelayCommand<ChangeRequest>(EditChangeRequest, (cr) => cr != null && !IsLoading && !IsEditing);
             DeleteChangeRequestCommand = new RelayCommand(async () => await DeleteChangeRequestAsync(), () => SelectedChangeRequest != null && !IsLoading && !IsEditing);
             SaveChangeRequestCommand = new RelayCommand(async () => await SaveChangeRequestAsync(), () => CanSaveChangeRequest());
             CancelEditCommand = new RelayCommand(CancelEdit);
@@ -202,6 +278,7 @@ namespace MaritimeERP.Desktop.ViewModels
             ImplementCommand = new RelayCommand(async () => await ImplementAsync(), () => CanImplement());
             ClearFiltersCommand = new RelayCommand(ClearFilters);
             ViewDetailsCommand = new RelayCommand(ViewDetails, () => SelectedChangeRequest != null);
+            OpenHardwareChangeRequestCommand = new RelayCommand(OpenHardwareChangeRequest, () => SelectedChangeRequest != null && SelectedChangeRequest.RequestTypeId == 1); // Only for Hardware Change
 
             // Load initial data
             _ = LoadDataAsync();
@@ -286,6 +363,7 @@ namespace MaritimeERP.Desktop.ViewModels
                     ChangeTypes.Add(new ChangeType { Id = 1, Name = "Hardware Change", Description = "Hardware modification or replacement" });
                     ChangeTypes.Add(new ChangeType { Id = 2, Name = "Software Change", Description = "Software update or configuration change" });
                     ChangeTypes.Add(new ChangeType { Id = 3, Name = "System Plan", Description = "System planning and design change" });
+                    ChangeTypes.Add(new ChangeType { Id = 4, Name = "Security Review Statement", Description = "Security review statement" });
 
                     ChangeStatuses.Clear();
                     ChangeStatuses.Add(new ChangeStatus { Id = 1, Name = "Draft", Description = "Change request being prepared" });
@@ -325,18 +403,120 @@ namespace MaritimeERP.Desktop.ViewModels
 
         private void AddChangeRequest()
         {
-            ClearForm();
-            IsEditing = true;
-            StatusMessage = "Creating new change request";
-            RefreshCommands();
+            // Show type selection dialog
+            var typeDialog = new ChangeRequestTypeSelectionDialog();
+            var result = typeDialog.ShowDialog();
+            
+            if (result == true)
+            {
+                var selectedTypeId = typeDialog.SelectedTypeId;
+                
+                switch (selectedTypeId)
+                {
+                    case 1: // Hardware Change
+                        OpenHardwareChangeRequestForm();
+                        break;
+                    case 2: // Software Change
+                        OpenSoftwareChangeRequestForm();
+                        break;
+                    case 3: // System Plan
+                        OpenSystemPlanChangeRequestForm();
+                        break;
+                    case 4: // Security Review Statement
+                        OpenSecurityReviewStatementForm();
+                        break;
+                }
+            }
         }
 
-        private void EditChangeRequest()
+        private void OpenHardwareChangeRequestForm()
         {
-            if (SelectedChangeRequest != null)
+            var viewModel = new HardwareChangeRequestDialogViewModel(_authenticationService);
+            var dialog = new HardwareChangeRequestDialog(viewModel);
+            var result = dialog.ShowDialog();
+
+            if (result == true)
             {
-                IsEditing = true;
-                StatusMessage = $"Editing change request: {SelectedChangeRequest.RequestNo}";
+                // Create new change request with the form data
+                var changeRequest = new ChangeRequest
+                {
+                    RequestNo = viewModel.RequestNumber,
+                    RequestTypeId = 1, // Hardware Change
+                    StatusId = 1, // Draft
+                    RequestedById = _authenticationService.CurrentUser?.Id ?? 1,
+                    Purpose = viewModel.Reason,
+                    Description = $"Hardware Change: {viewModel.BeforeHwName} → {viewModel.AfterHwName}",
+                    RequestedAt = DateTime.UtcNow
+                };
+
+                // Save to database
+                _ = SaveNewChangeRequestAsync(changeRequest);
+            }
+        }
+
+        private void OpenSoftwareChangeRequestForm()
+        {
+            var viewModel = new SoftwareChangeRequestDialogViewModel(_softwareService, _authenticationService);
+            var dialog = new SoftwareChangeRequestDialog(viewModel);
+            var result = dialog.ShowDialog();
+
+            if (result == true)
+            {
+                // Create new change request with the form data
+                var changeRequest = new ChangeRequest
+                {
+                    RequestNo = viewModel.RequestNumber,
+                    RequestTypeId = 2, // Software Change
+                    StatusId = 1, // Draft
+                    RequestedById = _authenticationService.CurrentUser?.Id ?? 1,
+                    Purpose = viewModel.Reason,
+                    Description = $"Software Change: {viewModel.BeforeSwName} → {viewModel.AfterSwName}",
+                    RequestedAt = DateTime.UtcNow
+                };
+
+                // Save to database
+                _ = SaveNewChangeRequestAsync(changeRequest);
+            }
+        }
+
+        private void OpenSystemPlanChangeRequestForm()
+        {
+            // TODO: Create system plan change request form
+            MessageBox.Show("System Plan Change Request form will be implemented soon.", "Coming Soon", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+
+        private void OpenSecurityReviewStatementForm()
+        {
+            // TODO: Create security review statement form
+            MessageBox.Show("Security Review Statement form will be implemented soon.", "Coming Soon", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+
+        private async Task SaveNewChangeRequestAsync(ChangeRequest changeRequest)
+        {
+            try
+            {
+                IsLoading = true;
+                StatusMessage = "Saving change request...";
+
+                var created = await _changeRequestService.CreateChangeRequestAsync(changeRequest);
+                
+                await Application.Current.Dispatcher.InvokeAsync(() =>
+                {
+                    ChangeRequests.Add(created);
+                    TotalRequests++;
+                    MyRequests++;
+                    StatusMessage = "Change request created successfully";
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error saving new change request");
+                StatusMessage = "Error saving change request";
+                MessageBox.Show($"Error saving change request: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            finally
+            {
+                IsLoading = false;
                 RefreshCommands();
             }
         }
@@ -661,6 +841,46 @@ namespace MaritimeERP.Desktop.ViewModels
             }
         }
 
+        private void OpenHardwareChangeRequest()
+        {
+            if (SelectedChangeRequest == null || SelectedChangeRequest.RequestTypeId != 1) return; // Only for Hardware Change
+
+            var viewModel = new HardwareChangeRequestDialogViewModel(_authenticationService);
+            
+            // Pre-populate with existing data if available
+            viewModel.InstalledCbs = InstalledCbs;
+            viewModel.InstalledComponent = InstalledComponent;
+            viewModel.BeforeHwManufacturerModel = BeforeHwModel;
+            viewModel.BeforeHwName = BeforeHwName;
+            viewModel.BeforeHwOs = BeforeHwOs;
+            viewModel.AfterHwManufacturerModel = AfterHwModel;
+            viewModel.AfterHwName = AfterHwName;
+            viewModel.AfterHwOs = AfterHwOs;
+            viewModel.WorkDescription = WorkDescription;
+            viewModel.SecurityReviewComment = SecurityReviewComment;
+
+            var dialog = new HardwareChangeRequestDialog(viewModel);
+            var result = dialog.ShowDialog();
+
+            if (result == true)
+            {
+                // Save the data back to the change request
+                InstalledCbs = viewModel.InstalledCbs;
+                InstalledComponent = viewModel.InstalledComponent;
+                BeforeHwModel = viewModel.BeforeHwManufacturerModel;
+                BeforeHwName = viewModel.BeforeHwName;
+                BeforeHwOs = viewModel.BeforeHwOs;
+                AfterHwModel = viewModel.AfterHwManufacturerModel;
+                AfterHwName = viewModel.AfterHwName;
+                AfterHwOs = viewModel.AfterHwOs;
+                WorkDescription = viewModel.WorkDescription;
+                SecurityReviewComment = viewModel.SecurityReviewComment;
+                
+                // Auto-save the change request
+                _ = SaveChangeRequestAsync();
+            }
+        }
+
         private void ClearForm()
         {
             RequestNo = string.Empty;
@@ -669,6 +889,18 @@ namespace MaritimeERP.Desktop.ViewModels
             SelectedShip = null;
             SelectedChangeType = null;
             SelectedStatus = ChangeStatuses.FirstOrDefault(cs => cs.Id == 1); // Draft
+            
+            // Clear hardware change request properties
+            InstalledCbs = string.Empty;
+            InstalledComponent = string.Empty;
+            BeforeHwModel = string.Empty;
+            BeforeHwName = string.Empty;
+            BeforeHwOs = string.Empty;
+            AfterHwModel = string.Empty;
+            AfterHwName = string.Empty;
+            AfterHwOs = string.Empty;
+            WorkDescription = string.Empty;
+            SecurityReviewComment = string.Empty;
         }
 
         private bool CanSaveChangeRequest()
@@ -722,6 +954,7 @@ namespace MaritimeERP.Desktop.ViewModels
             ((RelayCommand)RejectCommand).RaiseCanExecuteChanged();
             ((RelayCommand)ImplementCommand).RaiseCanExecuteChanged();
             ((RelayCommand)ViewDetailsCommand).RaiseCanExecuteChanged();
+            ((RelayCommand)OpenHardwareChangeRequestCommand).RaiseCanExecuteChanged();
         }
 
         public event PropertyChangedEventHandler? PropertyChanged;
@@ -739,6 +972,95 @@ namespace MaritimeERP.Desktop.ViewModels
             field = value;
             OnPropertyChanged(propertyName);
             return true;
+        }
+
+        private void EditChangeRequest(ChangeRequest? changeRequest)
+        {
+            if (changeRequest == null) return;
+
+            SelectedChangeRequest = changeRequest;
+            
+            // Open the appropriate form based on the change request type
+            switch (changeRequest.RequestTypeId)
+            {
+                case 1: // Hardware Change
+                    EditHardwareChangeRequest(changeRequest);
+                    break;
+                case 2: // Software Change
+                    EditSoftwareChangeRequest(changeRequest);
+                    break;
+                case 3: // System Plan
+                    EditSystemPlanChangeRequest(changeRequest);
+                    break;
+                default:
+                    MessageBox.Show("Unknown change request type.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    break;
+            }
+        }
+
+        private void EditHardwareChangeRequest(ChangeRequest changeRequest)
+        {
+            var viewModel = new HardwareChangeRequestDialogViewModel(_authenticationService);
+            
+            // Pre-populate with existing data
+            viewModel.RequestNumber = changeRequest.RequestNo;
+            viewModel.Reason = changeRequest.Purpose;
+            // TODO: Load hardware-specific data from the change request
+            
+            var dialog = new HardwareChangeRequestDialog(viewModel);
+            var result = dialog.ShowDialog();
+
+            if (result == true)
+            {
+                // Update the change request with the form data
+                changeRequest.Purpose = viewModel.Reason;
+                changeRequest.Description = $"Hardware Change: {viewModel.BeforeHwName} → {viewModel.AfterHwName}";
+                
+                // Save to database
+                _ = UpdateChangeRequestAsync(changeRequest);
+            }
+        }
+
+        private void EditSoftwareChangeRequest(ChangeRequest changeRequest)
+        {
+            MessageBox.Show("Software Change Request editing will be implemented soon.", "Coming Soon", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+
+        private void EditSystemPlanChangeRequest(ChangeRequest changeRequest)
+        {
+            MessageBox.Show("System Plan Change Request editing will be implemented soon.", "Coming Soon", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+
+        private async Task UpdateChangeRequestAsync(ChangeRequest changeRequest)
+        {
+            try
+            {
+                IsLoading = true;
+                StatusMessage = "Updating change request...";
+
+                var updated = await _changeRequestService.UpdateChangeRequestAsync(changeRequest);
+                
+                await Application.Current.Dispatcher.InvokeAsync(() =>
+                {
+                    var index = ChangeRequests.ToList().FindIndex(cr => cr.Id == changeRequest.Id);
+                    if (index >= 0)
+                    {
+                        ChangeRequests[index] = updated;
+                    }
+                    StatusMessage = "Change request updated successfully";
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating change request");
+                StatusMessage = "Error updating change request";
+                MessageBox.Show($"Error updating change request: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            finally
+            {
+                IsLoading = false;
+                RefreshCommands();
+            }
         }
     }
 } 
