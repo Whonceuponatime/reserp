@@ -112,6 +112,7 @@ namespace MaritimeERP.Desktop
             services.AddScoped<ISystemService, SystemService>();
             services.AddScoped<IComponentService, ComponentService>();
             services.AddScoped<ISoftwareService, SoftwareService>();
+            services.AddScoped<IChangeRequestService, ChangeRequestService>();
             services.AddSingleton<INavigationService, NavigationService>();
             services.AddSingleton<ViewLocator>();
             // Add other services here as they are implemented
@@ -124,6 +125,7 @@ namespace MaritimeERP.Desktop
             services.AddTransient<SystemsViewModel>();
             services.AddTransient<ComponentsViewModel>();
             services.AddTransient<SoftwareViewModel>();
+            services.AddTransient<ChangeRequestsViewModel>();
 
             // Views
             services.AddTransient<LoginWindow>();

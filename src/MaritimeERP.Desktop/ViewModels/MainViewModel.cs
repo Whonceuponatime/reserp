@@ -327,7 +327,12 @@ namespace MaritimeERP.Desktop.ViewModels
 
         private object CreateChangeRequestsViewModel()
         {
-            return new PlaceholderViewModel("Change Requests", "Manage change requests and approvals", "📝");
+            if (!_viewModelCache.TryGetValue("ChangeRequests", out var viewModel))
+            {
+                viewModel = _serviceProvider.GetRequiredService<ChangeRequestsViewModel>();
+                _viewModelCache["ChangeRequests"] = viewModel;
+            }
+            return viewModel;
         }
 
         private object CreateDocumentsViewModel()
