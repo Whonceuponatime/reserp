@@ -300,7 +300,7 @@ namespace MaritimeERP.Services
                 // Add approval record
                 var approval = new Approval
                 {
-                    ChangeId = changeRequestId,
+                    ChangeRequestId = changeRequestId,
                     Stage = 1,
                     Action = "Submitted",
                     ActionById = userId,
@@ -338,7 +338,7 @@ namespace MaritimeERP.Services
                 // Add approval record
                 var approval = new Approval
                 {
-                    ChangeId = changeRequestId,
+                    ChangeRequestId = changeRequestId,
                     Stage = (short)(changeRequest.Approvals.Count + 1),
                     Action = "Approved",
                     ActionById = userId,
@@ -376,7 +376,7 @@ namespace MaritimeERP.Services
                 // Add approval record
                 var approval = new Approval
                 {
-                    ChangeId = changeRequestId,
+                    ChangeRequestId = changeRequestId,
                     Stage = (short)(changeRequest.Approvals.Count + 1),
                     Action = "Rejected",
                     ActionById = userId,
@@ -414,7 +414,7 @@ namespace MaritimeERP.Services
                 // Add approval record
                 var approval = new Approval
                 {
-                    ChangeId = changeRequestId,
+                    ChangeRequestId = changeRequestId,
                     Stage = (short)(changeRequest.Approvals.Count + 1),
                     Action = "Implemented",
                     ActionById = userId,

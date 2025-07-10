@@ -3,30 +3,43 @@ using System.Runtime.CompilerServices;
 using System.Windows.Input;
 using MaritimeERP.Desktop.Commands;
 using MaritimeERP.Services.Interfaces;
+using MaritimeERP.Core.Entities;
+using System.Windows;
 
 namespace MaritimeERP.Desktop.ViewModels
 {
     public class HardwareChangeRequestDialogViewModel : INotifyPropertyChanged
     {
         private readonly IAuthenticationService _authenticationService;
+        private readonly IHardwareChangeRequestService _hardwareChangeRequestService;
+        private readonly IChangeRequestService _changeRequestService;
+        private HardwareChangeRequest? _hardwareChangeRequest;
+        private bool _isEditMode;
 
-        public HardwareChangeRequestDialogViewModel(IAuthenticationService authenticationService)
+        public HardwareChangeRequestDialogViewModel(
+            IAuthenticationService authenticationService, 
+            IHardwareChangeRequestService hardwareChangeRequestService,
+            IChangeRequestService changeRequestService)
         {
             _authenticationService = authenticationService;
+            _hardwareChangeRequestService = hardwareChangeRequestService;
+            _changeRequestService = changeRequestService;
             
             // Initialize with current user data
             var currentUser = _authenticationService.CurrentUser;
             if (currentUser != null)
             {
                 RequesterName = currentUser.FullName;
+                Department = "Engineering"; // Default since User doesn't have Department
+                PositionTitle = "Engineer"; // Default since User doesn't have Position
             }
             
             CreatedDate = DateTime.Now;
-            RequestNumber = GenerateRequestNumber();
+            RequestNumber = ""; // Will be generated when saving
             
             // Initialize commands
-            SaveCommand = new RelayCommand(Save, CanSave);
-            SubmitCommand = new RelayCommand(Submit, CanSubmit);
+            SaveCommand = new RelayCommand(async () => await SaveAsync(), CanSave);
+            SubmitCommand = new RelayCommand(async () => await SubmitAsync(), CanSubmit);
             CancelCommand = new RelayCommand(Cancel);
         }
 
@@ -158,6 +171,12 @@ namespace MaritimeERP.Desktop.ViewModels
             set => SetProperty(ref _isApproved, value);
         }
 
+        public bool IsEditMode
+        {
+            get => _isEditMode;
+            set => SetProperty(ref _isEditMode, value);
+        }
+
         #endregion
 
         #region Commands
@@ -177,24 +196,138 @@ namespace MaritimeERP.Desktop.ViewModels
 
         #region Methods
 
+        /// <summary>
+        /// Sets an existing hardware change request for editing
+        /// </summary>
+        /// <param name="hardwareChangeRequest">The existing hardware change request to edit</param>
+        public void SetExistingHardwareChangeRequest(HardwareChangeRequest hardwareChangeRequest)
+        {
+            _hardwareChangeRequest = hardwareChangeRequest;
+            _isEditMode = true;
+            IsEditMode = true;
+        }
+
         private string GenerateRequestNumber()
         {
             var today = DateTime.Now;
             return $"HW-{today:yyyyMM}-{today:ddHHmm}";
         }
 
-        private void Save()
+        private async Task SaveAsync()
         {
-            // TODO: Implement save logic
-            // For now, just close the dialog with success
-            RequestSave?.Invoke(this, EventArgs.Empty);
+            try
+            {
+                if (_hardwareChangeRequest == null)
+                {
+                    _hardwareChangeRequest = new HardwareChangeRequest
+                    {
+                        RequesterUserId = _authenticationService.CurrentUser?.Id ?? 0,
+                        Department = Department,
+                        PositionTitle = PositionTitle,
+                        RequesterName = RequesterName,
+                        InstalledCbs = InstalledCbs,
+                        InstalledComponent = InstalledComponent,
+                        Reason = Reason,
+                        BeforeHwManufacturerModel = BeforeHwManufacturerModel,
+                        BeforeHwName = BeforeHwName,
+                        BeforeHwOs = BeforeHwOs,
+                        AfterHwManufacturerModel = AfterHwManufacturerModel,
+                        AfterHwName = AfterHwName,
+                        AfterHwOs = AfterHwOs,
+                        WorkDescription = WorkDescription,
+                        SecurityReviewComment = SecurityReviewComment,
+                        Status = "Draft",
+                        CreatedDate = DateTime.Now
+                    };
+                    
+                    _hardwareChangeRequest = await _hardwareChangeRequestService.CreateAsync(_hardwareChangeRequest);
+                    RequestNumber = _hardwareChangeRequest.RequestNumber;
+                    IsEditMode = true;
+                    
+                    // Also create a ChangeRequest record for the main UI
+                    var changeRequest = new ChangeRequest
+                    {
+                        RequestNo = _hardwareChangeRequest.RequestNumber,
+                        RequestTypeId = 1, // Hardware Change
+                        StatusId = 1, // Draft
+                        RequestedById = _authenticationService.CurrentUser?.Id ?? 1,
+                        Purpose = Reason,
+                        Description = $"Hardware Change: {BeforeHwName} → {AfterHwName}",
+                        RequestedAt = DateTime.UtcNow,
+                        CreatedAt = DateTime.UtcNow
+                    };
+                    
+                    await _changeRequestService.CreateChangeRequestAsync(changeRequest);
+                    
+                    MessageBox.Show("Hardware change request saved successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+                else
+                {
+                    _hardwareChangeRequest.Department = Department;
+                    _hardwareChangeRequest.PositionTitle = PositionTitle;
+                    _hardwareChangeRequest.RequesterName = RequesterName;
+                    _hardwareChangeRequest.InstalledCbs = InstalledCbs;
+                    _hardwareChangeRequest.InstalledComponent = InstalledComponent;
+                    _hardwareChangeRequest.Reason = Reason;
+                    _hardwareChangeRequest.BeforeHwManufacturerModel = BeforeHwManufacturerModel;
+                    _hardwareChangeRequest.BeforeHwName = BeforeHwName;
+                    _hardwareChangeRequest.BeforeHwOs = BeforeHwOs;
+                    _hardwareChangeRequest.AfterHwManufacturerModel = AfterHwManufacturerModel;
+                    _hardwareChangeRequest.AfterHwName = AfterHwName;
+                    _hardwareChangeRequest.AfterHwOs = AfterHwOs;
+                    _hardwareChangeRequest.WorkDescription = WorkDescription;
+                    _hardwareChangeRequest.SecurityReviewComment = SecurityReviewComment;
+                    
+                    _hardwareChangeRequest = await _hardwareChangeRequestService.UpdateAsync(_hardwareChangeRequest);
+                    
+                    // Also update the corresponding ChangeRequest record
+                    var changeRequests = await _changeRequestService.GetAllChangeRequestsAsync();
+                    var correspondingChangeRequest = changeRequests.FirstOrDefault(cr => cr.RequestNo == _hardwareChangeRequest.RequestNumber);
+                    if (correspondingChangeRequest != null)
+                    {
+                        correspondingChangeRequest.Purpose = Reason;
+                        correspondingChangeRequest.Description = $"Hardware Change: {BeforeHwName} → {AfterHwName}";
+                        await _changeRequestService.UpdateChangeRequestAsync(correspondingChangeRequest);
+                    }
+                    
+                    MessageBox.Show("Hardware change request updated successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+                
+                RequestSave?.Invoke(this, EventArgs.Empty);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error saving hardware change request: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
-        private void Submit()
+        private async Task SubmitAsync()
         {
-            // TODO: Implement submit logic
-            IsUnderReview = true;
-            RequestSave?.Invoke(this, EventArgs.Empty);
+            try
+            {
+                await SaveAsync(); // Save first
+                
+                if (_hardwareChangeRequest != null)
+                {
+                    await _hardwareChangeRequestService.SubmitForReviewAsync(_hardwareChangeRequest.Id, _authenticationService.CurrentUser?.Id ?? 0);
+                    
+                    // Also update the corresponding ChangeRequest status
+                    var changeRequests = await _changeRequestService.GetAllChangeRequestsAsync();
+                    var correspondingChangeRequest = changeRequests.FirstOrDefault(cr => cr.RequestNo == _hardwareChangeRequest.RequestNumber);
+                    if (correspondingChangeRequest != null)
+                    {
+                        await _changeRequestService.SubmitForApprovalAsync(correspondingChangeRequest.Id, _authenticationService.CurrentUser?.Id ?? 0);
+                    }
+                    
+                    IsUnderReview = true;
+                    MessageBox.Show("Hardware change request submitted for review!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                    RequestSave?.Invoke(this, EventArgs.Empty);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error submitting hardware change request: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
         private void Cancel()

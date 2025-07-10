@@ -113,6 +113,8 @@ namespace MaritimeERP.Desktop
             services.AddScoped<IComponentService, ComponentService>();
             services.AddScoped<ISoftwareService, SoftwareService>();
             services.AddScoped<IChangeRequestService, ChangeRequestService>();
+            services.AddScoped<ISystemChangePlanService, SystemChangePlanService>();
+            services.AddScoped<IHardwareChangeRequestService, HardwareChangeRequestService>();
             services.AddSingleton<INavigationService, NavigationService>();
             services.AddSingleton<ViewLocator>();
             // Add other services here as they are implemented
@@ -128,6 +130,7 @@ namespace MaritimeERP.Desktop
             services.AddTransient<ChangeRequestsViewModel>();
             services.AddTransient<HardwareChangeRequestDialogViewModel>();
             services.AddTransient<SoftwareChangeRequestDialogViewModel>();
+            services.AddTransient<SystemChangePlanDialogViewModel>();
 
             // Views
             services.AddTransient<LoginWindow>();
@@ -142,7 +145,11 @@ namespace MaritimeERP.Desktop
             {
                 Task.Run(async () =>
                 {
-                await _host.StartAsync();
+                    await _host.StartAsync();
+                    
+                    // Initialize database
+                    await InitializeDatabaseAsync();
+                    
                     await Task.Delay(100); // Add a small delay to ensure proper initialization
                 }).Wait();
 
@@ -152,7 +159,7 @@ namespace MaritimeERP.Desktop
                 loginViewModel.LoginSuccess += (s, _) => 
                 {
                     var mainWindow = _host.Services.GetRequiredService<MainWindow>();
-                mainWindow.Show();
+                    mainWindow.Show();
                     loginWindow.Close();
                 };
                 loginWindow.ShowDialog();
@@ -164,6 +171,92 @@ namespace MaritimeERP.Desktop
                 _logger.LogError(ex, "Error during application startup");
                 MessageBox.Show("Error during application startup", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 Current.Shutdown();
+            }
+        }
+
+        private async Task InitializeDatabaseAsync()
+        {
+            try
+            {
+                Console.WriteLine("Initializing database...");
+                
+                using var scope = _host.Services.CreateScope();
+                var context = scope.ServiceProvider.GetRequiredService<MaritimeERPContext>();
+                
+                // Ensure database is created
+                await context.Database.EnsureCreatedAsync();
+                
+                // Check if HardwareChangeRequests table exists, if not create it
+                var connection = context.Database.GetDbConnection();
+                await connection.OpenAsync();
+                
+                var command = connection.CreateCommand();
+                command.CommandText = "SELECT name FROM sqlite_master WHERE type='table' AND name='HardwareChangeRequests'";
+                var result = await command.ExecuteScalarAsync();
+                
+                if (result == null)
+                {
+                    Console.WriteLine("Creating HardwareChangeRequests table...");
+                    
+                    // Create the table manually
+                    command.CommandText = @"
+                        CREATE TABLE HardwareChangeRequests (
+                            Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                            RequestNumber TEXT NOT NULL UNIQUE,
+                            CreatedDate DATETIME NOT NULL,
+                            RequesterUserId INTEGER NOT NULL,
+                            Department TEXT,
+                            PositionTitle TEXT,
+                            RequesterName TEXT,
+                            InstalledCbs TEXT,
+                            InstalledComponent TEXT,
+                            Reason TEXT,
+                            BeforeHwManufacturerModel TEXT,
+                            BeforeHwName TEXT,
+                            BeforeHwOs TEXT,
+                            AfterHwManufacturerModel TEXT,
+                            AfterHwName TEXT,
+                            AfterHwOs TEXT,
+                            WorkDescription TEXT,
+                            SecurityReviewComment TEXT,
+                            PreparedByUserId INTEGER,
+                            ReviewedByUserId INTEGER,
+                            ApprovedByUserId INTEGER,
+                            PreparedAt DATETIME,
+                            ReviewedAt DATETIME,
+                            ApprovedAt DATETIME,
+                            Status TEXT NOT NULL DEFAULT 'Draft',
+                            FOREIGN KEY (RequesterUserId) REFERENCES Users(Id),
+                            FOREIGN KEY (PreparedByUserId) REFERENCES Users(Id),
+                            FOREIGN KEY (ReviewedByUserId) REFERENCES Users(Id),
+                            FOREIGN KEY (ApprovedByUserId) REFERENCES Users(Id)
+                        );";
+                    await command.ExecuteNonQueryAsync();
+                    
+                    // Create indexes
+                    command.CommandText = "CREATE INDEX IX_HardwareChangeRequests_RequestNumber ON HardwareChangeRequests(RequestNumber);";
+                    await command.ExecuteNonQueryAsync();
+                    
+                    command.CommandText = "CREATE INDEX IX_HardwareChangeRequests_RequesterUserId ON HardwareChangeRequests(RequesterUserId);";
+                    await command.ExecuteNonQueryAsync();
+                    
+                    command.CommandText = "CREATE INDEX IX_HardwareChangeRequests_Status ON HardwareChangeRequests(Status);";
+                    await command.ExecuteNonQueryAsync();
+                    
+                    Console.WriteLine("HardwareChangeRequests table created successfully");
+                }
+                else
+                {
+                    Console.WriteLine("HardwareChangeRequests table already exists");
+                }
+                
+                await connection.CloseAsync();
+                Console.WriteLine("Database initialization completed");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error initializing database: {ex.Message}");
+                _logger.LogError(ex, "Error initializing database");
             }
         }
 

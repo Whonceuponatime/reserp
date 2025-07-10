@@ -7,6 +7,8 @@ namespace MaritimeERP.Core.Entities
         public int Id { get; set; }
 
         public int ChangeId { get; set; }
+        
+        public int ChangeRequestId { get; set; }
         public ChangeRequest ChangeRequest { get; set; } = null!;
 
         public short Stage { get; set; }

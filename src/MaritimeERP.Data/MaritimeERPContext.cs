@@ -30,6 +30,9 @@ namespace MaritimeERP.Data
         
         // Hardware Change Request form
         public DbSet<HardwareChangeRequest> HardwareChangeRequests { get; set; }
+        
+        // System Change Plan form
+        public DbSet<SystemChangePlan> SystemChangePlans { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -208,6 +211,19 @@ namespace MaritimeERP.Data
                 entity.HasOne(d => d.ApprovedByUser)
                       .WithMany()
                       .HasForeignKey(d => d.ApprovedByUserId)
+                      .OnDelete(DeleteBehavior.SetNull);
+            });
+
+            // Configure SystemChangePlan relationships
+            modelBuilder.Entity<SystemChangePlan>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.RequestNumber).HasMaxLength(50).IsRequired();
+                entity.HasIndex(e => e.RequestNumber).IsUnique();
+                
+                entity.HasOne(d => d.User)
+                      .WithMany()
+                      .HasForeignKey(d => d.UserId)
                       .OnDelete(DeleteBehavior.SetNull);
             });
 

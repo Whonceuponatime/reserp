@@ -5,7 +5,8 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         mc:Ignorable="d" 
         Title="System Hardware Change Request Form" 
-        Height="800" Width="900"
+        Height="900" Width="1000"
+        MinHeight="800" MinWidth="900"
         WindowStartupLocation="CenterScreen"
         ResizeMode="CanResize"
         Background="White">
@@ -48,25 +49,12 @@
             </Grid>
         </Border>
         
-        <!-- Form Content -->
-        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="0">
-            <Grid>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                </Grid.RowDefinitions>
+        <!-- Form Content with ScrollViewer -->
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" Padding="10">
+            <StackPanel Orientation="Vertical" Margin="10">
                 
                 <!-- Basic Information -->
-                <Border Grid.Row="0" BorderBrush="#BDC3C7" BorderThickness="0,0,0,1">
+                <Border BorderBrush="#BDC3C7" BorderThickness="1" Margin="0,0,0,10">
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="150"/>
@@ -89,213 +77,214 @@
                     </Grid>
                 </Border>
                 
-                <!-- Requester Information Header -->
-                <Border Grid.Row="1" BorderBrush="#BDC3C7" BorderThickness="0,0,0,1">
-                    <TextBlock Text="Requester" 
-                              Background="#34495E" 
-                              Foreground="White"
-                              Padding="15" 
-                              FontWeight="Bold" 
-                              FontSize="14"/>
-                </Border>
-                
-                <!-- Requester Information Details -->
-                <Border Grid.Row="2" BorderBrush="#BDC3C7" BorderThickness="0,0,0,1">
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="150"/>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="150"/>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="150"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
+                <!-- Requester Information -->
+                <Border BorderBrush="#BDC3C7" BorderThickness="1" Margin="0,0,0,10">
+                    <StackPanel>
+                        <TextBlock Text="Requester Information" 
+                                  Background="#34495E" 
+                                  Foreground="White"
+                                  Padding="15" 
+                                  FontWeight="Bold" 
+                                  FontSize="14"/>
                         
-                        <TextBlock Grid.Column="0" Text="Department" 
-                                  Background="#ECF0F1" Padding="15" 
-                                  VerticalAlignment="Center" FontWeight="Bold" FontSize="13"/>
-                        <TextBox Grid.Column="1" Text="{Binding Department}" 
-                                 Padding="15" BorderThickness="0" FontSize="13"/>
-                        
-                        <TextBlock Grid.Column="2" Text="Position" 
-                                  Background="#ECF0F1" Padding="15" 
-                                  VerticalAlignment="Center" FontWeight="Bold" FontSize="13"/>
-                        <TextBox Grid.Column="3" Text="{Binding PositionTitle}" 
-                                 Padding="15" BorderThickness="0" FontSize="13"/>
-                        
-                        <TextBlock Grid.Column="4" Text="Full Name" 
-                                  Background="#ECF0F1" Padding="15" 
-                                  VerticalAlignment="Center" FontWeight="Bold" FontSize="13"/>
-                        <TextBox Grid.Column="5" Text="{Binding RequesterName}" 
-                                 Padding="15" BorderThickness="0" FontSize="13"/>
-                    </Grid>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="150"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="150"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="150"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            
+                            <TextBlock Grid.Column="0" Text="Department" 
+                                      Background="#ECF0F1" Padding="15" 
+                                      VerticalAlignment="Center" FontWeight="Bold" FontSize="13"/>
+                            <TextBox Grid.Column="1" Text="{Binding Department}" 
+                                     Padding="15" BorderThickness="0" FontSize="13"/>
+                            
+                            <TextBlock Grid.Column="2" Text="Position" 
+                                      Background="#ECF0F1" Padding="15" 
+                                      VerticalAlignment="Center" FontWeight="Bold" FontSize="13"/>
+                            <TextBox Grid.Column="3" Text="{Binding PositionTitle}" 
+                                     Padding="15" BorderThickness="0" FontSize="13"/>
+                            
+                            <TextBlock Grid.Column="4" Text="Full Name" 
+                                      Background="#ECF0F1" Padding="15" 
+                                      VerticalAlignment="Center" FontWeight="Bold" FontSize="13"/>
+                            <TextBox Grid.Column="5" Text="{Binding RequesterName}" 
+                                     Padding="15" BorderThickness="0" FontSize="13"/>
+                        </Grid>
+                    </StackPanel>
                 </Border>
                 
                 <!-- Installation Details -->
-                <Border Grid.Row="3" BorderBrush="#BDC3C7" BorderThickness="0,0,0,1">
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="150"/>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="180"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
+                <Border BorderBrush="#BDC3C7" BorderThickness="1" Margin="0,0,0,10">
+                    <StackPanel>
+                        <TextBlock Text="Installation Details" 
+                                  Background="#34495E" 
+                                  Foreground="White"
+                                  Padding="15" 
+                                  FontWeight="Bold" 
+                                  FontSize="14"/>
                         
-                        <TextBlock Grid.Column="0" Text="Installed CBS" 
-                                  Background="#ECF0F1" Padding="15" 
-                                  VerticalAlignment="Center" FontWeight="Bold" FontSize="13"/>
-                        <TextBox Grid.Column="1" Text="{Binding InstalledCbs}" 
-                                 Padding="15" BorderThickness="0" FontSize="13"/>
-                        
-                        <TextBlock Grid.Column="2" Text="Installed Component" 
-                                  Background="#ECF0F1" Padding="15" 
-                                  VerticalAlignment="Center" FontWeight="Bold" FontSize="13"/>
-                        <TextBox Grid.Column="3" Text="{Binding InstalledComponent}" 
-                                 Padding="15" BorderThickness="0" FontSize="13"/>
-                    </Grid>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="150"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="180"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            
+                            <TextBlock Grid.Column="0" Text="Installed CBS" 
+                                      Background="#ECF0F1" Padding="15" 
+                                      VerticalAlignment="Center" FontWeight="Bold" FontSize="13"/>
+                            <TextBox Grid.Column="1" Text="{Binding InstalledCbs}" 
+                                     Padding="15" BorderThickness="0" FontSize="13"/>
+                            
+                            <TextBlock Grid.Column="2" Text="Installed Component" 
+                                      Background="#ECF0F1" Padding="15" 
+                                      VerticalAlignment="Center" FontWeight="Bold" FontSize="13"/>
+                            <TextBox Grid.Column="3" Text="{Binding InstalledComponent}" 
+                                     Padding="15" BorderThickness="0" FontSize="13"/>
+                        </Grid>
+                    </StackPanel>
                 </Border>
                 
                 <!-- Reason -->
-                <Border Grid.Row="4" BorderBrush="#BDC3C7" BorderThickness="0,0,0,1">
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="150"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
+                <Border BorderBrush="#BDC3C7" BorderThickness="1" Margin="0,0,0,10">
+                    <StackPanel>
+                        <TextBlock Text="Request Reason" 
+                                  Background="#34495E" 
+                                  Foreground="White"
+                                  Padding="15" 
+                                  FontWeight="Bold" 
+                                  FontSize="14"/>
                         
-                        <TextBlock Grid.Column="0" Text="Request Reason" 
-                                  Background="#ECF0F1" Padding="15" 
-                                  VerticalAlignment="Center" FontWeight="Bold" FontSize="13"
-                                  MinHeight="100"/>
-                        <TextBox Grid.Column="1" Text="{Binding Reason}" 
+                        <TextBox Text="{Binding Reason}" 
                                  Padding="15" BorderThickness="0" 
                                  TextWrapping="Wrap" AcceptsReturn="True" 
-                                 MinHeight="100" FontSize="13"/>
-                    </Grid>
+                                 MinHeight="80" FontSize="13"/>
+                    </StackPanel>
                 </Border>
                 
-                <!-- Hardware Before Change Header -->
-                <Border Grid.Row="5" BorderBrush="#BDC3C7" BorderThickness="0,0,0,1">
-                    <TextBlock Text="Current Hardware (Before Change)" 
-                              Background="#34495E" 
-                              Foreground="White"
-                              Padding="15" 
-                              FontWeight="Bold" 
-                              FontSize="14"/>
+                <!-- Hardware Before Change -->
+                <Border BorderBrush="#BDC3C7" BorderThickness="1" Margin="0,0,0,10">
+                    <StackPanel>
+                        <TextBlock Text="Current Hardware (Before Change)" 
+                                  Background="#34495E" 
+                                  Foreground="White"
+                                  Padding="15" 
+                                  FontWeight="Bold" 
+                                  FontSize="14"/>
+                        
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="200"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="200"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="200"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            
+                            <TextBlock Grid.Column="0" Text="Manufacturer/Model" 
+                                      Background="#ECF0F1" Padding="15" 
+                                      VerticalAlignment="Center" FontWeight="Bold" FontSize="13"/>
+                            <TextBox Grid.Column="1" Text="{Binding BeforeHwManufacturerModel}" 
+                                     Padding="15" BorderThickness="0" FontSize="13"/>
+                            
+                            <TextBlock Grid.Column="2" Text="Hardware Name" 
+                                      Background="#ECF0F1" Padding="15" 
+                                      VerticalAlignment="Center" FontWeight="Bold" FontSize="13"/>
+                            <TextBox Grid.Column="3" Text="{Binding BeforeHwName}" 
+                                     Padding="15" BorderThickness="0" FontSize="13"/>
+                            
+                            <TextBlock Grid.Column="4" Text="OS Name / Version" 
+                                      Background="#ECF0F1" Padding="15" 
+                                      VerticalAlignment="Center" FontWeight="Bold" FontSize="13"/>
+                            <TextBox Grid.Column="5" Text="{Binding BeforeHwOs}" 
+                                     Padding="15" BorderThickness="0" FontSize="13"/>
+                        </Grid>
+                    </StackPanel>
                 </Border>
                 
-                <!-- Hardware Before Change Details -->
-                <Border Grid.Row="6" BorderBrush="#BDC3C7" BorderThickness="0,0,0,1">
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="200"/>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="200"/>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="200"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
+                <!-- Hardware After Change -->
+                <Border BorderBrush="#BDC3C7" BorderThickness="1" Margin="0,0,0,10">
+                    <StackPanel>
+                        <TextBlock Text="New Hardware (After Change)" 
+                                  Background="#34495E" 
+                                  Foreground="White"
+                                  Padding="15" 
+                                  FontWeight="Bold" 
+                                  FontSize="14"/>
                         
-                        <TextBlock Grid.Column="0" Text="Manufacturer/Model" 
-                                  Background="#ECF0F1" Padding="15" 
-                                  VerticalAlignment="Center" FontWeight="Bold" FontSize="13"/>
-                        <TextBox Grid.Column="1" Text="{Binding BeforeHwManufacturerModel}" 
-                                 Padding="15" BorderThickness="0" FontSize="13"/>
-                        
-                        <TextBlock Grid.Column="2" Text="Hardware Name" 
-                                  Background="#ECF0F1" Padding="15" 
-                                  VerticalAlignment="Center" FontWeight="Bold" FontSize="13"/>
-                        <TextBox Grid.Column="3" Text="{Binding BeforeHwName}" 
-                                 Padding="15" BorderThickness="0" FontSize="13"/>
-                        
-                        <TextBlock Grid.Column="4" Text="OS Name / Version" 
-                                  Background="#ECF0F1" Padding="15" 
-                                  VerticalAlignment="Center" FontWeight="Bold" FontSize="13"/>
-                        <TextBox Grid.Column="5" Text="{Binding BeforeHwOs}" 
-                                 Padding="15" BorderThickness="0" FontSize="13"/>
-                    </Grid>
-                </Border>
-                
-                <!-- Hardware After Change Header -->
-                <Border Grid.Row="7" BorderBrush="#BDC3C7" BorderThickness="0,0,0,1">
-                    <TextBlock Text="New Hardware (After Change)" 
-                              Background="#34495E" 
-                              Foreground="White"
-                              Padding="15" 
-                              FontWeight="Bold" 
-                              FontSize="14"/>
-                </Border>
-                
-                <!-- Hardware After Change Details -->
-                <Border Grid.Row="8" BorderBrush="#BDC3C7" BorderThickness="0,0,0,1">
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="200"/>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="200"/>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="200"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
-                        
-                        <TextBlock Grid.Column="0" Text="Manufacturer/Model" 
-                                  Background="#ECF0F1" Padding="15" 
-                                  VerticalAlignment="Center" FontWeight="Bold" FontSize="13"/>
-                        <TextBox Grid.Column="1" Text="{Binding AfterHwManufacturerModel}" 
-                                 Padding="15" BorderThickness="0" FontSize="13"/>
-                        
-                        <TextBlock Grid.Column="2" Text="Hardware Name" 
-                                  Background="#ECF0F1" Padding="15" 
-                                  VerticalAlignment="Center" FontWeight="Bold" FontSize="13"/>
-                        <TextBox Grid.Column="3" Text="{Binding AfterHwName}" 
-                                 Padding="15" BorderThickness="0" FontSize="13"/>
-                        
-                        <TextBlock Grid.Column="4" Text="OS Name / Version" 
-                                  Background="#ECF0F1" Padding="15" 
-                                  VerticalAlignment="Center" FontWeight="Bold" FontSize="13"/>
-                        <TextBox Grid.Column="5" Text="{Binding AfterHwOs}" 
-                                 Padding="15" BorderThickness="0" FontSize="13"/>
-                    </Grid>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="200"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="200"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="200"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            
+                            <TextBlock Grid.Column="0" Text="Manufacturer/Model" 
+                                      Background="#ECF0F1" Padding="15" 
+                                      VerticalAlignment="Center" FontWeight="Bold" FontSize="13"/>
+                            <TextBox Grid.Column="1" Text="{Binding AfterHwManufacturerModel}" 
+                                     Padding="15" BorderThickness="0" FontSize="13"/>
+                            
+                            <TextBlock Grid.Column="2" Text="Hardware Name" 
+                                      Background="#ECF0F1" Padding="15" 
+                                      VerticalAlignment="Center" FontWeight="Bold" FontSize="13"/>
+                            <TextBox Grid.Column="3" Text="{Binding AfterHwName}" 
+                                     Padding="15" BorderThickness="0" FontSize="13"/>
+                            
+                            <TextBlock Grid.Column="4" Text="OS Name / Version" 
+                                      Background="#ECF0F1" Padding="15" 
+                                      VerticalAlignment="Center" FontWeight="Bold" FontSize="13"/>
+                            <TextBox Grid.Column="5" Text="{Binding AfterHwOs}" 
+                                     Padding="15" BorderThickness="0" FontSize="13"/>
+                        </Grid>
+                    </StackPanel>
                 </Border>
                 
                 <!-- Work Description -->
-                <Border Grid.Row="9" BorderBrush="#BDC3C7" BorderThickness="0,0,0,1">
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="150"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
+                <Border BorderBrush="#BDC3C7" BorderThickness="1" Margin="0,0,0,10">
+                    <StackPanel>
+                        <TextBlock Text="Work Description" 
+                                  Background="#34495E" 
+                                  Foreground="White"
+                                  Padding="15" 
+                                  FontWeight="Bold" 
+                                  FontSize="14"/>
                         
-                        <TextBlock Grid.Column="0" Text="Work Description" 
-                                  Background="#ECF0F1" Padding="15" 
-                                  VerticalAlignment="Center" FontWeight="Bold" FontSize="13"
-                                  MinHeight="100"/>
-                        <TextBox Grid.Column="1" Text="{Binding WorkDescription}" 
+                        <TextBox Text="{Binding WorkDescription}" 
                                  Padding="15" BorderThickness="0" 
                                  TextWrapping="Wrap" AcceptsReturn="True" 
-                                 MinHeight="100" FontSize="13"/>
-                    </Grid>
+                                 MinHeight="80" FontSize="13"/>
+                    </StackPanel>
                 </Border>
                 
                 <!-- Security Review -->
-                <Border Grid.Row="10" BorderBrush="#BDC3C7" BorderThickness="0,0,0,1">
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="180"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
+                <Border BorderBrush="#BDC3C7" BorderThickness="1" Margin="0,0,0,10">
+                    <StackPanel>
+                        <TextBlock Text="Security Review Comments" 
+                                  Background="#34495E" 
+                                  Foreground="White"
+                                  Padding="15" 
+                                  FontWeight="Bold" 
+                                  FontSize="14"/>
                         
-                        <TextBlock Grid.Column="0" Text="Security Review Comments" 
-                                  Background="#ECF0F1" Padding="15" 
-                                  VerticalAlignment="Center" FontWeight="Bold" FontSize="13"
-                                  MinHeight="100"/>
-                        <TextBox Grid.Column="1" Text="{Binding SecurityReviewComment}" 
+                        <TextBox Text="{Binding SecurityReviewComment}" 
                                  Padding="15" BorderThickness="0" 
                                  TextWrapping="Wrap" AcceptsReturn="True" 
-                                 MinHeight="100" FontSize="13"/>
-                    </Grid>
+                                 MinHeight="80" FontSize="13"/>
+                    </StackPanel>
                 </Border>
-            </Grid>
+                
+            </StackPanel>
         </ScrollViewer>
         
         <!-- Action Buttons -->
