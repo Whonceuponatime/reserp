@@ -1,4 +1,6 @@
 using MaritimeERP.Core.Entities;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace MaritimeERP.Services.Interfaces
 {
@@ -6,10 +8,10 @@ namespace MaritimeERP.Services.Interfaces
     {
         // CRUD Operations
         Task<IEnumerable<Component>> GetAllComponentsAsync();
-        Task<Component?> GetComponentByIdAsync(int id);
-        Task<Component> CreateComponentAsync(Component component);
+        Task<Component> GetComponentByIdAsync(int id);
+        Task<Component> AddComponentAsync(Component component);
         Task<Component> UpdateComponentAsync(Component component);
-        Task<bool> DeleteComponentAsync(int id);
+        Task DeleteComponentAsync(int id);
 
         // System-specific operations
         Task<IEnumerable<Component>> GetComponentsBySystemIdAsync(int systemId);

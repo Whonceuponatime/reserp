@@ -16,6 +16,7 @@ namespace MaritimeERP.Data
         public DbSet<SystemCategory> SystemCategories { get; set; }
         public DbSet<SecurityZone> SecurityZones { get; set; }
         public DbSet<Component> Components { get; set; }
+        public DbSet<Software> Software { get; set; }
         
         // Change Request related entities
         public DbSet<ChangeRequest> ChangeRequests { get; set; }
@@ -64,9 +65,10 @@ namespace MaritimeERP.Data
                 entity.Property(e => e.Model).HasMaxLength(100).IsRequired();
                 entity.Property(e => e.SerialNumber).HasMaxLength(100).IsRequired();
                 entity.Property(e => e.Description).HasMaxLength(500);
+                entity.Property(e => e.HasRemoteConnection).HasDefaultValue(false);
                 entity.HasOne(d => d.Ship).WithMany(p => p.Systems).HasForeignKey(d => d.ShipId);
                 entity.HasOne(d => d.Category).WithMany(p => p.Systems).HasForeignKey(d => d.CategoryId);
-                entity.HasOne(d => d.SecurityZone).WithMany().HasForeignKey(d => d.SecurityZoneId);
+                entity.HasOne(d => d.SecurityZone).WithMany(p => p.Systems).HasForeignKey(d => d.SecurityZoneId);
                 entity.HasIndex(e => e.SerialNumber).IsUnique();
             });
 
@@ -82,16 +84,48 @@ namespace MaritimeERP.Data
                 entity.HasKey(e => e.Id);
                 entity.Property(e => e.Name).HasMaxLength(100).IsRequired();
                 entity.Property(e => e.Description).HasMaxLength(500);
+                entity.HasMany(e => e.Systems).WithOne(e => e.SecurityZone).HasForeignKey(e => e.SecurityZoneId);
             });
 
             modelBuilder.Entity<Component>(entity =>
             {
                 entity.HasKey(e => e.Id);
+                entity.Property(e => e.SystemName).HasMaxLength(200).IsRequired();
+                entity.Property(e => e.ComponentType).HasMaxLength(100).IsRequired();
                 entity.Property(e => e.Name).HasMaxLength(200).IsRequired();
-                entity.Property(e => e.MakerModel).HasMaxLength(200).IsRequired();
-                entity.Property(e => e.ConnectedCbs).HasMaxLength(500);
+                entity.Property(e => e.Manufacturer).HasMaxLength(200);
+                entity.Property(e => e.Model).HasMaxLength(200);
                 entity.Property(e => e.InstalledLocation).HasMaxLength(200).IsRequired();
+                entity.Property(e => e.OsName).HasMaxLength(200);
+                entity.Property(e => e.OsVersion).HasMaxLength(50);
+                entity.Property(e => e.SupportedProtocols).HasMaxLength(200);
+                entity.Property(e => e.NetworkSegment).HasMaxLength(100);
+                entity.Property(e => e.ConnectedCbs).HasMaxLength(500);
+                entity.Property(e => e.ConnectionPurpose).HasMaxLength(500);
                 entity.HasOne(d => d.System).WithMany(p => p.Components).HasForeignKey(d => d.SystemId);
+            });
+
+            modelBuilder.Entity<Software>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Manufacturer).HasMaxLength(200);
+                entity.Property(e => e.Name).HasMaxLength(200).IsRequired();
+                entity.Property(e => e.SoftwareType).HasMaxLength(100);
+                entity.Property(e => e.Version).HasMaxLength(50);
+                entity.Property(e => e.FunctionPurpose).HasMaxLength(500);
+                entity.Property(e => e.InstalledHardwareComponent).HasMaxLength(200);
+                entity.Property(e => e.LicenseType).HasMaxLength(100);
+                entity.Property(e => e.LicenseKey).HasMaxLength(200);
+                entity.Property(e => e.Description).HasMaxLength(500);
+                entity.Property(e => e.InstallationDate);
+                entity.Property(e => e.ExpiryDate);
+                entity.Property(e => e.CreatedAt);
+                entity.Property(e => e.UpdatedAt);
+
+                entity.HasOne(e => e.InstalledComponent)
+                    .WithMany()
+                    .HasForeignKey(e => e.InstalledComponentId)
+                    .OnDelete(DeleteBehavior.SetNull);
             });
 
             // Configure ChangeRequest relationships

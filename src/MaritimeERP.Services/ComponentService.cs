@@ -57,103 +57,122 @@ namespace MaritimeERP.Services
             }
         }
 
-        public async Task<Component> CreateComponentAsync(Component component)
+        public async Task<bool> ValidateComponentAsync(Component component)
         {
             try
             {
-                // Validate the component
-                if (!await ValidateComponentAsync(component))
+                if (component == null)
                 {
-                    throw new InvalidOperationException("Component validation failed");
+                    throw new ArgumentNullException(nameof(component));
                 }
 
-                // Ensure the system exists
-                var system = await _context.Systems.FindAsync(component.SystemId);
-                if (system == null)
+                if (string.IsNullOrWhiteSpace(component.Name))
                 {
-                    throw new InvalidOperationException($"System with ID {component.SystemId} not found");
+                    throw new ArgumentException("Component name is required");
                 }
 
-                component.CreatedAt = DateTime.UtcNow;
+                if (string.IsNullOrWhiteSpace(component.ComponentType))
+                {
+                    throw new ArgumentException("Component type is required");
+                }
+
+                if (string.IsNullOrWhiteSpace(component.SystemName))
+                {
+                    throw new ArgumentException("System name is required");
+                }
+
+                if (string.IsNullOrWhiteSpace(component.InstalledLocation))
+                {
+                    throw new ArgumentException("Installed location is required");
+                }
+
+                // Check if system exists
+                if (component.SystemId > 0)
+                {
+                    var system = await _context.Systems.FindAsync(component.SystemId);
+                    if (system == null)
+                    {
+                        throw new ArgumentException($"System with ID {component.SystemId} not found");
+                    }
+                }
+
+                // Check for duplicate component names within the same system
+                var existingComponent = await _context.Components
+                    .FirstOrDefaultAsync(c => 
+                        c.Name == component.Name && 
+                        c.SystemId == component.SystemId && 
+                        c.Id != component.Id);
+
+                if (existingComponent != null)
+                {
+                    throw new ArgumentException($"A component with name '{component.Name}' already exists in this system");
+                }
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Component validation failed");
+                return false;
+            }
+        }
+
+        public async Task<Component> AddComponentAsync(Component component)
+        {
+            if (!await ValidateComponentAsync(component))
+            {
+                throw new ArgumentException("Component validation failed");
+            }
+
+            try
+            {
                 _context.Components.Add(component);
                 await _context.SaveChangesAsync();
-
-                _logger.LogInformation("Component created: {ComponentName} for system {SystemId}", 
-                    component.Name, component.SystemId);
                 return component;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error creating component: {ComponentName}", component.Name);
+                _logger.LogError(ex, "Error adding component");
                 throw;
             }
         }
 
         public async Task<Component> UpdateComponentAsync(Component component)
         {
+            if (!await ValidateComponentAsync(component))
+            {
+                throw new ArgumentException("Component validation failed");
+            }
+
             try
             {
-                // Validate the component
-                if (!await ValidateComponentAsync(component))
-                {
-                    throw new InvalidOperationException("Component validation failed");
-                }
-
                 var existingComponent = await _context.Components.FindAsync(component.Id);
                 if (existingComponent == null)
                 {
-                    throw new InvalidOperationException($"Component with ID {component.Id} not found");
+                    throw new KeyNotFoundException($"Component with ID {component.Id} not found");
                 }
 
-                // Update properties
-                existingComponent.Name = component.Name;
-                existingComponent.MakerModel = component.MakerModel;
-                existingComponent.UsbPorts = component.UsbPorts;
-                existingComponent.LanPorts = component.LanPorts;
-                existingComponent.SerialPorts = component.SerialPorts;
-                existingComponent.ConnectedCbs = component.ConnectedCbs;
-                existingComponent.HasRemoteConnection = component.HasRemoteConnection;
-                existingComponent.InstalledLocation = component.InstalledLocation;
-                existingComponent.UpdatedAt = DateTime.UtcNow;
-
+                _context.Entry(existingComponent).CurrentValues.SetValues(component);
                 await _context.SaveChangesAsync();
-
-                _logger.LogInformation("Component updated: {ComponentId} - {ComponentName}", 
-                    component.Id, component.Name);
                 return existingComponent;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error updating component: {ComponentId}", component.Id);
+                _logger.LogError(ex, "Error updating component");
                 throw;
             }
         }
 
-        public async Task<bool> DeleteComponentAsync(int id)
+        public async Task DeleteComponentAsync(int id)
         {
             try
             {
-                var component = await _context.Components
-                    .Include(c => c.Software)
-                    .FirstOrDefaultAsync(c => c.Id == id);
-                
-                if (component == null)
+                var component = await _context.Components.FindAsync(id);
+                if (component != null)
                 {
-                    return false;
+                    _context.Components.Remove(component);
+                    await _context.SaveChangesAsync();
                 }
-
-                // Check if component has software
-                if (component.Software.Any())
-                {
-                    throw new InvalidOperationException("Cannot delete component that has software installed. Please remove all software first.");
-                }
-
-                _context.Components.Remove(component);
-                await _context.SaveChangesAsync();
-
-                _logger.LogInformation("Component deleted: {ComponentId} - {ComponentName}", 
-                    id, component.Name);
-                return true;
             }
             catch (Exception ex)
             {
@@ -209,7 +228,7 @@ namespace MaritimeERP.Services
                     .Include(c => c.System)
                         .ThenInclude(s => s.Category)
                     .Where(c => c.Name.ToLower().Contains(lowerSearchTerm) ||
-                               c.MakerModel.ToLower().Contains(lowerSearchTerm) ||
+                               c.Manufacturer.ToLower().Contains(lowerSearchTerm) ||
                                c.InstalledLocation.ToLower().Contains(lowerSearchTerm) ||
                                (c.ConnectedCbs != null && c.ConnectedCbs.ToLower().Contains(lowerSearchTerm)) ||
                                c.System.Name.ToLower().Contains(lowerSearchTerm) ||
@@ -255,17 +274,13 @@ namespace MaritimeERP.Services
                 return await _context.Components
                     .Include(c => c.System)
                         .ThenInclude(s => s.Ship)
-                    .Include(c => c.System)
-                        .ThenInclude(s => s.Category)
-                    .Where(c => c.MakerModel.ToLower() == makerModel.ToLower())
-                    .OrderBy(c => c.System.Ship.ShipName)
-                    .ThenBy(c => c.System.Name)
-                    .ThenBy(c => c.Name)
+                    .Where(c => (c.Manufacturer + " " + c.Model).Contains(makerModel))
+                    .OrderBy(c => c.Name)
                     .ToListAsync();
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error retrieving components for maker/model: {MakerModel}", makerModel);
+                _logger.LogError(ex, "Error retrieving components by maker/model: {MakerModel}", makerModel);
                 throw;
             }
         }
@@ -277,12 +292,8 @@ namespace MaritimeERP.Services
                 return await _context.Components
                     .Include(c => c.System)
                         .ThenInclude(s => s.Ship)
-                    .Include(c => c.System)
-                        .ThenInclude(s => s.Category)
-                    .Where(c => c.HasRemoteConnection)
-                    .OrderBy(c => c.System.Ship.ShipName)
-                    .ThenBy(c => c.System.Name)
-                    .ThenBy(c => c.Name)
+                    .Where(c => c.System.HasRemoteConnection)
+                    .OrderBy(c => c.Name)
                     .ToListAsync();
             }
             catch (Exception ex)
@@ -297,14 +308,14 @@ namespace MaritimeERP.Services
             try
             {
                 return await _context.Components
-                    .Select(c => c.MakerModel)
+                    .Select(c => (c.Manufacturer + " " + c.Model).Trim())
                     .Distinct()
                     .OrderBy(m => m)
                     .ToListAsync();
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error retrieving maker models");
+                _logger.LogError(ex, "Error retrieving maker/model list");
                 throw;
             }
         }
@@ -376,66 +387,15 @@ namespace MaritimeERP.Services
             try
             {
                 return await _context.Components
-                    .GroupBy(c => c.MakerModel)
-                    .ToDictionaryAsync(g => g.Key, g => g.Count());
+                    .GroupBy(c => (c.Manufacturer + " " + c.Model).Trim())
+                    .Select(g => new { MakerModel = g.Key, Count = g.Count() })
+                    .OrderByDescending(x => x.Count)
+                    .ToDictionaryAsync(x => x.MakerModel, x => x.Count);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting components count by maker/model");
                 throw;
-            }
-        }
-
-        public async Task<bool> ValidateComponentAsync(Component component)
-        {
-            try
-            {
-                // Basic validation
-                if (string.IsNullOrWhiteSpace(component.Name))
-                {
-                    _logger.LogWarning("Component validation failed: Name is required");
-                    return false;
-                }
-
-                if (string.IsNullOrWhiteSpace(component.MakerModel))
-                {
-                    _logger.LogWarning("Component validation failed: MakerModel is required");
-                    return false;
-                }
-
-                if (string.IsNullOrWhiteSpace(component.InstalledLocation))
-                {
-                    _logger.LogWarning("Component validation failed: InstalledLocation is required");
-                    return false;
-                }
-
-                if (component.SystemId <= 0)
-                {
-                    _logger.LogWarning("Component validation failed: Valid SystemId is required");
-                    return false;
-                }
-
-                // Port validation
-                if (component.UsbPorts < 0 || component.LanPorts < 0 || component.SerialPorts < 0)
-                {
-                    _logger.LogWarning("Component validation failed: Port counts cannot be negative");
-                    return false;
-                }
-
-                // Check if system exists
-                var systemExists = await _context.Systems.AnyAsync(s => s.Id == component.SystemId);
-                if (!systemExists)
-                {
-                    _logger.LogWarning("Component validation failed: System with ID {SystemId} does not exist", component.SystemId);
-                    return false;
-                }
-
-                return true;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error validating component");
-                return false;
             }
         }
     }

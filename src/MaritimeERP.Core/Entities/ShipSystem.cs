@@ -28,6 +28,8 @@ namespace MaritimeERP.Core.Entities
         [MaxLength(500)]
         public string? Description { get; set; }
 
+        public bool HasRemoteConnection { get; set; } = false;
+
         public int SecurityZoneId { get; set; }
         public SecurityZone SecurityZone { get; set; } = null!;
 
