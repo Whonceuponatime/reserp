@@ -6,7 +6,11 @@ using MaritimeERP.Core.Entities;
 using MaritimeERP.Desktop.Commands;
 using MaritimeERP.Services.Interfaces;
 using Microsoft.Extensions.Logging;
-using ComponentEntity = MaritimeERP.Core.Entities.Component;
+using Component = MaritimeERP.Core.Entities.Component;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Windows;
 
 namespace MaritimeERP.Desktop.ViewModels
 {
@@ -16,17 +20,30 @@ namespace MaritimeERP.Desktop.ViewModels
         private readonly ISystemService _systemService;
         private readonly IShipService _shipService;
         private readonly ILogger<ComponentsViewModel> _logger;
+        private readonly INavigationService _navigationService;
+        private readonly DashboardViewModel _dashboardViewModel;
 
         // Collections
-        public ObservableCollection<ComponentEntity> Components { get; set; } = new();
+        public ObservableCollection<Component> Components { get; set; } = new();
+        private ObservableCollection<Component> _filteredComponents = new();
+        public ObservableCollection<Component> FilteredComponents
+        {
+            get => _filteredComponents;
+            set
+            {
+                _filteredComponents = value;
+                OnPropertyChanged();
+            }
+        }
+
         public ObservableCollection<ShipSystem> Systems { get; set; } = new();
         public ObservableCollection<Ship> Ships { get; set; } = new();
         public ObservableCollection<string> MakerModels { get; set; } = new();
         public ObservableCollection<string> Locations { get; set; } = new();
 
         // Selected items
-        private ComponentEntity? _selectedComponent;
-        public ComponentEntity? SelectedComponent
+        private Component? _selectedComponent;
+        public Component? SelectedComponent
         {
             get => _selectedComponent;
             set
@@ -70,71 +87,22 @@ namespace MaritimeERP.Desktop.ViewModels
             {
                 _searchText = value;
                 OnPropertyChanged();
-                _ = SearchComponentsAsync();
-            }
-        }
-
-        private int? _filterSystemId;
-        public int? FilterSystemId
-        {
-            get => _filterSystemId;
-            set
-            {
-                _filterSystemId = value;
-                OnPropertyChanged();
-                _ = FilterComponentsAsync();
-            }
-        }
-
-        private int? _filterShipId;
-        public int? FilterShipId
-        {
-            get => _filterShipId;
-            set
-            {
-                _filterShipId = value;
-                OnPropertyChanged();
-                _ = FilterComponentsAsync();
-            }
-        }
-
-        private string? _filterMakerModel;
-        public string? FilterMakerModel
-        {
-            get => _filterMakerModel;
-            set
-            {
-                _filterMakerModel = value;
-                OnPropertyChanged();
-                _ = FilterComponentsAsync();
-            }
-        }
-
-        private string? _filterLocation;
-        public string? FilterLocation
-        {
-            get => _filterLocation;
-            set
-            {
-                _filterLocation = value;
-                OnPropertyChanged();
-                _ = FilterComponentsAsync();
-            }
-        }
-
-        private bool _showOnlyRemoteComponents;
-        public bool ShowOnlyRemoteComponents
-        {
-            get => _showOnlyRemoteComponents;
-            set
-            {
-                _showOnlyRemoteComponents = value;
-                OnPropertyChanged();
-                _ = FilterComponentsAsync();
+                ApplyFilters();
             }
         }
 
         // Form properties for current component
+        private bool _isEditing;
+        public bool IsEditing
+        {
+            get => _isEditing;
+            set
+            {
+                _isEditing = value;
+                OnPropertyChanged();
+            }
+        }
+
         private int _componentId;
         public int ComponentId
         {
@@ -157,14 +125,14 @@ namespace MaritimeERP.Desktop.ViewModels
             }
         }
 
-        private string _componentName = string.Empty;
-        public string ComponentName
+        private string _name = string.Empty;
+        public string Name
         {
-            get => _componentName;
+            get => _name;
             set
             {
-                _componentName = value;
-                OnPropertyChanged();
+                _name = value;
+                OnPropertyChanged(nameof(Name));
             }
         }
 
@@ -186,7 +154,7 @@ namespace MaritimeERP.Desktop.ViewModels
             set
             {
                 _usbPorts = value;
-                OnPropertyChanged();
+                OnPropertyChanged(nameof(UsbPorts));
             }
         }
 
@@ -201,17 +169,6 @@ namespace MaritimeERP.Desktop.ViewModels
             }
         }
 
-        private short _serialPorts;
-        public short SerialPorts
-        {
-            get => _serialPorts;
-            set
-            {
-                _serialPorts = value;
-                OnPropertyChanged();
-            }
-        }
-
         private string? _connectedCbs;
         public string? ConnectedCbs
         {
@@ -219,17 +176,6 @@ namespace MaritimeERP.Desktop.ViewModels
             set
             {
                 _connectedCbs = value;
-                OnPropertyChanged();
-            }
-        }
-
-        private bool _hasRemoteConnection;
-        public bool HasRemoteConnection
-        {
-            get => _hasRemoteConnection;
-            set
-            {
-                _hasRemoteConnection = value;
                 OnPropertyChanged();
             }
         }
@@ -268,45 +214,249 @@ namespace MaritimeERP.Desktop.ViewModels
             }
         }
 
-        private bool _isEditing;
-        public bool IsEditing
+        private int _totalComponents;
+        public int TotalComponents
         {
-            get => _isEditing;
+            get => _totalComponents;
             set
             {
-                _isEditing = value;
+                _totalComponents = value;
                 OnPropertyChanged();
             }
         }
 
         // Commands
-        public ICommand LoadDataCommand { get; }
-        public ICommand AddComponentCommand { get; }
-        public ICommand EditComponentCommand { get; }
-        public ICommand SaveComponentCommand { get; }
-        public ICommand DeleteComponentCommand { get; }
-        public ICommand CancelEditCommand { get; }
-        public ICommand ClearFiltersCommand { get; }
+        public ICommand LoadDataCommand { get; private set; }
+        public ICommand AddComponentCommand { get; private set; }
+        public ICommand EditCommand { get; private set; }
+        public ICommand DeleteCommand { get; private set; }
+        public ICommand CancelCommand { get; private set; }
+        public ICommand ClearFiltersCommand { get; private set; }
+        public ICommand NavigateToSoftwareCommand { get; private set; }
 
-        public ComponentsViewModel(IComponentService componentService, ISystemService systemService, 
-            IShipService shipService, ILogger<ComponentsViewModel> logger)
+        private ICommand? _saveCommand;
+        public ICommand SaveCommand 
         {
-            _componentService = componentService;
-            _systemService = systemService;
-            _shipService = shipService;
-            _logger = logger;
+            get
+            {
+                _saveCommand ??= new RelayCommand(
+                    async () => await SaveComponentAsync(),
+                    () => !IsLoading && CanSaveComponent()
+                );
+                return _saveCommand;
+            }
+        }
 
-            // Initialize commands
-            LoadDataCommand = new RelayCommand(async () => await LoadDataAsync());
-            AddComponentCommand = new RelayCommand(AddComponent);
-            EditComponentCommand = new RelayCommand(EditComponent, () => SelectedComponent != null);
-            SaveComponentCommand = new RelayCommand(async () => await SaveComponentAsync(), CanSaveComponent);
-            DeleteComponentCommand = new RelayCommand(async () => await DeleteComponentAsync(), () => SelectedComponent != null);
-            CancelEditCommand = new RelayCommand(CancelEdit);
-            ClearFiltersCommand = new RelayCommand(ClearFilters);
+        // Events
+        public event EventHandler<Component>? ComponentSaved;
+        public event EventHandler<Component>? ComponentDeleted;
+        public event EventHandler? RequestClose;
 
-            // Load data on initialization
+        // Properties
+        public int Id { get; set; }
+
+        private string _systemName = string.Empty;
+        public string SystemName
+        {
+            get => _systemName;
+            set
+            {
+                _systemName = value;
+                OnPropertyChanged(nameof(SystemName));
+            }
+        }
+
+        private string _componentType = string.Empty;
+        public string ComponentType
+        {
+            get => _componentType;
+            set
+            {
+                _componentType = value;
+                OnPropertyChanged(nameof(ComponentType));
+            }
+        }
+
+        private string _manufacturer = string.Empty;
+        public string Manufacturer
+        {
+            get => _manufacturer;
+            set
+            {
+                _manufacturer = value;
+                OnPropertyChanged(nameof(Manufacturer));
+            }
+        }
+
+        private string _model = string.Empty;
+        public string Model
+        {
+            get => _model;
+            set
+            {
+                _model = value;
+                OnPropertyChanged(nameof(Model));
+            }
+        }
+
+        private string? _osName;
+        public string? OsName
+        {
+            get => _osName;
+            set
+            {
+                _osName = value;
+                OnPropertyChanged(nameof(OsName));
+            }
+        }
+
+        private string? _osVersion;
+        public string? OsVersion
+        {
+            get => _osVersion;
+            set
+            {
+                _osVersion = value;
+                OnPropertyChanged(nameof(OsVersion));
+            }
+        }
+
+        private string? _networkSegment;
+        public string? NetworkSegment
+        {
+            get => _networkSegment;
+            set
+            {
+                _networkSegment = value;
+                OnPropertyChanged(nameof(NetworkSegment));
+            }
+        }
+
+        private string? _supportedProtocols;
+        public string? SupportedProtocols
+        {
+            get => _supportedProtocols;
+            set
+            {
+                _supportedProtocols = value;
+                OnPropertyChanged(nameof(SupportedProtocols));
+            }
+        }
+
+        private string? _connectionPurpose;
+        public string? ConnectionPurpose
+        {
+            get => _connectionPurpose;
+            set
+            {
+                _connectionPurpose = value;
+                OnPropertyChanged(nameof(ConnectionPurpose));
+            }
+        }
+
+        private bool _hasRemoteConnection;
+        public bool HasRemoteConnection
+        {
+            get => _hasRemoteConnection;
+            set
+            {
+                _hasRemoteConnection = value;
+                OnPropertyChanged(nameof(HasRemoteConnection));
+            }
+        }
+
+        private bool _isTypeApproved;
+        public bool IsTypeApproved
+        {
+            get => _isTypeApproved;
+            set
+            {
+                _isTypeApproved = value;
+                OnPropertyChanged(nameof(IsTypeApproved));
+            }
+        }
+
+        public ComponentsViewModel(
+            IComponentService componentService,
+            ISystemService systemService,
+            IShipService shipService,
+            ILogger<ComponentsViewModel> logger,
+            INavigationService navigationService,
+            DashboardViewModel dashboardViewModel)
+        {
+            _componentService = componentService ?? throw new ArgumentNullException(nameof(componentService));
+            _systemService = systemService ?? throw new ArgumentNullException(nameof(systemService));
+            _shipService = shipService ?? throw new ArgumentNullException(nameof(shipService));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _navigationService = navigationService ?? throw new ArgumentNullException(nameof(navigationService));
+            _dashboardViewModel = dashboardViewModel ?? throw new ArgumentNullException(nameof(dashboardViewModel));
+
+            // Initialize commands with proper CanExecute conditions
+            LoadDataCommand = new RelayCommand(async () => await LoadDataAsync(), () => !IsLoading);
+            AddComponentCommand = new RelayCommand(AddComponent, () => !IsLoading && !IsEditing);
+            EditCommand = new RelayCommand(StartEditing, () => SelectedComponent != null && !IsEditing);
+            DeleteCommand = new RelayCommand(async () => await DeleteComponentAsync(), () => SelectedComponent != null && !IsEditing);
+            CancelCommand = new RelayCommand(CancelEdit);
+            ClearFiltersCommand = new RelayCommand(ClearFilters, () => !IsLoading);
+            NavigateToSoftwareCommand = new RelayCommand(() => NavigateToSoftware(SelectedComponent), () => SelectedComponent != null);
+
+            // Subscribe to property changes to refresh command states
+            PropertyChanged += (s, e) =>
+            {
+                if (e.PropertyName == nameof(Name) ||
+                    e.PropertyName == nameof(ComponentType) ||
+                    e.PropertyName == nameof(InstalledLocation) ||
+                    e.PropertyName == nameof(SelectedSystem))
+                {
+                    ((RelayCommand)SaveCommand).RaiseCanExecuteChanged();
+                }
+                else if (e.PropertyName == nameof(SelectedComponent) || e.PropertyName == nameof(IsEditing))
+                {
+                    ((RelayCommand)EditCommand).RaiseCanExecuteChanged();
+                    ((RelayCommand)DeleteCommand).RaiseCanExecuteChanged();
+                    ((RelayCommand)AddComponentCommand).RaiseCanExecuteChanged();
+                }
+            };
+
             _ = LoadDataAsync();
+        }
+
+        /// <summary>
+        /// Sets a system filter for the components page when navigating from Systems page
+        /// </summary>
+        /// <param name="systemFilter">The system to filter components by</param>
+        public void SetSystemFilter(ShipSystem systemFilter)
+        {
+            // Set the system filter after data is loaded
+            Task.Run(async () =>
+            {
+                // Wait for data to load first
+                while (IsLoading)
+                {
+                    await Task.Delay(100);
+                }
+
+                // Set the filter on the UI thread
+                await Application.Current.Dispatcher.BeginInvoke(() =>
+                {
+                    // Find and select the ship
+                    var ship = Ships.FirstOrDefault(s => s.Id == systemFilter.ShipId);
+                    if (ship != null)
+                    {
+                        SelectedShip = ship;
+                    }
+
+                    // Find and select the system
+                    var system = Systems.FirstOrDefault(s => s.Id == systemFilter.Id);
+                    if (system != null)
+                    {
+                        SelectedSystem = system;
+                    }
+
+                    // Update status to show filtering
+                    StatusMessage = $"Showing components for system: {systemFilter.Name}";
+                });
+            });
         }
 
         private async Task LoadDataAsync()
@@ -320,10 +470,8 @@ namespace MaritimeERP.Desktop.ViewModels
                 var componentsTask = _componentService.GetAllComponentsAsync();
                 var systemsTask = _systemService.GetAllSystemsAsync();
                 var shipsTask = _shipService.GetAllShipsAsync();
-                var makerModelsTask = _componentService.GetMakerModelsAsync();
-                var locationsTask = _componentService.GetInstalledLocationsAsync();
 
-                await Task.WhenAll(componentsTask, systemsTask, shipsTask, makerModelsTask, locationsTask);
+                await Task.WhenAll(componentsTask, systemsTask, shipsTask);
 
                 // Update collections
                 Components.Clear();
@@ -344,18 +492,8 @@ namespace MaritimeERP.Desktop.ViewModels
                     Ships.Add(ship);
                 }
 
-                MakerModels.Clear();
-                foreach (var makerModel in await makerModelsTask)
-                {
-                    MakerModels.Add(makerModel);
-                }
-
-                Locations.Clear();
-                foreach (var location in await locationsTask)
-                {
-                    Locations.Add(location);
-                }
-
+                TotalComponents = Components.Count;
+                ApplyFilters();
                 StatusMessage = $"Loaded {Components.Count} components successfully";
                 _logger.LogInformation("Components data loaded successfully");
             }
@@ -370,88 +508,53 @@ namespace MaritimeERP.Desktop.ViewModels
             }
         }
 
-        private async Task SearchComponentsAsync()
+        private void ApplyFilters()
         {
-            try
-            {
-                IsLoading = true;
-                var components = await _componentService.SearchComponentsAsync(SearchText);
-                
-                Components.Clear();
-                foreach (var component in components)
-                {
-                    Components.Add(component);
-                }
+            var filtered = Components.AsEnumerable();
 
-                StatusMessage = $"Found {Components.Count} components matching '{SearchText}'";
-            }
-            catch (Exception ex)
+            // Apply search filter
+            if (!string.IsNullOrWhiteSpace(SearchText))
             {
-                StatusMessage = "Error searching components";
-                _logger.LogError(ex, "Error searching components");
+                var searchLower = SearchText.ToLower();
+                filtered = filtered.Where(c => 
+                    c.Name.ToLower().Contains(searchLower) ||
+                    c.MakerModel.ToLower().Contains(searchLower) ||
+                    c.InstalledLocation.ToLower().Contains(searchLower) ||
+                    c.System.Name.ToLower().Contains(searchLower) ||
+                    c.System.Ship.ShipName.ToLower().Contains(searchLower));
             }
-            finally
+
+            // Apply ship filter
+            if (SelectedShip != null)
             {
-                IsLoading = false;
+                filtered = filtered.Where(c => c.System.ShipId == SelectedShip.Id);
             }
-        }
 
-        private async Task FilterComponentsAsync()
-        {
-            try
+            // Apply system filter
+            if (SelectedSystem != null)
             {
-                IsLoading = true;
-                IEnumerable<ComponentEntity> components;
-
-                if (ShowOnlyRemoteComponents)
-                {
-                    components = await _componentService.GetComponentsWithRemoteConnectionAsync();
-                }
-                else if (FilterSystemId.HasValue)
-                {
-                    components = await _componentService.GetComponentsBySystemIdAsync(FilterSystemId.Value);
-                }
-                else if (!string.IsNullOrEmpty(FilterMakerModel))
-                {
-                    components = await _componentService.GetComponentsByMakerModelAsync(FilterMakerModel);
-                }
-                else if (!string.IsNullOrEmpty(FilterLocation))
-                {
-                    components = await _componentService.GetComponentsByLocationAsync(FilterLocation);
-                }
-                else
-                {
-                    components = await _componentService.GetAllComponentsAsync();
-                }
-
-                // Apply ship filter if specified
-                if (FilterShipId.HasValue)
-                {
-                    components = components.Where(c => c.System.ShipId == FilterShipId.Value);
-                }
-
-                Components.Clear();
-                foreach (var component in components)
-                {
-                    Components.Add(component);
-                }
-
-                StatusMessage = $"Filtered to {Components.Count} components";
+                filtered = filtered.Where(c => c.SystemId == SelectedSystem.Id);
             }
-            catch (Exception ex)
+
+            FilteredComponents.Clear();
+            foreach (var component in filtered.OrderBy(c => c.System.Ship.ShipName)
+                                             .ThenBy(c => c.System.Name)
+                                             .ThenBy(c => c.Name))
             {
-                StatusMessage = "Error filtering components";
-                _logger.LogError(ex, "Error filtering components");
+                FilteredComponents.Add(component);
             }
-            finally
-            {
-                IsLoading = false;
-            }
+
+            StatusMessage = $"Showing {FilteredComponents.Count} of {TotalComponents} components";
         }
 
         private async Task UpdateSystemsForShipAsync()
         {
-            if (SelectedShip == null) return;
+            if (SelectedShip == null)
+            {
+                // If no ship selected, show all systems
+                await LoadDataAsync();
+                return;
+            }
 
             try
             {
@@ -461,6 +564,14 @@ namespace MaritimeERP.Desktop.ViewModels
                 {
                     Systems.Add(system);
                 }
+                
+                // Reset system selection if current system doesn't belong to selected ship
+                if (SelectedSystem != null && SelectedSystem.ShipId != SelectedShip.Id)
+                {
+                    SelectedSystem = null;
+                }
+                
+                ApplyFilters();
             }
             catch (Exception ex)
             {
@@ -470,7 +581,7 @@ namespace MaritimeERP.Desktop.ViewModels
 
         private void OnSelectedComponentChanged()
         {
-            if (SelectedComponent != null)
+            if (SelectedComponent != null && !IsEditing)
             {
                 PopulateFormFromSelectedComponent();
             }
@@ -480,22 +591,28 @@ namespace MaritimeERP.Desktop.ViewModels
         {
             if (SelectedComponent == null) return;
 
-            ComponentId = SelectedComponent.Id;
-            SystemId = SelectedComponent.SystemId;
-            ComponentName = SelectedComponent.Name;
-            MakerModel = SelectedComponent.MakerModel;
+            Name = SelectedComponent.Name;
+            Manufacturer = SelectedComponent.Manufacturer ?? string.Empty;
+            Model = SelectedComponent.Model ?? string.Empty;
+            ComponentType = SelectedComponent.ComponentType;
+            SystemName = SelectedComponent.SystemName;
+            InstalledLocation = SelectedComponent.InstalledLocation;
             UsbPorts = SelectedComponent.UsbPorts;
             LanPorts = SelectedComponent.LanPorts;
-            SerialPorts = SelectedComponent.SerialPorts;
             ConnectedCbs = SelectedComponent.ConnectedCbs;
             HasRemoteConnection = SelectedComponent.HasRemoteConnection;
-            InstalledLocation = SelectedComponent.InstalledLocation;
+            IsTypeApproved = SelectedComponent.IsTypeApproved;
+            OsName = SelectedComponent.OsName;
+            OsVersion = SelectedComponent.OsVersion;
+            NetworkSegment = SelectedComponent.NetworkSegment;
+            SupportedProtocols = SelectedComponent.SupportedProtocols;
+            ConnectionPurpose = SelectedComponent.ConnectionPurpose;
 
-            // Update selected system
-            SelectedSystem = Systems.FirstOrDefault(s => s.Id == SystemId);
-            if (SelectedSystem != null)
+            // Find and select the system
+            var system = Systems.FirstOrDefault(s => s.Id == SelectedComponent.SystemId);
+            if (system != null)
             {
-                SelectedShip = Ships.FirstOrDefault(ship => ship.Id == SelectedSystem.ShipId);
+                SelectedSystem = system;
             }
         }
 
@@ -509,18 +626,78 @@ namespace MaritimeERP.Desktop.ViewModels
 
         private void AddComponent()
         {
+            SelectedComponent = null;
             ClearForm();
             IsEditing = true;
-            StatusMessage = "Adding new component";
         }
 
-        private void EditComponent()
+        private void StartEditing()
         {
             if (SelectedComponent != null)
             {
                 IsEditing = true;
-                StatusMessage = $"Editing component: {SelectedComponent.Name}";
             }
+        }
+
+        private void CancelEdit()
+        {
+            if (SelectedComponent != null)
+            {
+                // Restore original values
+                PopulateFormFromSelectedComponent();
+            }
+            else
+            {
+                ClearForm();
+            }
+            IsEditing = false;
+        }
+
+        private void ClearForm()
+        {
+            Name = string.Empty;
+            Manufacturer = string.Empty;
+            Model = string.Empty;
+            ComponentType = string.Empty;
+            SystemName = string.Empty;
+            InstalledLocation = string.Empty;
+            UsbPorts = 0;
+            LanPorts = 0;
+            ConnectedCbs = string.Empty;
+            HasRemoteConnection = false;
+            IsTypeApproved = false;
+            OsName = string.Empty;
+            OsVersion = string.Empty;
+            NetworkSegment = string.Empty;
+            SupportedProtocols = string.Empty;
+            ConnectionPurpose = string.Empty;
+            SelectedSystem = null;
+        }
+
+        private void ClearFilters()
+        {
+            SearchText = string.Empty;
+            SelectedShip = null;
+            SelectedSystem = null;
+
+            ApplyFilters();
+            StatusMessage = "Filters cleared";
+        }
+
+        private void NavigateToSoftware(Component? component)
+        {
+            if (component == null) return;
+
+            _navigationService.NavigateToPageWithComponentFilter("Software", component);
+        }
+
+        private bool CanSaveComponent()
+        {
+            return IsEditing && 
+                   !string.IsNullOrWhiteSpace(Name) && 
+                   !string.IsNullOrWhiteSpace(ComponentType) && 
+                   !string.IsNullOrWhiteSpace(InstalledLocation) && 
+                   SelectedSystem != null;
         }
 
         private async Task SaveComponentAsync()
@@ -528,48 +705,49 @@ namespace MaritimeERP.Desktop.ViewModels
             try
             {
                 IsLoading = true;
+                StatusMessage = "Saving component...";
 
-                var component = new ComponentEntity
+                var component = new Component
                 {
-                    Id = ComponentId,
-                    SystemId = SystemId,
-                    Name = ComponentName,
-                    MakerModel = MakerModel,
+                    Id = SelectedComponent?.Id ?? 0,
+                    Name = Name,
+                    Manufacturer = Manufacturer,
+                    Model = Model,
+                    ComponentType = ComponentType,
+                    SystemId = SelectedSystem?.Id ?? 0,
+                    SystemName = SelectedSystem?.Name ?? string.Empty,
+                    InstalledLocation = InstalledLocation,
                     UsbPorts = UsbPorts,
                     LanPorts = LanPorts,
-                    SerialPorts = SerialPorts,
                     ConnectedCbs = ConnectedCbs,
                     HasRemoteConnection = HasRemoteConnection,
-                    InstalledLocation = InstalledLocation
+                    IsTypeApproved = IsTypeApproved,
+                    OsName = OsName,
+                    OsVersion = OsVersion,
+                    NetworkSegment = NetworkSegment,
+                    SupportedProtocols = SupportedProtocols,
+                    ConnectionPurpose = ConnectionPurpose
                 };
 
-                if (ComponentId == 0)
+                if (SelectedComponent == null)
                 {
-                    // Create new component
-                    var createdComponent = await _componentService.CreateComponentAsync(component);
-                    Components.Add(createdComponent);
-                    StatusMessage = "Component created successfully";
+                    await _componentService.AddComponentAsync(component);
+                    StatusMessage = "Component added successfully.";
                 }
                 else
                 {
-                    // Update existing component
-                    var updatedComponent = await _componentService.UpdateComponentAsync(component);
-                    var index = Components.ToList().FindIndex(c => c.Id == ComponentId);
-                    if (index >= 0)
-                    {
-                        Components[index] = updatedComponent;
-                    }
-                    StatusMessage = "Component updated successfully";
+                    await _componentService.UpdateComponentAsync(component);
+                    StatusMessage = "Component updated successfully.";
                 }
 
+                await LoadDataAsync();
                 IsEditing = false;
                 ClearForm();
-                _logger.LogInformation("Component saved successfully: {ComponentName}", ComponentName);
             }
             catch (Exception ex)
             {
-                StatusMessage = $"Error saving component: {ex.Message}";
                 _logger.LogError(ex, "Error saving component");
+                StatusMessage = "Error saving component. Please try again.";
             }
             finally
             {
@@ -584,24 +762,22 @@ namespace MaritimeERP.Desktop.ViewModels
             try
             {
                 IsLoading = true;
-                var success = await _componentService.DeleteComponentAsync(SelectedComponent.Id);
+                StatusMessage = "Deleting component...";
+
+                await _componentService.DeleteComponentAsync(SelectedComponent.Id);
                 
-                if (success)
-                {
                     Components.Remove(SelectedComponent);
-                    StatusMessage = "Component deleted successfully";
+                FilteredComponents.Remove(SelectedComponent);
+                SelectedComponent = null;
                     ClearForm();
-                    _logger.LogInformation("Component deleted: {ComponentId}", SelectedComponent.Id);
-                }
-                else
-                {
-                    StatusMessage = "Component not found or could not be deleted";
-                }
+
+                StatusMessage = "Component deleted successfully.";
+                ComponentDeleted?.Invoke(this, SelectedComponent);
             }
             catch (Exception ex)
             {
-                StatusMessage = $"Error deleting component: {ex.Message}";
                 _logger.LogError(ex, "Error deleting component");
+                StatusMessage = "Error deleting component. Please try again.";
             }
             finally
             {
@@ -609,53 +785,29 @@ namespace MaritimeERP.Desktop.ViewModels
             }
         }
 
-        private void CancelEdit()
-        {
-            IsEditing = false;
-            ClearForm();
-            StatusMessage = "Edit cancelled";
-        }
-
-        private void ClearForm()
-        {
-            ComponentId = 0;
-            SystemId = 0;
-            ComponentName = string.Empty;
-            MakerModel = string.Empty;
-            UsbPorts = 0;
-            LanPorts = 0;
-            SerialPorts = 0;
-            ConnectedCbs = null;
-            HasRemoteConnection = false;
-            InstalledLocation = string.Empty;
-            SelectedSystem = null;
-            SelectedShip = null;
-        }
-
-        private void ClearFilters()
-        {
-            SearchText = string.Empty;
-            FilterSystemId = null;
-            FilterShipId = null;
-            FilterMakerModel = null;
-            FilterLocation = null;
-            ShowOnlyRemoteComponents = false;
-            _ = LoadDataAsync();
-        }
-
-        private bool CanSaveComponent()
-        {
-            return !string.IsNullOrWhiteSpace(ComponentName) &&
-                   !string.IsNullOrWhiteSpace(MakerModel) &&
-                   !string.IsNullOrWhiteSpace(InstalledLocation) &&
-                   SystemId > 0;
-        }
-
         public event PropertyChangedEventHandler? PropertyChanged;
 
         protected virtual void OnPropertyChanged([CallerMemberName] string? propertyName = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+
+            // Refresh command states when relevant properties change
+            if (propertyName == nameof(IsEditing) || 
+                propertyName == nameof(IsLoading) || 
+                propertyName == nameof(SelectedComponent) ||
+                propertyName == nameof(Name) ||
+                propertyName == nameof(ComponentType) ||
+                propertyName == nameof(Manufacturer) ||
+                propertyName == nameof(Model) ||
+                propertyName == nameof(InstalledLocation) ||
+                propertyName == nameof(SelectedSystem))
+            {
+                (AddComponentCommand as RelayCommand)?.RaiseCanExecuteChanged();
+                (EditCommand as RelayCommand)?.RaiseCanExecuteChanged();
+                (DeleteCommand as RelayCommand)?.RaiseCanExecuteChanged();
+                (SaveCommand as RelayCommand)?.RaiseCanExecuteChanged();
+                (CancelCommand as RelayCommand)?.RaiseCanExecuteChanged();
+            }
         }
 
         protected bool SetProperty<T>(ref T field, T value, [CallerMemberName] string? propertyName = null)

@@ -1,4 +1,6 @@
 using System.Windows.Controls;
+using System.Windows.Input;
+using MaritimeERP.Desktop.ViewModels;
 
 namespace MaritimeERP.Desktop.Views
 {
@@ -10,6 +12,17 @@ namespace MaritimeERP.Desktop.Views
         public ComponentsView()
         {
             InitializeComponent();
+        }
+
+        private void DataGrid_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            if (sender is DataGrid dataGrid && dataGrid.SelectedItem != null)
+            {
+                if (DataContext is ComponentsViewModel viewModel && viewModel.NavigateToSoftwareCommand.CanExecute(null))
+                {
+                    viewModel.NavigateToSoftwareCommand.Execute(null);
+                }
+            }
         }
     }
 } 

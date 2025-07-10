@@ -12,14 +12,20 @@ using MaritimeERP.Core.Entities;
 using MaritimeERP.Data;
 using MaritimeERP.Desktop.ViewModels;
 using MaritimeERP.Desktop.Views;
+using MaritimeERP.Desktop.Services;
 using MaritimeERP.Services;
 using MaritimeERP.Services.Interfaces;
+using System;
+using System.Threading.Tasks;
+using System.Threading;
+using System.Linq;
 
 namespace MaritimeERP.Desktop
 {
     public partial class App : Application
     {
         private readonly IHost _host;
+        private readonly ILogger<App> _logger;
 
         [DllImport("kernel32.dll")]
         private static extern bool AllocConsole();
@@ -61,13 +67,12 @@ namespace MaritimeERP.Desktop
                     })
                     .ConfigureServices((context, services) =>
                     {
+                        services.AddLogging(builder =>
+                        {
+                            builder.AddConsole();
+                            builder.AddDebug();
+                        });
                         ConfigureServices(services, context.Configuration);
-                    })
-                    .ConfigureLogging(logging =>
-                    {
-                        logging.ClearProviders();
-                        logging.AddConsole();
-                        logging.AddDebug();
                     })
                     .Build();
                     
@@ -79,6 +84,8 @@ namespace MaritimeERP.Desktop
                 MessageBox.Show($"Error in App constructor: {ex.Message}", "Startup Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 throw;
             }
+
+            _logger = _host.Services.GetRequiredService<ILogger<App>>();
         }
 
         private void ConfigureServices(IServiceCollection services, IConfiguration configuration)
@@ -104,15 +111,19 @@ namespace MaritimeERP.Desktop
             services.AddScoped<IShipService, ShipService>();
             services.AddScoped<ISystemService, SystemService>();
             services.AddScoped<IComponentService, ComponentService>();
+            services.AddScoped<ISoftwareService, SoftwareService>();
+            services.AddSingleton<INavigationService, NavigationService>();
+            services.AddSingleton<ViewLocator>();
             // Add other services here as they are implemented
 
             // ViewModels
             services.AddTransient<LoginViewModel>();
             services.AddTransient<MainViewModel>();
-            services.AddTransient<DashboardViewModel>();
+            services.AddSingleton<DashboardViewModel>();
             services.AddTransient<ShipsViewModel>();
             services.AddTransient<SystemsViewModel>();
             services.AddTransient<ComponentsViewModel>();
+            services.AddTransient<SoftwareViewModel>();
 
             // Views
             services.AddTransient<LoginWindow>();
@@ -121,159 +132,44 @@ namespace MaritimeERP.Desktop
             Console.WriteLine("Services configured successfully");
         }
 
-        protected override async void OnStartup(StartupEventArgs e)
+        protected override void OnStartup(StartupEventArgs e)
         {
-            Console.WriteLine("OnStartup called");
-            
             try
             {
-                if (_host == null)
+                Task.Run(async () =>
                 {
-                    throw new InvalidOperationException("Host was not initialized properly during construction.");
-                }
-
-                Console.WriteLine("Starting host...");
                 await _host.StartAsync();
-                Console.WriteLine("Host started successfully");
+                    await Task.Delay(100); // Add a small delay to ensure proper initialization
+                }).Wait();
 
-                Console.WriteLine("Initializing database...");
-                await InitializeDatabaseAsync();
-                Console.WriteLine("Database initialized successfully");
-
-                Console.WriteLine("Showing login window...");
-                await ShowLoginWindowAsync();
-                Console.WriteLine("Login window shown successfully");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Startup error: {ex}");
-                MessageBox.Show($"Application startup failed: {ex.Message}\n\nStack trace:\n{ex.StackTrace}", 
-                    "Startup Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                
-                Shutdown();
-                return;
-            }
-
-            base.OnStartup(e);
-        }
-
-        private async Task InitializeDatabaseAsync()
-        {
-            using var scope = _host.Services.CreateScope();
-            var context = scope.ServiceProvider.GetRequiredService<MaritimeERPContext>();
-            
-            // Ensure database is created
-            await context.Database.EnsureCreatedAsync();
-            
-            // Seed initial data if needed
-            await SeedInitialDataAsync(context);
-        }
-
-        private async Task SeedInitialDataAsync(MaritimeERPContext context)
-        {
-            Console.WriteLine("Starting database seeding...");
-            
-            // Check if we need to seed data
-            var userCount = await context.Users.CountAsync();
-            Console.WriteLine($"Current user count: {userCount}");
-            
-            if (userCount > 0)
-            {
-                Console.WriteLine("Users already exist, skipping seeding");
-                return;
-            }
-
-            // Check for Administrator role
-            var adminRole = await context.Roles.FirstOrDefaultAsync(r => r.Name == "Administrator");
-            Console.WriteLine($"Administrator role found: {adminRole != null}");
-            
-            if (adminRole == null)
-            {
-                Console.WriteLine("Administrator role not found, checking all roles...");
-                var allRoles = await context.Roles.ToListAsync();
-                Console.WriteLine($"Available roles: {string.Join(", ", allRoles.Select(r => r.Name))}");
-                
-                // Use the first available role or create a temporary one
-                if (allRoles.Any())
-                {
-                    adminRole = allRoles.First();
-                    Console.WriteLine($"Using role: {adminRole.Name}");
-                }
-                else
-                {
-                    Console.WriteLine("No roles found, this might be a database seeding issue");
-                    return;
-                }
-            }
-
-            Console.WriteLine("Creating admin user...");
-            var adminUser = new User
-            {
-                Username = "admin",
-                PasswordHash = AuthenticationService.HashPassword("admin123"),
-                FullName = "System Administrator",
-                Email = "admin@maritime-erp.com",
-                RoleId = adminRole.Id,
-                IsActive = true,
-                CreatedAt = DateTime.UtcNow
-            };
-
-            context.Users.Add(adminUser);
-            var changes = await context.SaveChangesAsync();
-            Console.WriteLine($"Admin user created successfully. Changes saved: {changes}");
-        }
-
-        private async Task ShowLoginWindowAsync()
-        {
-            var loginWindow = _host.Services.GetRequiredService<LoginWindow>();
-            
-            // The LoginWindow already has its LoginViewModel injected via constructor
-            // Get the same instance that's being used by the window
-            var loginViewModel = (LoginViewModel)loginWindow.DataContext;
-            
-            // Subscribe to login success event
-            loginViewModel.LoginSuccess += async (sender, args) =>
-            {
-                Console.WriteLine("LoginSuccess event triggered in App.xaml.cs");
-                loginWindow.Hide();
-                await ShowMainWindowAsync();
-            };
-
-            loginWindow.Show();
-        }
-
-        private async Task ShowMainWindowAsync()
-        {
-            try
-            {
-                var mainWindow = _host.Services.GetRequiredService<MainWindow>();
                 var authService = _host.Services.GetRequiredService<IAuthenticationService>();
-                
-                if (authService.CurrentUser == null)
+                var loginViewModel = new LoginViewModel(authService);
+                var loginWindow = new LoginWindow(loginViewModel);
+                loginViewModel.LoginSuccess += (s, _) => 
                 {
-                    await ShowLoginWindowAsync();
-                    return;
-                }
-
-                MainWindow = mainWindow;
+                    var mainWindow = _host.Services.GetRequiredService<MainWindow>();
                 mainWindow.Show();
+                    loginWindow.Close();
+                };
+                loginWindow.ShowDialog();
+
+                base.OnStartup(e);
             }
             catch (Exception ex)
             {
-                var errorMessage = $"Error in ShowMainWindowAsync:\n\nType: {ex.GetType().Name}\nMessage: {ex.Message}\n\nStack Trace:\n{ex.StackTrace}";
-                MessageBox.Show(errorMessage, "Main Window Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                
-                // Return to login window
-                await ShowLoginWindowAsync();
+                _logger.LogError(ex, "Error during application startup");
+                MessageBox.Show("Error during application startup", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                Current.Shutdown();
             }
         }
 
-        protected override async void OnExit(ExitEventArgs e)
+        protected override void OnExit(ExitEventArgs e)
         {
-            using (_host)
+            Task.Run(async () =>
             {
                 await _host.StopAsync();
-            }
+                _host.Dispose();
+            }).Wait();
 
             base.OnExit(e);
         }

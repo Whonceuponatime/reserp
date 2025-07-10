@@ -45,4 +45,18 @@
     <SolidColorBrush x:Key="Chart5Brush" Color="#7B1FA2"/>
     <SolidColorBrush x:Key="Chart6Brush" Color="#D32F2F"/>
 
+    <!-- Theme Colors -->
+    <SolidColorBrush x:Key="PrimaryBrush" Color="#2196F3"/>
+    <SolidColorBrush x:Key="PrimaryLightBrush" Color="#64B5F6"/>
+    <SolidColorBrush x:Key="PrimaryDarkBrush" Color="#1976D2"/>
+    <SolidColorBrush x:Key="PrimaryDarkerBrush" Color="#1565C0"/>
+    <SolidColorBrush x:Key="DangerBrush" Color="#F44336"/>
+    <SolidColorBrush x:Key="DangerDarkBrush" Color="#D32F2F"/>
+    <SolidColorBrush x:Key="DangerDarkerBrush" Color="#C62828"/>
+    <SolidColorBrush x:Key="DisabledBrush" Color="#BDBDBD"/>
+    <SolidColorBrush x:Key="BorderBrush" Color="#E0E0E0"/>
+    <SolidColorBrush x:Key="TextPrimaryBrush" Color="#212121"/>
+    <SolidColorBrush x:Key="TextSecondaryBrush" Color="#757575"/>
+    <SolidColorBrush x:Key="SurfaceBrush" Color="#FFFFFF"/>
+
 </ResourceDictionary> 

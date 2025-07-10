@@ -3,6 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:viewModels="clr-namespace:MaritimeERP.Desktop.ViewModels"
         xmlns:views="clr-namespace:MaritimeERP.Desktop.Views"
+        xmlns:services="clr-namespace:MaritimeERP.Desktop.Services"
         Title="Maritime ERP System" 
         Height="700" Width="1200"
         WindowStartupLocation="CenterScreen"
@@ -10,21 +11,9 @@
         Background="#FAFAFA">
 
     <Window.Resources>
-        <!-- DataTemplates to map ViewModels to Views -->
+        <!-- DataTemplates for Dashboard and Placeholder -->
         <DataTemplate DataType="{x:Type viewModels:DashboardViewModel}">
             <views:DashboardView />
-        </DataTemplate>
-        
-        <DataTemplate DataType="{x:Type viewModels:ShipsViewModel}">
-            <views:ShipsView />
-        </DataTemplate>
-        
-        <DataTemplate DataType="{x:Type viewModels:SystemsViewModel}">
-            <views:SystemsView />
-        </DataTemplate>
-        
-        <DataTemplate DataType="{x:Type viewModels:ComponentsViewModel}">
-            <views:ComponentsView />
         </DataTemplate>
         
         <DataTemplate DataType="{x:Type viewModels:PlaceholderViewModel}">
@@ -172,7 +161,7 @@
         <Border Grid.Row="1" Grid.Column="1"
                 Background="#FAFAFA"
                 Padding="12">
-            <ContentControl Content="{Binding CurrentViewModel}"/>
+            <ContentPresenter x:Name="MainContent" Content="{Binding CurrentViewModel}"/>
         </Border>
 
         <!-- Compact Status Bar -->
@@ -194,7 +183,7 @@
                            VerticalAlignment="Center"/>
 
                 <TextBlock Grid.Column="1"
-                           Text="© 2024 Maritime Solutions | v1.0.0"
+                           Text="{Binding CurrentUser.LastLoginAt, StringFormat='Last login: {0:g}'}"
                            FontSize="11"
                            Foreground="#757575"
                            VerticalAlignment="Center"/>

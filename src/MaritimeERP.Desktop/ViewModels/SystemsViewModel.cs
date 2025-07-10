@@ -6,6 +6,7 @@ using MaritimeERP.Core.Entities;
 using MaritimeERP.Desktop.Commands;
 using MaritimeERP.Services.Interfaces;
 using Microsoft.Extensions.Logging;
+using System.Windows;
 
 namespace MaritimeERP.Desktop.ViewModels
 {
@@ -14,6 +15,7 @@ namespace MaritimeERP.Desktop.ViewModels
         private readonly ISystemService _systemService;
         private readonly IShipService _shipService;
         private readonly ILogger<SystemsViewModel> _logger;
+        private readonly INavigationService _navigationService;
 
         // Collections
         public ObservableCollection<ShipSystem> Systems { get; set; } = new();
@@ -43,10 +45,13 @@ namespace MaritimeERP.Desktop.ViewModels
             get => _selectedShip;
             set
             {
-                _selectedShip = value;
-                OnPropertyChanged();
-                UpdateSystemFromShip();
-                RefreshSaveCommand();
+                if (_selectedShip != value)
+                {
+                    _selectedShip = value;
+                    OnPropertyChanged();
+                    UpdateSystemFromShip();
+                    _logger.LogDebug("SelectedShip changed to {ShipName}", value?.ShipName ?? "null");
+                }
             }
         }
 
@@ -56,10 +61,13 @@ namespace MaritimeERP.Desktop.ViewModels
             get => _selectedCategory;
             set
             {
-                _selectedCategory = value;
-                OnPropertyChanged();
-                UpdateSystemFromCategory();
-                RefreshSaveCommand();
+                if (_selectedCategory != value)
+                {
+                    _selectedCategory = value;
+                    OnPropertyChanged();
+                    UpdateSystemFromCategory();
+                    _logger.LogDebug("SelectedCategory changed to {CategoryName}", value?.Name ?? "null");
+                }
             }
         }
 
@@ -176,9 +184,12 @@ namespace MaritimeERP.Desktop.ViewModels
             get => _systemName;
             set
             {
-                _systemName = value;
-                OnPropertyChanged();
-                RefreshSaveCommand();
+                if (_systemName != value)
+                {
+                    _systemName = value;
+                    OnPropertyChanged();
+                    RefreshSaveCommand();
+                }
             }
         }
 
@@ -226,15 +237,29 @@ namespace MaritimeERP.Desktop.ViewModels
             }
         }
 
+        private bool _hasRemoteConnection;
+        public bool HasRemoteConnection
+        {
+            get => _hasRemoteConnection;
+            set
+            {
+                _hasRemoteConnection = value;
+                OnPropertyChanged();
+            }
+        }
+
         private string _manufacturer = string.Empty;
         public string Manufacturer
         {
             get => _manufacturer;
             set
             {
-                _manufacturer = value;
-                OnPropertyChanged();
-                RefreshSaveCommand();
+                if (_manufacturer != value)
+                {
+                    _manufacturer = value;
+                    OnPropertyChanged();
+                    RefreshSaveCommand();
+                }
             }
         }
 
@@ -244,9 +269,12 @@ namespace MaritimeERP.Desktop.ViewModels
             get => _model;
             set
             {
-                _model = value;
-                OnPropertyChanged();
-                RefreshSaveCommand();
+                if (_model != value)
+                {
+                    _model = value;
+                    OnPropertyChanged();
+                    RefreshSaveCommand();
+                }
             }
         }
 
@@ -256,9 +284,12 @@ namespace MaritimeERP.Desktop.ViewModels
             get => _serialNumber;
             set
             {
-                _serialNumber = value;
-                OnPropertyChanged();
-                RefreshSaveCommand();
+                if (_serialNumber != value)
+                {
+                    _serialNumber = value;
+                    OnPropertyChanged();
+                    RefreshSaveCommand();
+                }
             }
         }
 
@@ -326,9 +357,12 @@ namespace MaritimeERP.Desktop.ViewModels
             get => _isEditing;
             set
             {
-                _isEditing = value;
-                OnPropertyChanged();
-                RefreshSaveCommand();
+                if (_isEditing != value)
+                {
+                    _isEditing = value;
+                    OnPropertyChanged();
+                    RefreshSaveCommand();
+                }
             }
         }
 
@@ -346,39 +380,83 @@ namespace MaritimeERP.Desktop.ViewModels
         public ICommand LoadDataCommand { get; }
         public ICommand AddSystemCommand { get; }
         public ICommand EditSystemCommand { get; }
-        public ICommand SaveSystemCommand { get; }
         public ICommand DeleteSystemCommand { get; }
         public ICommand CancelEditCommand { get; }
         public ICommand ClearFiltersCommand { get; }
+        public ICommand NavigateToComponentsCommand { get; }
 
-        private AsyncRelayCommand? _saveSystemAsyncCommand;
+        private ICommand? _saveSystemCommand;
+        public ICommand SaveSystemCommand 
+        { 
+            get => _saveSystemCommand ??= new RelayCommand(async () => await SaveSystemAsync(), () => CanSaveSystem());
+            private set => _saveSystemCommand = value;
+        }
 
-        public SystemsViewModel(ISystemService systemService, IShipService shipService, ILogger<SystemsViewModel> logger)
+        public SystemsViewModel(ISystemService systemService, IShipService shipService, ILogger<SystemsViewModel> logger, INavigationService navigationService)
         {
-            _systemService = systemService;
-            _shipService = shipService;
-            _logger = logger;
+            _systemService = systemService ?? throw new ArgumentNullException(nameof(systemService));
+            _shipService = shipService ?? throw new ArgumentNullException(nameof(shipService));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _navigationService = navigationService ?? throw new ArgumentNullException(nameof(navigationService));
 
-            // Initialize commands
-            LoadDataCommand = new AsyncRelayCommand(LoadDataAsync);
+            LoadDataCommand = new RelayCommand(async () => await LoadDataAsync());
             AddSystemCommand = new RelayCommand(AddSystem);
-            EditSystemCommand = new RelayCommand(EditSystem, () => SelectedSystem != null);
-            _saveSystemAsyncCommand = new AsyncRelayCommand(SaveSystemAsync, CanSaveSystem);
-            SaveSystemCommand = _saveSystemAsyncCommand;
-            DeleteSystemCommand = new AsyncRelayCommand(DeleteSystemAsync, () => SelectedSystem != null);
+            EditSystemCommand = new RelayCommand(EditSystem, () => SelectedSystem != null && !IsEditing);
+            DeleteSystemCommand = new RelayCommand(async () => await DeleteSystemAsync(), () => SelectedSystem != null && !IsEditing);
             CancelEditCommand = new RelayCommand(CancelEdit);
             ClearFiltersCommand = new RelayCommand(ClearFilters);
+            NavigateToComponentsCommand = new RelayCommand(NavigateToComponents, () => SelectedSystem != null);
 
-            // Load data on initialization
-            _ = LoadDataAsync();
+            // Subscribe to property changes to refresh commands
+            PropertyChanged += (s, e) =>
+            {
+                if (e.PropertyName == nameof(IsEditing) ||
+                    e.PropertyName == nameof(SelectedSystem))
+                {
+                    ((RelayCommand)EditSystemCommand).RaiseCanExecuteChanged();
+                    ((RelayCommand)DeleteSystemCommand).RaiseCanExecuteChanged();
+                    ((RelayCommand)NavigateToComponentsCommand).RaiseCanExecuteChanged();
+                }
+
+                if (e.PropertyName == nameof(IsEditing) ||
+                    e.PropertyName == nameof(SystemName) ||
+                    e.PropertyName == nameof(Manufacturer) ||
+                    e.PropertyName == nameof(Model) ||
+                    e.PropertyName == nameof(SerialNumber) ||
+                    e.PropertyName == nameof(SelectedShip) ||
+                    e.PropertyName == nameof(SelectedCategory))
+                {
+                    ((RelayCommand)SaveSystemCommand).RaiseCanExecuteChanged();
+                }
+            };
+
+            // Load data with proper error handling
+            Task.Run(async () => 
+            {
+                try
+                {
+                    await LoadDataAsync();
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Failed to load initial data in SystemsViewModel constructor");
+                    StatusMessage = "Failed to load initial data. Please try refreshing.";
+                }
+            });
         }
 
         private async Task LoadDataAsync()
         {
             try
             {
-                IsLoading = true;
-                StatusMessage = "Loading systems data...";
+                // Set loading state on UI thread
+                await Application.Current.Dispatcher.InvokeAsync(() =>
+                {
+                    IsLoading = true;
+                    StatusMessage = "Loading systems data...";
+                });
+                
+                _logger.LogInformation("Starting LoadDataAsync");
 
                 // Load all data in parallel
                 var systemsTask = _systemService.GetAllSystemsAsync();
@@ -389,48 +467,69 @@ namespace MaritimeERP.Desktop.ViewModels
 
                 await Task.WhenAll(systemsTask, shipsTask, categoriesTask, securityZonesTask, manufacturersTask);
 
-                // Update collections
-                Systems.Clear();
-                foreach (var system in await systemsTask)
-                {
-                    Systems.Add(system);
-                }
+                // Get the results
+                var systems = await systemsTask;
+                var ships = await shipsTask;
+                var categories = await categoriesTask;
+                var securityZones = await securityZonesTask;
+                var manufacturers = await manufacturersTask;
 
-                Ships.Clear();
-                foreach (var ship in await shipsTask)
+                // Update collections on UI thread
+                await Application.Current.Dispatcher.InvokeAsync(() =>
                 {
-                    Ships.Add(ship);
-                }
+                    Systems.Clear();
+                    foreach (var system in systems)
+                    {
+                        Systems.Add(system);
+                    }
+                    _logger.LogInformation("Loaded {SystemCount} systems", Systems.Count);
 
-                Categories.Clear();
-                foreach (var category in await categoriesTask)
-                {
-                    Categories.Add(category);
-                }
+                    Ships.Clear();
+                    foreach (var ship in ships)
+                    {
+                        Ships.Add(ship);
+                    }
+                    _logger.LogInformation("Loaded {ShipCount} ships", Ships.Count);
 
-                SecurityZones.Clear();
-                foreach (var zone in await securityZonesTask)
-                {
-                    SecurityZones.Add(zone);
-                }
+                    Categories.Clear();
+                    foreach (var category in categories)
+                    {
+                        Categories.Add(category);
+                    }
+                    _logger.LogInformation("Loaded {CategoryCount} categories", Categories.Count);
 
-                Manufacturers.Clear();
-                foreach (var manufacturer in await manufacturersTask)
-                {
-                    Manufacturers.Add(manufacturer);
-                }
+                    SecurityZones.Clear();
+                    foreach (var zone in securityZones)
+                    {
+                        SecurityZones.Add(zone);
+                    }
+                    _logger.LogInformation("Loaded {ZoneCount} security zones", SecurityZones.Count);
 
-                StatusMessage = $"Loaded {Systems.Count} systems successfully";
-                _logger.LogInformation("Systems data loaded successfully");
+                    Manufacturers.Clear();
+                    foreach (var manufacturer in manufacturers)
+                    {
+                        Manufacturers.Add(manufacturer);
+                    }
+                    _logger.LogInformation("Loaded {ManufacturerCount} manufacturers", Manufacturers.Count);
+
+                    StatusMessage = $"Loaded {Systems.Count} systems successfully";
+                    _logger.LogInformation("Systems data loaded successfully");
+                });
             }
             catch (Exception ex)
             {
-                StatusMessage = "Error loading systems data";
+                await Application.Current.Dispatcher.InvokeAsync(() =>
+                {
+                    StatusMessage = "Error loading systems data";
+                });
                 _logger.LogError(ex, "Error loading systems data");
             }
             finally
             {
-                IsLoading = false;
+                await Application.Current.Dispatcher.InvokeAsync(() =>
+                {
+                    IsLoading = false;
+                });
             }
         }
 
@@ -438,25 +537,37 @@ namespace MaritimeERP.Desktop.ViewModels
         {
             try
             {
-                IsLoading = true;
+                await Application.Current.Dispatcher.InvokeAsync(() =>
+                {
+                    IsLoading = true;
+                });
+                
                 var systems = await _systemService.SearchSystemsAsync(SearchText);
                 
-                Systems.Clear();
-                foreach (var system in systems)
+                await Application.Current.Dispatcher.InvokeAsync(() =>
                 {
-                    Systems.Add(system);
-                }
-
-                StatusMessage = $"Found {Systems.Count} systems";
+                    Systems.Clear();
+                    foreach (var system in systems)
+                    {
+                        Systems.Add(system);
+                    }
+                    StatusMessage = $"Found {Systems.Count} systems";
+                });
             }
             catch (Exception ex)
             {
-                StatusMessage = "Error searching systems";
+                await Application.Current.Dispatcher.InvokeAsync(() =>
+                {
+                    StatusMessage = "Error searching systems";
+                });
                 _logger.LogError(ex, "Error searching systems");
             }
             finally
             {
-                IsLoading = false;
+                await Application.Current.Dispatcher.InvokeAsync(() =>
+                {
+                    IsLoading = false;
+                });
             }
         }
 
@@ -464,7 +575,11 @@ namespace MaritimeERP.Desktop.ViewModels
         {
             try
             {
-                IsLoading = true;
+                await Application.Current.Dispatcher.InvokeAsync(() =>
+                {
+                    IsLoading = true;
+                });
+                
                 IEnumerable<ShipSystem> systems;
 
                 if (FilterShipId.HasValue)
@@ -484,22 +599,30 @@ namespace MaritimeERP.Desktop.ViewModels
                     systems = await _systemService.GetAllSystemsAsync();
                 }
 
-                Systems.Clear();
-                foreach (var system in systems)
+                await Application.Current.Dispatcher.InvokeAsync(() =>
                 {
-                    Systems.Add(system);
-                }
-
-                StatusMessage = $"Filtered to {Systems.Count} systems";
+                    Systems.Clear();
+                    foreach (var system in systems)
+                    {
+                        Systems.Add(system);
+                    }
+                    StatusMessage = $"Filtered to {Systems.Count} systems";
+                });
             }
             catch (Exception ex)
             {
-                StatusMessage = "Error filtering systems";
+                await Application.Current.Dispatcher.InvokeAsync(() =>
+                {
+                    StatusMessage = "Error filtering systems";
+                });
                 _logger.LogError(ex, "Error filtering systems");
             }
             finally
             {
-                IsLoading = false;
+                await Application.Current.Dispatcher.InvokeAsync(() =>
+                {
+                    IsLoading = false;
+                });
             }
         }
 
@@ -516,19 +639,20 @@ namespace MaritimeERP.Desktop.ViewModels
             if (SelectedSystem == null) return;
 
             SystemId = SelectedSystem.Id;
-            ShipId = SelectedSystem.ShipId;
             SystemName = SelectedSystem.Name;
             Manufacturer = SelectedSystem.Manufacturer;
             Model = SelectedSystem.Model;
             SerialNumber = SelectedSystem.SerialNumber;
             Description = SelectedSystem.Description;
+            HasRemoteConnection = SelectedSystem.HasRemoteConnection;
             CategoryId = SelectedSystem.CategoryId;
             SecurityZoneId = SelectedSystem.SecurityZoneId;
+            ShipId = SelectedSystem.ShipId;
 
-            // Update selected items in combos
-            SelectedShip = Ships.FirstOrDefault(s => s.Id == ShipId);
-            SelectedCategory = Categories.FirstOrDefault(c => c.Id == CategoryId);
-            SelectedSecurityZone = SecurityZones.FirstOrDefault(z => z.Id == SecurityZoneId);
+            // Set selected items
+            SelectedShip = Ships.FirstOrDefault(s => s.Id == SelectedSystem.ShipId);
+            SelectedCategory = Categories.FirstOrDefault(c => c.Id == SelectedSystem.CategoryId);
+            SelectedSecurityZone = SecurityZones.FirstOrDefault(z => z.Id == SelectedSystem.SecurityZoneId);
         }
 
         private void UpdateSystemFromShip()
@@ -536,10 +660,7 @@ namespace MaritimeERP.Desktop.ViewModels
             if (SelectedShip != null)
             {
                 ShipId = SelectedShip.Id;
-            }
-            else
-            {
-                ShipId = 0;
+                RefreshSaveCommand();
             }
         }
 
@@ -548,10 +669,7 @@ namespace MaritimeERP.Desktop.ViewModels
             if (SelectedCategory != null)
             {
                 CategoryId = SelectedCategory.Id;
-            }
-            else
-            {
-                CategoryId = 0;
+                RefreshSaveCommand();
             }
         }
 
@@ -565,9 +683,57 @@ namespace MaritimeERP.Desktop.ViewModels
 
         private void AddSystem()
         {
+            _logger.LogDebug("AddSystem called");
+            _logger.LogInformation("AddSystem: Ships count = {ShipCount}, Categories count = {CategoryCount}", 
+                Ships.Count, Categories.Count);
+            
+            // If no data is loaded, try to load it first
+            if (Ships.Count == 0 || Categories.Count == 0)
+            {
+                _logger.LogWarning("No ships or categories loaded. Attempting to reload data...");
+                StatusMessage = "Loading required data...";
+                
+                Task.Run(async () =>
+                {
+                    try
+                    {
+                        await LoadDataAsync();
+                        // After loading, try to add system again
+                        Application.Current.Dispatcher.Invoke(() =>
+                        {
+                            if (Ships.Count > 0 && Categories.Count > 0)
+                            {
+                                ClearForm();
+                                IsEditing = true;
+                                StatusMessage = "Adding new system - fill in all required fields";
+                                RefreshSaveCommand();
+                            }
+                            else
+                            {
+                                StatusMessage = "Error: Unable to load ships and categories data";
+                            }
+                        });
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Failed to load data when adding system");
+                        Application.Current.Dispatcher.Invoke(() =>
+                        {
+                            StatusMessage = "Error loading data. Please try again.";
+                        });
+                    }
+                });
+                return;
+            }
+            
             ClearForm();
             IsEditing = true;
             StatusMessage = "Adding new system - fill in all required fields";
+            
+            _logger.LogInformation("AddSystem: After setting IsEditing=true, Ships count = {ShipCount}, Categories count = {CategoryCount}", 
+                Ships.Count, Categories.Count);
+            
+            RefreshSaveCommand();
         }
 
         private void EditSystem()
@@ -576,11 +742,18 @@ namespace MaritimeERP.Desktop.ViewModels
             {
                 IsEditing = true;
                 StatusMessage = $"Editing system: {SelectedSystem.Name}";
+                RefreshSaveCommand();
             }
         }
 
         private async Task SaveSystemAsync()
         {
+            if (!CanSaveSystem())
+            {
+                StatusMessage = "Please fill in all required fields";
+                return;
+            }
+
             try
             {
                 IsLoading = true;
@@ -589,14 +762,15 @@ namespace MaritimeERP.Desktop.ViewModels
                 var system = new ShipSystem
                 {
                     Id = SystemId,
-                    ShipId = ShipId,
-                    Name = SystemName,
-                    Manufacturer = Manufacturer,
-                    Model = Model,
-                    SerialNumber = SerialNumber,
-                    Description = Description,
-                    CategoryId = CategoryId > 0 ? CategoryId : 1, // Default to category 1 if not set
-                    SecurityZoneId = SecurityZoneId > 0 ? SecurityZoneId : 1 // Default to security zone 1 if not set
+                    ShipId = SelectedShip?.Id ?? throw new InvalidOperationException("Ship must be selected"),
+                    CategoryId = SelectedCategory?.Id ?? throw new InvalidOperationException("Category must be selected"),
+                    SecurityZoneId = SelectedSecurityZone?.Id ?? 1, // Default to zone 1 if not selected
+                    Name = SystemName?.Trim() ?? throw new InvalidOperationException("System name is required"),
+                    Manufacturer = Manufacturer?.Trim() ?? throw new InvalidOperationException("Manufacturer is required"),
+                    Model = Model?.Trim() ?? throw new InvalidOperationException("Model is required"),
+                    SerialNumber = SerialNumber?.Trim() ?? throw new InvalidOperationException("Serial number is required"),
+                    Description = Description?.Trim(),
+                    HasRemoteConnection = HasRemoteConnection
                 };
 
                 if (SystemId == 0)
@@ -604,8 +778,13 @@ namespace MaritimeERP.Desktop.ViewModels
                     // Create new system
                     system.CreatedAt = DateTime.UtcNow;
                     var createdSystem = await _systemService.CreateSystemAsync(system);
-                    Systems.Add(createdSystem);
-                    StatusMessage = "System created successfully";
+                    
+                    await Application.Current.Dispatcher.InvokeAsync(() =>
+                    {
+                        Systems.Add(createdSystem);
+                        StatusMessage = "System created successfully";
+                    });
+                    
                     _logger.LogInformation("System created successfully: {SystemName}", SystemName);
                 }
                 else
@@ -613,12 +792,17 @@ namespace MaritimeERP.Desktop.ViewModels
                     // Update existing system
                     system.UpdatedAt = DateTime.UtcNow;
                     var updatedSystem = await _systemService.UpdateSystemAsync(system);
-                    var index = Systems.ToList().FindIndex(s => s.Id == SystemId);
-                    if (index >= 0)
+                    
+                    await Application.Current.Dispatcher.InvokeAsync(() =>
                     {
-                        Systems[index] = updatedSystem;
-                    }
-                    StatusMessage = "System updated successfully";
+                        var index = Systems.ToList().FindIndex(s => s.Id == SystemId);
+                        if (index >= 0)
+                        {
+                            Systems[index] = updatedSystem;
+                        }
+                        StatusMessage = "System updated successfully";
+                    });
+                    
                     _logger.LogInformation("System updated successfully: {SystemName}", SystemName);
                 }
 
@@ -629,6 +813,11 @@ namespace MaritimeERP.Desktop.ViewModels
             {
                 StatusMessage = $"Error saving system: {ex.Message}";
                 _logger.LogError(ex, "Error saving system: {Message}", ex.Message);
+                MessageBox.Show(
+                    $"Error saving system: {ex.Message}",
+                    "Error",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
             }
             finally
             {
@@ -647,9 +836,13 @@ namespace MaritimeERP.Desktop.ViewModels
                 
                 if (success)
                 {
-                    Systems.Remove(SelectedSystem);
-                    StatusMessage = "System deleted successfully";
-                    ClearForm();
+                    await Application.Current.Dispatcher.InvokeAsync(() =>
+                    {
+                        Systems.Remove(SelectedSystem);
+                        StatusMessage = "System deleted successfully";
+                        ClearForm();
+                    });
+                    
                     _logger.LogInformation("System deleted: {SystemId}", SelectedSystem.Id);
                 }
                 else
@@ -677,6 +870,7 @@ namespace MaritimeERP.Desktop.ViewModels
 
         private void ClearForm()
         {
+            _logger.LogDebug("ClearForm called");
             SystemId = 0;
             ShipId = 0;
             SystemName = string.Empty;
@@ -686,9 +880,11 @@ namespace MaritimeERP.Desktop.ViewModels
             Description = null;
             CategoryId = 0;
             SecurityZoneId = 0;
+            HasRemoteConnection = false;
             SelectedShip = null;
             SelectedCategory = null;
             SelectedSecurityZone = null;
+            RefreshSaveCommand();
         }
 
         private void ClearFilters()
@@ -700,15 +896,40 @@ namespace MaritimeERP.Desktop.ViewModels
             _ = LoadDataAsync();
         }
 
+        private void NavigateToComponents()
+        {
+            if (SelectedSystem != null)
+            {
+                _navigationService.NavigateToPageWithFilter("Components", SelectedSystem);
+            }
+        }
+
         private bool CanSaveSystem()
         {
-            return IsEditing && 
-                   !string.IsNullOrWhiteSpace(SystemName) &&
-                   !string.IsNullOrWhiteSpace(Manufacturer) &&
-                   !string.IsNullOrWhiteSpace(Model) &&
-                   !string.IsNullOrWhiteSpace(SerialNumber) &&
-                   ShipId > 0 &&
-                   CategoryId > 0;
+            var canSave = IsEditing &&
+                   !string.IsNullOrWhiteSpace(SystemName?.Trim()) &&
+                   !string.IsNullOrWhiteSpace(Manufacturer?.Trim()) &&
+                   !string.IsNullOrWhiteSpace(Model?.Trim()) &&
+                   !string.IsNullOrWhiteSpace(SerialNumber?.Trim()) &&
+                   SelectedShip != null &&
+                   SelectedCategory != null;
+
+            // Debug logging
+            var reasons = new List<string>();
+            if (!IsEditing) reasons.Add("Not in edit mode");
+            if (string.IsNullOrWhiteSpace(SystemName?.Trim())) reasons.Add("System name is empty");
+            if (string.IsNullOrWhiteSpace(Manufacturer?.Trim())) reasons.Add("Manufacturer is empty");
+            if (string.IsNullOrWhiteSpace(Model?.Trim())) reasons.Add("Model is empty");
+            if (string.IsNullOrWhiteSpace(SerialNumber?.Trim())) reasons.Add("Serial number is empty");
+            if (SelectedShip == null) reasons.Add("No ship selected");
+            if (SelectedCategory == null) reasons.Add("No category selected");
+
+            _logger.LogDebug("CanSaveSystem called. Result={CanSave}. {ReasonCount} reasons: {Reasons}", 
+                canSave, 
+                reasons.Count, 
+                reasons.Count > 0 ? string.Join(", ", reasons) : "All conditions met");
+
+            return canSave;
         }
 
         private void ApplyFilters()
@@ -748,7 +969,24 @@ namespace MaritimeERP.Desktop.ViewModels
 
         private void RefreshSaveCommand()
         {
-            _saveSystemAsyncCommand?.RaiseCanExecuteChanged();
+            _logger.LogDebug("RefreshSaveCommand called. Current state: " +
+                $"IsEditing={IsEditing}, " +
+                $"SystemName='{SystemName}', " +
+                $"Manufacturer='{Manufacturer}', " +
+                $"Model='{Model}', " +
+                $"SerialNumber='{SerialNumber}', " +
+                $"SelectedShip={SelectedShip?.ShipName ?? "null"}, " +
+                $"SelectedCategory={SelectedCategory?.Name ?? "null"}");
+
+            if (SaveSystemCommand is RelayCommand cmd)
+            {
+                cmd.RaiseCanExecuteChanged();
+                _logger.LogDebug("SaveSystemCommand.CanExecute = {CanExecute}", cmd.CanExecute(null));
+            }
+            else
+            {
+                _logger.LogWarning("SaveSystemCommand is not a RelayCommand");
+            }
         }
     }
 } 

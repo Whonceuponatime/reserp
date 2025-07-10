@@ -1,4 +1,6 @@
+using System;
 using System.Windows;
+using MaritimeERP.Core.Entities;
 using MaritimeERP.Desktop.ViewModels;
 using ComponentEntity = MaritimeERP.Core.Entities.Component;
 
@@ -38,15 +40,14 @@ namespace MaritimeERP.Desktop.Views
             Close();
         }
 
-        private void OnComponentSaved(object? sender, EventArgs e)
+        private void OnComponentSaved(object? sender, Component e)
         {
-            DialogResult = true;
-            Close();
+            // Handle component saved event if needed
         }
 
         private void OnRequestClose(object? sender, EventArgs e)
         {
-            DialogResult = false;
+            DialogResult = true;
             Close();
         }
 

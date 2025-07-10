@@ -6,6 +6,8 @@ using Microsoft.Extensions.DependencyInjection;
 using MaritimeERP.Core.Entities;
 using MaritimeERP.Desktop.Commands;
 using MaritimeERP.Services.Interfaces;
+using ComponentEntity = MaritimeERP.Core.Entities.Component;
+using System.Collections.Generic;
 
 namespace MaritimeERP.Desktop.ViewModels
 {
@@ -13,16 +15,27 @@ namespace MaritimeERP.Desktop.ViewModels
     {
         private readonly IAuthenticationService _authenticationService;
         private readonly IServiceProvider _serviceProvider;
+        private readonly INavigationService _navigationService;
         private User? _currentUser;
         private NavigationItem? _selectedNavigation;
         private object? _currentViewModel;
         private string _pageTitle = "Dashboard";
 
-        public MainViewModel(IAuthenticationService authenticationService, IServiceProvider serviceProvider)
+        // Cache view models to persist state across navigation
+        private readonly Dictionary<string, object> _viewModelCache = new();
+
+        public MainViewModel(IAuthenticationService authenticationService, IServiceProvider serviceProvider, INavigationService navigationService)
         {
             _authenticationService = authenticationService;
             _serviceProvider = serviceProvider;
+            _navigationService = navigationService;
             _currentUser = _authenticationService.CurrentUser;
+            
+            // Initialize the navigation service with this MainViewModel instance
+            if (_navigationService is MaritimeERP.Desktop.Services.NavigationService navService)
+            {
+                navService.SetMainViewModel(this);
+            }
             
             InitializeNavigation();
             InitializeCommands();
@@ -176,27 +189,140 @@ namespace MaritimeERP.Desktop.ViewModels
 
         private object CreateDashboardViewModel()
         {
-            return _serviceProvider.GetRequiredService<DashboardViewModel>();
+            if (!_viewModelCache.TryGetValue("Dashboard", out var viewModel))
+            {
+                viewModel = _serviceProvider.GetRequiredService<DashboardViewModel>();
+                _viewModelCache["Dashboard"] = viewModel;
+            }
+            return viewModel;
         }
 
         private object CreateShipsViewModel()
         {
-            return _serviceProvider.GetRequiredService<ShipsViewModel>();
+            if (!_viewModelCache.TryGetValue("Ships", out var viewModel))
+            {
+                viewModel = _serviceProvider.GetRequiredService<ShipsViewModel>();
+                _viewModelCache["Ships"] = viewModel;
+            }
+            return viewModel;
         }
 
         private object CreateSystemsViewModel()
         {
-            return _serviceProvider.GetRequiredService<SystemsViewModel>();
+            if (!_viewModelCache.TryGetValue("Systems", out var viewModel))
+            {
+                viewModel = _serviceProvider.GetRequiredService<SystemsViewModel>();
+                _viewModelCache["Systems"] = viewModel;
+            }
+            return viewModel;
         }
 
         private object CreateComponentsViewModel()
         {
-            return _serviceProvider.GetRequiredService<ComponentsViewModel>();
+            if (!_viewModelCache.TryGetValue("Components", out var viewModel))
+            {
+                viewModel = _serviceProvider.GetRequiredService<ComponentsViewModel>();
+                _viewModelCache["Components"] = viewModel;
+            }
+            return viewModel;
+        }
+
+        private object CreateComponentsViewModel(ShipSystem? systemFilter = null)
+        {
+            var componentsViewModel = (ComponentsViewModel)CreateComponentsViewModel();
+            if (systemFilter != null)
+            {
+                componentsViewModel.SetSystemFilter(systemFilter);
+            }
+            return componentsViewModel;
+        }
+
+        /// <summary>
+        /// Navigate to a specific page with optional filter parameters
+        /// </summary>
+        /// <param name="pageName">The name of the page to navigate to</param>
+        /// <param name="systemFilter">Optional system filter for Components page</param>
+        public void NavigateToPageWithFilter(string pageName, ShipSystem? systemFilter = null)
+        {
+            // Find the navigation item
+            var navigationItem = NavigationItems.FirstOrDefault(item => item.Page == pageName);
+            if (navigationItem == null)
+                return;
+
+            // Set the page title
+            PageTitle = navigationItem.Title;
+            
+            // Create the appropriate view model with filters
+            CurrentViewModel = navigationItem.Page switch
+            {
+                "Components" => CreateComponentsViewModel(systemFilter),
+                "Dashboard" => CreateDashboardViewModel(),
+                "Ships" => CreateShipsViewModel(),
+                "Systems" => CreateSystemsViewModel(),
+                "Software" => CreateSoftwareViewModel(),
+                "ChangeRequests" => CreateChangeRequestsViewModel(),
+                "Documents" => CreateDocumentsViewModel(),
+                "Reports" => CreateReportsViewModel(),
+                "Users" => CreateUsersViewModel(),
+                _ => CreateDashboardViewModel()
+            };
+
+            // Update the selected navigation item
+            SelectedNavigation = navigationItem;
+        }
+
+        /// <summary>
+        /// Navigate to a specific page with optional component filter parameters
+        /// </summary>
+        /// <param name="pageName">The name of the page to navigate to</param>
+        /// <param name="componentFilter">Optional component filter for Software page</param>
+        public void NavigateToPageWithComponentFilter(string pageName, ComponentEntity? componentFilter = null)
+        {
+            // Find the navigation item
+            var navigationItem = NavigationItems.FirstOrDefault(item => item.Page == pageName);
+            if (navigationItem == null)
+                return;
+
+            // Set the page title
+            PageTitle = navigationItem.Title;
+            
+            // Create the appropriate view model with filters
+            CurrentViewModel = navigationItem.Page switch
+            {
+                "Software" => CreateSoftwareViewModel(componentFilter),
+                "Dashboard" => CreateDashboardViewModel(),
+                "Ships" => CreateShipsViewModel(),
+                "Systems" => CreateSystemsViewModel(),
+                "Components" => CreateComponentsViewModel(),
+                "ChangeRequests" => CreateChangeRequestsViewModel(),
+                "Documents" => CreateDocumentsViewModel(),
+                "Reports" => CreateReportsViewModel(),
+                "Users" => CreateUsersViewModel(),
+                _ => CreateDashboardViewModel()
+            };
+
+            // Update the selected navigation item
+            SelectedNavigation = navigationItem;
         }
 
         private object CreateSoftwareViewModel()
         {
-            return new PlaceholderViewModel("Software Management", "Manage software inventory", "💻");
+            if (!_viewModelCache.TryGetValue("Software", out var viewModel))
+            {
+                viewModel = _serviceProvider.GetRequiredService<SoftwareViewModel>();
+                _viewModelCache["Software"] = viewModel;
+            }
+            return viewModel;
+        }
+
+        private object CreateSoftwareViewModel(ComponentEntity? componentFilter = null)
+        {
+            var softwareViewModel = (SoftwareViewModel)CreateSoftwareViewModel();
+            if (componentFilter != null)
+            {
+                softwareViewModel.SetComponentFilter(componentFilter);
+            }
+            return softwareViewModel;
         }
 
         private object CreateChangeRequestsViewModel()
@@ -222,12 +348,16 @@ namespace MaritimeERP.Desktop.ViewModels
         private async Task LogoutAsync()
         {
             await _authenticationService.LogoutAsync();
+            // Clear cached view models on logout
+            _viewModelCache.Clear();
             // The App.xaml.cs will handle showing the login window
         }
 
         private async Task RefreshAsync()
         {
             CurrentUser = await _authenticationService.GetCurrentUserAsync();
+            // Clear cache to force refresh of all view models
+            _viewModelCache.Clear();
             InitializeNavigation();
             NavigateToPage();
         }
@@ -253,6 +383,11 @@ namespace MaritimeERP.Desktop.ViewModels
             field = value;
             OnPropertyChanged(propertyName);
             return true;
+        }
+
+        public void ClearViewModelCache()
+        {
+            _viewModelCache.Clear();
         }
     }
 

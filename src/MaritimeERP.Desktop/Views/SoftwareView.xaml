@@ -1,15 +1,18 @@
-<UserControl x:Class="MaritimeERP.Desktop.Views.SystemsView"
+<UserControl x:Class="MaritimeERP.Desktop.Views.SoftwareView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:local="clr-namespace:MaritimeERP.Desktop.Views"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:converters="clr-namespace:MaritimeERP.Desktop.Converters"
              mc:Ignorable="d" 
              d:DesignHeight="800" d:DesignWidth="1200"
              Background="#FAFAFA">
 
     <UserControl.Resources>
-        <!-- Converters -->
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+        <converters:InverseBooleanToVisibilityConverter x:Key="InverseBooleanToVisibilityConverter"/>
         
         <!-- Styles -->
         <Style x:Key="ActionButtonStyle" TargetType="Button">
@@ -55,11 +58,19 @@
             </Style.Triggers>
         </Style>
 
-        <!-- Inverse Boolean to Visibility Converter -->
         <Style x:Key="InverseVisibilityStyle" TargetType="FrameworkElement">
             <Setter Property="Visibility" Value="Collapsed"/>
             <Style.Triggers>
                 <DataTrigger Binding="{Binding IsEditing}" Value="False">
+                    <Setter Property="Visibility" Value="Visible"/>
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="EditingVisibilityStyle" TargetType="FrameworkElement">
+            <Setter Property="Visibility" Value="Collapsed"/>
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IsEditing}" Value="True">
                     <Setter Property="Visibility" Value="Visible"/>
                 </DataTrigger>
             </Style.Triggers>
@@ -85,19 +96,19 @@
                 </Grid.ColumnDefinitions>
 
                 <StackPanel Grid.Column="0">
-                    <TextBlock Text="Systems" 
+                    <TextBlock Text="Software" 
                                FontSize="20" 
                                FontWeight="SemiBold"
                                Foreground="#1976D2"/>
-                    <TextBlock Text="Manage ship systems and equipment"
+                    <TextBlock Text="Manage software installations and licenses"
                                FontSize="12"
                                Foreground="#757575"
                                Margin="0,2,0,0"/>
                 </StackPanel>
 
                 <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                    <Button Content="+ Add System" 
-                            Command="{Binding AddSystemCommand}"
+                    <Button Content="+ Add Software" 
+                            Command="{Binding AddSoftwareCommand}"
                             Background="#1976D2"
                             Foreground="White"
                             BorderThickness="0"
@@ -131,7 +142,7 @@
                 <ColumnDefinition Width="300"/>
             </Grid.ColumnDefinitions>
 
-            <!-- Systems List -->
+            <!-- Software List -->
             <Border Grid.Column="0" 
                     Background="White"
                     Padding="8,0,0,0">
@@ -151,18 +162,38 @@
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="200"/>
                                 <ColumnDefinition Width="150"/>
-                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="150"/>
                                 <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
 
                             <TextBox Grid.Column="0" 
-                                     Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                                     Text="{Binding SearchTerm, UpdateSourceTrigger=PropertyChanged}"
                                      Height="24"
                                      Padding="6,0"
                                      FontSize="12"
                                      Background="White"
                                      BorderThickness="1"
-                                     BorderBrush="#E0E0E0"/>
+                                     BorderBrush="#E0E0E0"
+                                     VerticalContentAlignment="Center">
+                                <TextBox.Style>
+                                    <Style TargetType="TextBox">
+                                        <Style.Triggers>
+                                            <Trigger Property="Text" Value="">
+                                                <Setter Property="Background">
+                                                    <Setter.Value>
+                                                        <VisualBrush Stretch="None" AlignmentX="Left" AlignmentY="Center">
+                                                            <VisualBrush.Visual>
+                                                                <TextBlock Text="Search software..." Foreground="Gray" Margin="5,0,0,0"/>
+                                                            </VisualBrush.Visual>
+                                                        </VisualBrush>
+                                                    </Setter.Value>
+                                                </Setter>
+                                            </Trigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBox.Style>
+                            </TextBox>
                             
                             <ComboBox Grid.Column="1" 
                                       ItemsSource="{Binding Ships}"
@@ -176,21 +207,60 @@
                                       BorderBrush="#E0E0E0"
                                       Margin="8,0,0,0"/>
 
-                            <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center">
-                                <TextBlock Text="Active Only" 
-                                           FontSize="11"
-                                           Foreground="#757575"
-                                           VerticalAlignment="Center"/>
-                                <CheckBox IsChecked="{Binding ShowActiveOnly}"
-                                          Margin="6,0,0,0"/>
-                            </StackPanel>
+                            <ComboBox Grid.Column="2" 
+                                      ItemsSource="{Binding Systems}"
+                                      SelectedItem="{Binding SelectedSystem}"
+                                      DisplayMemberPath="Name"
+                                      Height="24"
+                                      Padding="6,0"
+                                      FontSize="12"
+                                      Background="White"
+                                      BorderThickness="1"
+                                      BorderBrush="#E0E0E0"
+                                      Margin="8,0,0,0"/>
+
+                            <Button Grid.Column="3"
+                                    Content="Show All"
+                                    Command="{Binding ClearFilterCommand}"
+                                    Background="#757575"
+                                    Foreground="White"
+                                    BorderThickness="0"
+                                    Height="24"
+                                    Padding="8,0"
+                                    FontSize="11"
+                                    Margin="8,0,0,0">
+                                <Button.Style>
+                                    <Style TargetType="Button">
+                                        <Setter Property="Template">
+                                            <Setter.Value>
+                                                <ControlTemplate TargetType="Button">
+                                                    <Border Background="{TemplateBinding Background}" 
+                                                            CornerRadius="2" 
+                                                            Padding="{TemplateBinding Padding}">
+                                                        <ContentPresenter HorizontalAlignment="Center" 
+                                                                        VerticalAlignment="Center"/>
+                                                    </Border>
+                                                    <ControlTemplate.Triggers>
+                                                        <Trigger Property="IsMouseOver" Value="True">
+                                                            <Setter Property="Background" Value="#616161"/>
+                                                        </Trigger>
+                                                        <Trigger Property="IsPressed" Value="True">
+                                                            <Setter Property="Background" Value="#424242"/>
+                                                        </Trigger>
+                                                    </ControlTemplate.Triggers>
+                                                </ControlTemplate>
+                                            </Setter.Value>
+                                        </Setter>
+                                    </Style>
+                                </Button.Style>
+                            </Button>
                         </Grid>
                     </Border>
 
-                    <!-- Systems DataGrid -->
+                    <!-- Software DataGrid -->
                     <DataGrid Grid.Row="1"
-                              ItemsSource="{Binding Systems}"
-                              SelectedItem="{Binding SelectedSystem}"
+                              ItemsSource="{Binding SoftwareList}"
+                              SelectedItem="{Binding SelectedSoftware}"
                               AutoGenerateColumns="False"
                               CanUserAddRows="False"
                               IsReadOnly="True"
@@ -232,77 +302,70 @@
                         </DataGrid.RowStyle>
 
                         <DataGrid.Columns>
-                            <DataGridTextColumn Header="System Name" 
+                            <DataGridTextColumn Header="Software Name" 
                                                 Binding="{Binding Name}"
-                                                Width="150"
+                                              Width="140"
                                                 MinWidth="120"/>
-                            <DataGridTextColumn Header="Ship"
-                                                Binding="{Binding Ship.ShipName}"
-                                                Width="120"
-                                                MinWidth="100"/>
+                            <DataGridTextColumn Header="Version"
+                                                Binding="{Binding Version}"
+                                                Width="80"
+                                                MinWidth="60"/>
                             <DataGridTextColumn Header="Manufacturer"
-                                                Binding="{Binding Manufacturer}"
-                                                Width="100"
-                                                MinWidth="80"/>
-                            <DataGridTextColumn Header="Model"
-                                                Binding="{Binding Model}"
-                                                Width="100"
-                                                MinWidth="80"/>
-                            <DataGridTextColumn Header="Serial Number"
-                                                Binding="{Binding SerialNumber}"
+                                              Binding="{Binding Manufacturer}"
                                                 Width="120"
                                                 MinWidth="100"/>
-                            <DataGridTextColumn Header="Category"
-                                                Binding="{Binding Category.Name}"
-                                                Width="100"
-                                                MinWidth="80"/>
-                            <DataGridTextColumn Header="Updated"
-                                                Binding="{Binding UpdatedAt, StringFormat='{}{0:MM/dd/yyyy}'}"
-                                                Width="*"
-                                                MinWidth="90"/>
+                            <DataGridTextColumn Header="Type"
+                                              Binding="{Binding SoftwareType}"
+                                              Width="100"
+                                              MinWidth="80"/>
+                            <DataGridTextColumn Header="System"
+                                              Binding="{Binding SystemName}"
+                                              Width="120"
+                                              MinWidth="100"/>
+                            <DataGridTextColumn Header="Installed On"
+                                              Binding="{Binding InstalledHardwareComponent}"
+                                                    Width="*"
+                                              MinWidth="120"/>
                         </DataGrid.Columns>
                     </DataGrid>
 
                     <!-- Status Bar -->
                     <Border Grid.Row="2" 
                             Background="#F5F5F5" 
-                            Padding="12,6"
+                            Padding="12,8"
                             Margin="0,0,8,0">
                         <Grid>
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
 
                             <TextBlock Grid.Column="0"
                                        Text="{Binding StatusMessage}"
-                                       FontSize="11"
                                        Foreground="#757575"
+                                       FontSize="12"
                                        VerticalAlignment="Center"/>
 
                             <ProgressBar Grid.Column="1" 
-                                         Width="80" 
-                                         Height="12" 
                                          IsIndeterminate="True" 
-                                         Visibility="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}}"
-                                         Margin="0,0,8,0"/>
+                                        Height="2"
+                                        Margin="16,0"
+                                        Background="Transparent"
+                                        Foreground="#2196F3"
+                                        Visibility="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}}"/>
 
-                            <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
-                                <TextBlock Text="Total: " 
-                                           FontSize="11"
-                                           Foreground="#757575"/>
-                                <TextBlock Text="{Binding TotalSystems}" 
-                                           FontSize="11"
-                                           FontWeight="SemiBold"
-                                           Foreground="#1976D2"/>
-                            </StackPanel>
+                            <TextBlock Grid.Column="2" 
+                                       Text="{Binding TotalSoftware, StringFormat='Total: {0} items'}"
+                                       Foreground="#757575"
+                                       FontSize="12"
+                                       VerticalAlignment="Center"/>
                         </Grid>
                     </Border>
                 </Grid>
             </Border>
 
-            <!-- System Details Panel -->
+            <!-- Software Details Panel -->
             <Border Grid.Column="1" 
                     Background="White"
                     BorderThickness="1,0,0,0"
@@ -310,13 +373,13 @@
                     Padding="16">
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <StackPanel>
-                        <TextBlock Text="System Details" 
+                        <TextBlock Text="Software Details" 
                                    FontSize="16" 
                                    FontWeight="SemiBold"
                                    Foreground="#1976D2"
                                    Margin="0,0,0,16"/>
 
-                        <!-- System Form -->
+                        <!-- Software Form -->
                         <Grid>
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto"/>
@@ -325,125 +388,95 @@
                                 <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
                             </Grid.RowDefinitions>
 
-                            <!-- System Name -->
+                            <!-- Software Name -->
                             <StackPanel Grid.Row="0" Margin="0,0,0,12">
-                                <TextBlock Text="System Name" FontSize="11" FontWeight="SemiBold" Foreground="#424242" Margin="0,0,0,4"/>
-                                <TextBox Text="{Binding SystemName, UpdateSourceTrigger=PropertyChanged}"
-                                         IsEnabled="{Binding IsEditing}"
+                                <TextBlock Text="Software Name" FontSize="12" Margin="0,0,0,4"/>
+                                <TextBox Text="{Binding SoftwareName, UpdateSourceTrigger=PropertyChanged}"
                                          Height="24"
-                                         Padding="8,0"
+                                         Padding="6,0"
                                          FontSize="12"
-                                         Background="#F5F5F5"
-                                         BorderThickness="1"
-                                         BorderBrush="#E0E0E0"/>
+                                         IsEnabled="{Binding IsEditing}"
+                                         VerticalContentAlignment="Center"/>
                             </StackPanel>
 
-                            <!-- Ship Selection -->
+                            <!-- Version -->
                             <StackPanel Grid.Row="1" Margin="0,0,0,12">
-                                <TextBlock Text="Ship" FontSize="11" FontWeight="SemiBold" Foreground="#424242" Margin="0,0,0,4"/>
-                                <ComboBox ItemsSource="{Binding Ships}"
-                                          SelectedItem="{Binding SelectedShip, UpdateSourceTrigger=PropertyChanged}"
-                                          DisplayMemberPath="ShipName"
-                                          IsEnabled="{Binding IsEditing}"
-                                          Height="24"
-                                          Padding="8,0"
-                                          FontSize="12"
-                                          Background="#F5F5F5"
-                                          BorderThickness="1"
-                                          BorderBrush="#E0E0E0"/>
+                                <TextBlock Text="Version" FontSize="12" Margin="0,0,0,4"/>
+                                <TextBox Text="{Binding Version, UpdateSourceTrigger=PropertyChanged}"
+                                         Height="24"
+                                         Padding="6,0"
+                                         FontSize="12"
+                                         IsEnabled="{Binding IsEditing}"
+                                         VerticalContentAlignment="Center"/>
                             </StackPanel>
 
                             <!-- Manufacturer -->
                             <StackPanel Grid.Row="2" Margin="0,0,0,12">
-                                <TextBlock Text="Manufacturer" FontSize="11" FontWeight="SemiBold" Foreground="#424242" Margin="0,0,0,4"/>
-                                <ComboBox ItemsSource="{Binding Manufacturers}"
-                                          SelectedItem="{Binding Manufacturer, UpdateSourceTrigger=PropertyChanged}"
-                                          IsEditable="True"
-                                          Text="{Binding Manufacturer, UpdateSourceTrigger=PropertyChanged}"
-                                          IsEnabled="{Binding IsEditing}"
+                                <TextBlock Text="Manufacturer" FontSize="12" Margin="0,0,0,4"/>
+                                <TextBox Text="{Binding Manufacturer, UpdateSourceTrigger=PropertyChanged}"
                                           Height="24"
-                                          Padding="8,0"
+                                         Padding="6,0"
                                           FontSize="12"
-                                          Background="#F5F5F5"
-                                          BorderThickness="1"
-                                          BorderBrush="#E0E0E0"/>
+                                         IsEnabled="{Binding IsEditing}"
+                                         VerticalContentAlignment="Center"/>
                             </StackPanel>
 
-                            <!-- Model -->
+                            <!-- Software Type -->
                             <StackPanel Grid.Row="3" Margin="0,0,0,12">
-                                <TextBlock Text="Model" FontSize="11" FontWeight="SemiBold" Foreground="#424242" Margin="0,0,0,4"/>
-                                <TextBox Text="{Binding Model, UpdateSourceTrigger=PropertyChanged}"
-                                         IsEnabled="{Binding IsEditing}"
-                                         Height="24"
-                                         Padding="8,0"
-                                         FontSize="12"
-                                         Background="#F5F5F5"
-                                         BorderThickness="1"
-                                         BorderBrush="#E0E0E0"/>
-                            </StackPanel>
-
-                            <!-- Serial Number -->
-                            <StackPanel Grid.Row="4" Margin="0,0,0,12">
-                                <TextBlock Text="Serial Number" FontSize="11" FontWeight="SemiBold" Foreground="#424242" Margin="0,0,0,4"/>
-                                <TextBox Text="{Binding SerialNumber, UpdateSourceTrigger=PropertyChanged}"
-                                         IsEnabled="{Binding IsEditing}"
-                                         Height="24"
-                                         Padding="8,0"
-                                         FontSize="12"
-                                         Background="#F5F5F5"
-                                         BorderThickness="1"
-                                         BorderBrush="#E0E0E0"/>
-                            </StackPanel>
-
-                            <!-- Description -->
-                            <StackPanel Grid.Row="5" Margin="0,0,0,12">
-                                <TextBlock Text="Description" FontSize="11" FontWeight="SemiBold" Foreground="#424242" Margin="0,0,0,4"/>
-                                <TextBox Text="{Binding Description}"
-                                         IsEnabled="{Binding IsEditing}"
-                                         Height="60"
-                                         Padding="8,4"
-                                         FontSize="12"
-                                         Background="#F5F5F5"
-                                         BorderThickness="1"
-                                         BorderBrush="#E0E0E0"
-                                         TextWrapping="Wrap"
-                                         AcceptsReturn="True"/>
-                            </StackPanel>
-
-                            <!-- Has Remote Connection -->
-                            <StackPanel Grid.Row="6" Margin="0,0,0,12">
-                                <TextBlock Text="Remote Connection" FontSize="11" FontWeight="SemiBold" Foreground="#424242" Margin="0,0,0,4"/>
-                                <CheckBox IsChecked="{Binding HasRemoteConnection}"
-                                          IsEnabled="{Binding IsEditing}"
-                                          Content="System has remote connection capability"
-                                          FontSize="12"
-                                          Foreground="#424242"/>
-                            </StackPanel>
-
-                            <!-- Category -->
-                            <StackPanel Grid.Row="7" Margin="0,0,0,12">
-                                <TextBlock Text="Category" FontSize="11" FontWeight="SemiBold" Foreground="#424242" Margin="0,0,0,4"/>
-                                <ComboBox ItemsSource="{Binding Categories}"
-                                          SelectedItem="{Binding SelectedCategory, UpdateSourceTrigger=PropertyChanged}"
-                                          DisplayMemberPath="Name"
-                                          IsEnabled="{Binding IsEditing}"
+                                <TextBlock Text="Software Type" FontSize="12" Margin="0,0,0,4"/>
+                                <TextBox Text="{Binding SoftwareType, UpdateSourceTrigger=PropertyChanged}"
                                           Height="24"
-                                          Padding="8,0"
+                                         Padding="6,0"
                                           FontSize="12"
-                                          Background="#F5F5F5"
-                                          BorderThickness="1"
-                                          BorderBrush="#E0E0E0"/>
+                                         IsEnabled="{Binding IsEditing}"
+                                         VerticalContentAlignment="Center"/>
+                            </StackPanel>
+
+                            <!-- Function/Purpose -->
+                            <StackPanel Grid.Row="4" Margin="0,0,0,12">
+                                <TextBlock Text="Function/Purpose" FontSize="12" Margin="0,0,0,4"/>
+                                <TextBox Text="{Binding FunctionPurpose, UpdateSourceTrigger=PropertyChanged}"
+                                         Height="48"
+                                         TextWrapping="Wrap"
+                                         AcceptsReturn="True"
+                                         VerticalScrollBarVisibility="Auto"
+                                         Padding="6"
+                                          FontSize="12"
+                                         IsEnabled="{Binding IsEditing}"/>
+                            </StackPanel>
+
+
+
+                            <!-- Installed Hardware Component -->
+                            <StackPanel Grid.Row="5" Margin="0,0,0,12">
+                                <TextBlock Text="Installed Hardware Component" FontSize="12" Margin="0,0,0,4"/>
+                                <ComboBox ItemsSource="{Binding AvailableComponents}"
+                                          SelectedItem="{Binding SelectedComponent}"
+                                          DisplayMemberPath="Name"
+                                          Height="24"
+                                          Padding="6,0"
+                                          FontSize="12"
+                                          IsEnabled="{Binding IsEditing}"
+                                          VerticalContentAlignment="Center">
+                                    <ComboBox.Style>
+                                        <Style TargetType="ComboBox">
+                                            <Style.Triggers>
+                                                <Trigger Property="SelectedItem" Value="{x:Null}">
+                                                    <Setter Property="Text" Value="Select component..."/>
+                                                </Trigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </ComboBox.Style>
+                                </ComboBox>
                             </StackPanel>
 
                             <!-- Action Buttons -->
-                            <StackPanel Grid.Row="8" Orientation="Vertical" Margin="0,12,0,0">
-                                <Button Content="Save System" 
-                                        Command="{Binding SaveSystemCommand}"
+                            <StackPanel Grid.Row="6" Orientation="Vertical" Margin="0,12,0,0">
+                                <Button Content="Save Software" 
+                                        Command="{Binding SaveCommand}"
                                         Background="#4CAF50"
                                         Foreground="White"
                                         BorderThickness="0"
@@ -461,16 +494,16 @@
                                         </Style>
                                     </Button.Style>
                                 </Button>
-                                <Button Content="Edit System" 
-                                        Command="{Binding EditSystemCommand}"
+                                <Button Content="Edit Software" 
+                                        Command="{Binding EditCommand}"
                                         Background="#1976D2"
                                         Foreground="White"
                                         BorderThickness="0"
                                         Height="32"
                                         FontSize="12"
                                         Margin="0,0,0,6"/>
-                                <Button Content="Delete System" 
-                                        Command="{Binding DeleteSystemCommand}"
+                                <Button Content="Delete Software" 
+                                        Command="{Binding DeleteCommand}"
                                         Background="#D32F2F"
                                         Foreground="White"
                                         BorderThickness="0"
@@ -478,7 +511,7 @@
                                         FontSize="12"
                                         Margin="0,0,0,6"/>
                                 <Button Content="Cancel" 
-                                        Command="{Binding CancelEditCommand}"
+                                        Command="{Binding CancelCommand}"
                                         Background="#757575"
                                         Foreground="White"
                                         BorderThickness="0"

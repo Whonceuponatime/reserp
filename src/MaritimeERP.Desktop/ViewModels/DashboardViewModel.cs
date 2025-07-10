@@ -6,6 +6,7 @@ using MaritimeERP.Core.Entities;
 using MaritimeERP.Desktop.Commands;
 using MaritimeERP.Services.Interfaces;
 using Microsoft.Extensions.Logging;
+using Component = MaritimeERP.Core.Entities.Component;
 
 namespace MaritimeERP.Desktop.ViewModels
 {
@@ -13,12 +14,14 @@ namespace MaritimeERP.Desktop.ViewModels
     {
         private readonly IShipService _shipService;
         private readonly ISystemService _systemService;
+        private readonly IComponentService _componentService;
         private readonly ILogger<DashboardViewModel> _logger;
 
         // Statistics Properties
         private int _totalShips = 0;
         private int _activeShips = 0;
         private int _totalSystems = 0;
+        private int _totalComponents = 0;
         private decimal _totalTonnage = 0;
         private int _recentChanges = 0;
         private string _mostCommonShipType = "N/A";
@@ -29,15 +32,21 @@ namespace MaritimeERP.Desktop.ViewModels
         private ObservableCollection<DashboardActivity> _recentActivities = new();
         private ObservableCollection<Ship> _recentShips = new();
         private ObservableCollection<ShipSystem> _recentSystems = new();
+        private ObservableCollection<Component> _recentComponents = new();
 
         // Chart Data
         private ObservableCollection<ShipTypeStatistic> _shipTypeStatistics = new();
         private ObservableCollection<FleetStatistic> _fleetStatistics = new();
 
-        public DashboardViewModel(IShipService shipService, ISystemService systemService, ILogger<DashboardViewModel> logger)
+        public DashboardViewModel(
+            IShipService shipService, 
+            ISystemService systemService, 
+            IComponentService componentService,
+            ILogger<DashboardViewModel> logger)
         {
             _shipService = shipService;
             _systemService = systemService;
+            _componentService = componentService;
             _logger = logger;
 
             InitializeCommands();
@@ -61,6 +70,12 @@ namespace MaritimeERP.Desktop.ViewModels
         {
             get => _totalSystems;
             set => SetProperty(ref _totalSystems, value);
+        }
+
+        public int TotalComponents
+        {
+            get => _totalComponents;
+            set => SetProperty(ref _totalComponents, value);
         }
 
         public decimal TotalTonnage
@@ -111,6 +126,12 @@ namespace MaritimeERP.Desktop.ViewModels
             set => SetProperty(ref _recentSystems, value);
         }
 
+        public ObservableCollection<Component> RecentComponents
+        {
+            get => _recentComponents;
+            set => SetProperty(ref _recentComponents, value);
+        }
+
         public ObservableCollection<ShipTypeStatistic> ShipTypeStatistics
         {
             get => _shipTypeStatistics;
@@ -127,15 +148,17 @@ namespace MaritimeERP.Desktop.ViewModels
         public ICommand RefreshCommand { get; private set; } = null!;
         public ICommand ViewShipsCommand { get; private set; } = null!;
         public ICommand ViewSystemsCommand { get; private set; } = null!;
+        public ICommand ViewComponentsCommand { get; private set; } = null!;
 
         private void InitializeCommands()
         {
             RefreshCommand = new AsyncRelayCommand(LoadDashboardDataAsync);
             ViewShipsCommand = new RelayCommand(() => { /* Navigate to ships */ });
             ViewSystemsCommand = new RelayCommand(() => { /* Navigate to systems */ });
+            ViewComponentsCommand = new RelayCommand(() => { /* Navigate to components */ });
         }
 
-        private async Task LoadDashboardDataAsync()
+        public async Task LoadDashboardDataAsync()
         {
             try
             {
@@ -198,6 +221,10 @@ namespace MaritimeERP.Desktop.ViewModels
                 var allSystems = await _systemService.GetAllSystemsAsync();
                 TotalSystems = allSystems.Count();
 
+                // Get components count
+                var allComponents = await _componentService.GetAllComponentsAsync();
+                TotalComponents = allComponents.Count();
+
                 // Calculate recent changes (last 30 days)
                 var recentDate = DateTime.UtcNow.AddDays(-30);
                 RecentChanges = shipsList.Count(s => s.UpdatedAt >= recentDate || s.CreatedAt >= recentDate);
@@ -215,8 +242,9 @@ namespace MaritimeERP.Desktop.ViewModels
                 RecentActivities.Clear();
                 RecentShips.Clear();
                 RecentSystems.Clear();
+                RecentComponents.Clear();
 
-                // Get recent ships (last 10)
+                // Get recent ships (last 5)
                 var allShips = await _shipService.GetAllShipsAsync();
                 var recentShips = allShips
                     .OrderByDescending(s => s.CreatedAt)
@@ -250,16 +278,35 @@ namespace MaritimeERP.Desktop.ViewModels
                     {
                         Type = "System",
                         Title = $"System Added: {system.Name}",
-                        Description = $"Ship: {system.Ship?.ShipName}, Category: {system.Category?.Name}",
+                        Description = $"{system.Manufacturer} {system.Model}",
                         Timestamp = system.CreatedAt,
                         Icon = "⚙️"
                     });
                 }
 
-                // Sort activities by timestamp
+                // Get recent components (last 5)
+                var allComponents = await _componentService.GetAllComponentsAsync();
+                var recentComponents = allComponents
+                    .OrderByDescending(c => c.CreatedAt)
+                    .Take(5)
+                    .ToList();
+
+                foreach (var component in recentComponents)
+                {
+                    RecentComponents.Add(component);
+                    RecentActivities.Add(new DashboardActivity
+                    {
+                        Type = "Component",
+                        Title = $"Component Added: {component.Name}",
+                        Description = $"{component.MakerModel}",
+                        Timestamp = component.CreatedAt,
+                        Icon = "🔧"
+                    });
+                }
+
+                // Sort all activities by timestamp
                 var sortedActivities = RecentActivities
                     .OrderByDescending(a => a.Timestamp)
-                    .Take(10)
                     .ToList();
 
                 RecentActivities.Clear();
