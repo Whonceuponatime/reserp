@@ -10,11 +10,13 @@ namespace MaritimeERP.Services
     {
         private readonly MaritimeERPContext _context;
         private readonly ILogger<ShipService> _logger;
+        private readonly IAuditLogService _auditLogService;
 
-        public ShipService(MaritimeERPContext context, ILogger<ShipService> logger)
+        public ShipService(MaritimeERPContext context, ILogger<ShipService> logger, IAuditLogService auditLogService)
         {
             _context = context;
             _logger = logger;
+            _auditLogService = auditLogService;
         }
 
         public async Task<IEnumerable<Ship>> GetAllShipsAsync()
@@ -154,6 +156,9 @@ namespace MaritimeERP.Services
                 _context.Ships.Add(ship);
                 await _context.SaveChangesAsync();
 
+                // Log the create operation
+                await _auditLogService.LogCreateAsync(ship, "Ship created");
+
                 _logger.LogInformation("Ship '{ShipName}' with IMO {ImoNumber} created successfully", 
                     ship.ShipName, ship.ImoNumber);
 
@@ -189,6 +194,28 @@ namespace MaritimeERP.Services
                         throw new InvalidOperationException($"A ship with IMO number {ship.ImoNumber} already exists.");
                 }
 
+                // Store the old values for audit logging
+                var oldShip = new Ship
+                {
+                    Id = existingShip.Id,
+                    ShipName = existingShip.ShipName,
+                    ImoNumber = existingShip.ImoNumber,
+                    ShipType = existingShip.ShipType,
+                    Flag = existingShip.Flag,
+                    PortOfRegistry = existingShip.PortOfRegistry,
+                    Class = existingShip.Class,
+                    ClassNotation = existingShip.ClassNotation,
+                    BuildYear = existingShip.BuildYear,
+                    GrossTonnage = existingShip.GrossTonnage,
+                    NetTonnage = existingShip.NetTonnage,
+                    DeadweightTonnage = existingShip.DeadweightTonnage,
+                    Owner = existingShip.Owner,
+                    IsActive = existingShip.IsActive,
+                    CreatedAt = existingShip.CreatedAt,
+                    UpdatedAt = existingShip.UpdatedAt,
+                    IsDeleted = existingShip.IsDeleted
+                };
+
                 // Update properties - only include fields that exist in the simplified Ship entity
                 existingShip.ShipName = ship.ShipName;
                 existingShip.ImoNumber = ship.ImoNumber;
@@ -206,6 +233,9 @@ namespace MaritimeERP.Services
                 existingShip.UpdatedAt = DateTime.UtcNow;
 
                 await _context.SaveChangesAsync();
+
+                // Log the update operation
+                await _auditLogService.LogUpdateAsync(oldShip, existingShip, "Ship updated");
 
                 _logger.LogInformation("Ship '{ShipName}' with ID {ShipId} updated successfully", 
                     existingShip.ShipName, existingShip.Id);
@@ -234,6 +264,9 @@ namespace MaritimeERP.Services
                 ship.UpdatedAt = DateTime.UtcNow;
 
                 await _context.SaveChangesAsync();
+
+                // Log the delete operation
+                await _auditLogService.LogDeleteAsync(ship, "Ship deleted");
 
                 _logger.LogInformation("Ship '{ShipName}' with ID {ShipId} deleted successfully", 
                     ship.ShipName, ship.Id);

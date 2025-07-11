@@ -10,11 +10,13 @@ namespace MaritimeERP.Services
     {
         private readonly MaritimeERPContext _context;
         private readonly ILogger<SystemService> _logger;
+        private readonly IAuditLogService _auditLogService;
 
-        public SystemService(MaritimeERPContext context, ILogger<SystemService> logger)
+        public SystemService(MaritimeERPContext context, ILogger<SystemService> logger, IAuditLogService auditLogService)
         {
             _context = context;
             _logger = logger;
+            _auditLogService = auditLogService;
         }
 
         public async Task<IEnumerable<ShipSystem>> GetAllSystemsAsync()
@@ -68,6 +70,9 @@ namespace MaritimeERP.Services
                 _context.Systems.Add(system);
                 await _context.SaveChangesAsync();
 
+                // Log the create operation
+                await _auditLogService.LogCreateAsync(system, "System created");
+
                 _logger.LogInformation("System created: {SystemName} for ship {ShipId}", system.Name, system.ShipId);
                 return system;
             }
@@ -95,6 +100,23 @@ namespace MaritimeERP.Services
                     throw new InvalidOperationException($"System with ID {system.Id} not found");
                 }
 
+                // Store the old values for audit logging
+                var oldSystem = new ShipSystem
+                {
+                    Id = existingSystem.Id,
+                    Name = existingSystem.Name,
+                    ShipId = existingSystem.ShipId,
+                    CategoryId = existingSystem.CategoryId,
+                    SecurityZoneId = existingSystem.SecurityZoneId,
+                    Manufacturer = existingSystem.Manufacturer,
+                    Model = existingSystem.Model,
+                    SerialNumber = existingSystem.SerialNumber,
+                    Description = existingSystem.Description,
+                    HasRemoteConnection = existingSystem.HasRemoteConnection,
+                    CreatedAt = existingSystem.CreatedAt,
+                    UpdatedAt = existingSystem.UpdatedAt
+                };
+
                 // Update the properties of the existing tracked entity
                 existingSystem.Name = system.Name;
                 existingSystem.ShipId = system.ShipId;
@@ -108,6 +130,9 @@ namespace MaritimeERP.Services
                 existingSystem.UpdatedAt = DateTime.UtcNow;
 
                 await _context.SaveChangesAsync();
+
+                // Log the update operation
+                await _auditLogService.LogUpdateAsync(oldSystem, existingSystem, "System updated");
 
                 _logger.LogInformation("System updated: {SystemId} - {SystemName}", system.Id, system.Name);
                 
@@ -140,6 +165,9 @@ namespace MaritimeERP.Services
 
                 _context.Systems.Remove(system);
                 await _context.SaveChangesAsync();
+
+                // Log the delete operation
+                await _auditLogService.LogDeleteAsync(system, "System deleted");
 
                 _logger.LogInformation("System deleted: {SystemId} - {SystemName}", id, system.Name);
                 return true;

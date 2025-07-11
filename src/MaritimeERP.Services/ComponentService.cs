@@ -10,11 +10,13 @@ namespace MaritimeERP.Services
     {
         private readonly MaritimeERPContext _context;
         private readonly ILogger<ComponentService> _logger;
+        private readonly IAuditLogService _auditLogService;
 
-        public ComponentService(MaritimeERPContext context, ILogger<ComponentService> logger)
+        public ComponentService(MaritimeERPContext context, ILogger<ComponentService> logger, IAuditLogService auditLogService)
         {
             _context = context;
             _logger = logger;
+            _auditLogService = auditLogService;
         }
 
         public async Task<IEnumerable<Component>> GetAllComponentsAsync()
@@ -130,6 +132,10 @@ namespace MaritimeERP.Services
                 component.UpdatedAt = DateTime.UtcNow;
                 _context.Components.Add(component);
                 await _context.SaveChangesAsync();
+                
+                // Log the create operation
+                await _auditLogService.LogCreateAsync(component, "Component created");
+                
                 return component;
             }
             catch (Exception ex)
@@ -154,12 +160,41 @@ namespace MaritimeERP.Services
                     throw new KeyNotFoundException($"Component with ID {component.Id} not found");
                 }
 
+                // Store the old values for audit logging
+                var oldComponent = new Component
+                {
+                    Id = existingComponent.Id,
+                    SystemId = existingComponent.SystemId,
+                    SystemName = existingComponent.SystemName,
+                    ComponentType = existingComponent.ComponentType,
+                    Name = existingComponent.Name,
+                    Manufacturer = existingComponent.Manufacturer,
+                    Model = existingComponent.Model,
+                    InstalledLocation = existingComponent.InstalledLocation,
+                    OsName = existingComponent.OsName,
+                    OsVersion = existingComponent.OsVersion,
+                    UsbPorts = existingComponent.UsbPorts,
+                    LanPorts = existingComponent.LanPorts,
+                    ConnectedCbs = existingComponent.ConnectedCbs,
+                    NetworkSegment = existingComponent.NetworkSegment,
+                    SupportedProtocols = existingComponent.SupportedProtocols,
+                    ConnectionPurpose = existingComponent.ConnectionPurpose,
+                    HasRemoteConnection = existingComponent.HasRemoteConnection,
+                    IsTypeApproved = existingComponent.IsTypeApproved,
+                    CreatedAt = existingComponent.CreatedAt,
+                    UpdatedAt = existingComponent.UpdatedAt
+                };
+
                 component.UpdatedAt = DateTime.UtcNow;
                 // Preserve the original CreatedAt value
                 component.CreatedAt = existingComponent.CreatedAt;
                 
                 _context.Entry(existingComponent).CurrentValues.SetValues(component);
                 await _context.SaveChangesAsync();
+                
+                // Log the update operation
+                await _auditLogService.LogUpdateAsync(oldComponent, existingComponent, "Component updated");
+                
                 return existingComponent;
             }
             catch (Exception ex)
@@ -178,6 +213,9 @@ namespace MaritimeERP.Services
                 {
                     _context.Components.Remove(component);
                     await _context.SaveChangesAsync();
+                    
+                    // Log the delete operation
+                    await _auditLogService.LogDeleteAsync(component, "Component deleted");
                 }
             }
             catch (Exception ex)

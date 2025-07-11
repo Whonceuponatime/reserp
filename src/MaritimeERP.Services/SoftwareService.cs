@@ -14,11 +14,13 @@ namespace MaritimeERP.Services
     {
         private readonly MaritimeERPContext _context;
         private readonly ILogger<SoftwareService> _logger;
+        private readonly IAuditLogService _auditLogService;
 
-        public SoftwareService(MaritimeERPContext context, ILogger<SoftwareService> logger)
+        public SoftwareService(MaritimeERPContext context, ILogger<SoftwareService> logger, IAuditLogService auditLogService)
         {
             _context = context ?? throw new ArgumentNullException(nameof(context));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _auditLogService = auditLogService ?? throw new ArgumentNullException(nameof(auditLogService));
         }
 
         public async Task<IEnumerable<Software>> GetAllSoftwareAsync()
@@ -59,6 +61,9 @@ namespace MaritimeERP.Services
                 _context.Software.Add(software);
                 await _context.SaveChangesAsync();
                 
+                // Log the create operation
+                await _auditLogService.LogCreateAsync(software, "Software created");
+                
                 // Reload the software with related data
                 return await _context.Software
                     .Include(s => s.InstalledComponent)
@@ -82,6 +87,19 @@ namespace MaritimeERP.Services
                     throw new InvalidOperationException($"Software with ID {software.Id} not found");
                 }
 
+                // Store the old values for audit logging
+                var oldSoftware = new Software
+                {
+                    Id = existingSoftware.Id,
+                    Name = existingSoftware.Name,
+                    Version = existingSoftware.Version,
+                    Manufacturer = existingSoftware.Manufacturer,
+                    SoftwareType = existingSoftware.SoftwareType,
+                    InstalledComponentId = existingSoftware.InstalledComponentId,
+                    CreatedAt = existingSoftware.CreatedAt,
+                    UpdatedAt = existingSoftware.UpdatedAt
+                };
+
                 // Update the properties of the existing tracked entity
                 existingSoftware.Name = software.Name;
                 existingSoftware.Version = software.Version;
@@ -91,6 +109,9 @@ namespace MaritimeERP.Services
                 existingSoftware.UpdatedAt = DateTime.UtcNow;
 
                 await _context.SaveChangesAsync();
+                
+                // Log the update operation
+                await _auditLogService.LogUpdateAsync(oldSoftware, existingSoftware, "Software updated");
                 
                 // Reload the software with related data
                 return await _context.Software
@@ -113,6 +134,9 @@ namespace MaritimeERP.Services
                 {
                     _context.Software.Remove(software);
                     await _context.SaveChangesAsync();
+                    
+                    // Log the delete operation
+                    await _auditLogService.LogDeleteAsync(software, "Software deleted");
                 }
             }
             catch (Exception ex)

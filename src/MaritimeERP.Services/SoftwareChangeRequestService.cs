@@ -8,10 +8,12 @@ namespace MaritimeERP.Services
     public class SoftwareChangeRequestService : ISoftwareChangeRequestService
     {
         private readonly MaritimeERPContext _context;
+        private readonly IAuditLogService _auditLogService;
 
-        public SoftwareChangeRequestService(MaritimeERPContext context)
+        public SoftwareChangeRequestService(MaritimeERPContext context, IAuditLogService auditLogService)
         {
             _context = context;
+            _auditLogService = auditLogService;
         }
 
         public async Task<IEnumerable<SoftwareChangeRequest>> GetAllAsync()
@@ -58,13 +60,49 @@ namespace MaritimeERP.Services
             _context.SoftwareChangeRequests.Add(request);
             await _context.SaveChangesAsync();
             
+            // Log the create operation
+            await _auditLogService.LogCreateAsync(request, "Software Change Request created");
+            
             return await GetByIdAsync(request.Id) ?? request;
         }
 
         public async Task<SoftwareChangeRequest> UpdateAsync(SoftwareChangeRequest request)
         {
+            // Get the existing entity first for audit logging
+            var existingRequest = await _context.SoftwareChangeRequests.FindAsync(request.Id);
+            if (existingRequest == null)
+            {
+                throw new InvalidOperationException($"Software Change Request with ID {request.Id} not found");
+            }
+
+            // Store the old values for audit logging
+            var oldRequest = new SoftwareChangeRequest
+            {
+                Id = existingRequest.Id,
+                RequestNumber = existingRequest.RequestNumber,
+                Department = existingRequest.Department,
+                PositionTitle = existingRequest.PositionTitle,
+                RequesterName = existingRequest.RequesterName,
+                InstalledCbs = existingRequest.InstalledCbs,
+                InstalledComponent = existingRequest.InstalledComponent,
+                Reason = existingRequest.Reason,
+                BeforeSwManufacturer = existingRequest.BeforeSwManufacturer,
+                BeforeSwName = existingRequest.BeforeSwName,
+                BeforeSwVersion = existingRequest.BeforeSwVersion,
+                AfterSwManufacturer = existingRequest.AfterSwManufacturer,
+                AfterSwName = existingRequest.AfterSwName,
+                AfterSwVersion = existingRequest.AfterSwVersion,
+                WorkDescription = existingRequest.WorkDescription,
+                SecurityReviewComment = existingRequest.SecurityReviewComment,
+                Status = existingRequest.Status,
+                CreatedDate = existingRequest.CreatedDate
+            };
+
             _context.Entry(request).State = EntityState.Modified;
             await _context.SaveChangesAsync();
+            
+            // Log the update operation
+            await _auditLogService.LogUpdateAsync(oldRequest, request, "Software Change Request updated");
             
             return await GetByIdAsync(request.Id) ?? request;
         }
@@ -77,6 +115,10 @@ namespace MaritimeERP.Services
 
             _context.SoftwareChangeRequests.Remove(request);
             await _context.SaveChangesAsync();
+            
+            // Log the delete operation
+            await _auditLogService.LogDeleteAsync(request, "Software Change Request deleted");
+            
             return true;
         }
 
@@ -109,11 +151,17 @@ namespace MaritimeERP.Services
             if (request == null || request.Status != "Draft")
                 throw new InvalidOperationException("Cannot submit request for review");
 
+            var oldStatus = request.Status;
             request.Status = "Submitted";
             request.PreparedByUserId = reviewerId;
             request.PreparedAt = DateTime.Now;
 
             await _context.SaveChangesAsync();
+            
+            // Log the status change
+            await _auditLogService.LogActionAsync("SoftwareChangeRequest", "SUBMIT", request.Id.ToString(), 
+                request.RequestNumber, $"Status changed from {oldStatus} to Submitted");
+            
             return await GetByIdAsync(request.Id) ?? request;
         }
 
@@ -123,11 +171,17 @@ namespace MaritimeERP.Services
             if (request == null || request.Status != "Under Review")
                 throw new InvalidOperationException("Cannot approve request");
 
+            var oldStatus = request.Status;
             request.Status = "Approved";
             request.ApprovedByUserId = approverId;
             request.ApprovedAt = DateTime.Now;
 
             await _context.SaveChangesAsync();
+            
+            // Log the approval
+            await _auditLogService.LogActionAsync("SoftwareChangeRequest", "APPROVE", request.Id.ToString(), 
+                request.RequestNumber, $"Status changed from {oldStatus} to Approved");
+            
             return await GetByIdAsync(request.Id) ?? request;
         }
 
@@ -137,12 +191,18 @@ namespace MaritimeERP.Services
             if (request == null || (request.Status != "Submitted" && request.Status != "Under Review"))
                 throw new InvalidOperationException("Cannot reject request");
 
+            var oldStatus = request.Status;
             request.Status = "Rejected";
             request.ReviewedByUserId = rejectorId;
             request.ReviewedAt = DateTime.Now;
             request.SecurityReviewComment = reason;
 
             await _context.SaveChangesAsync();
+            
+            // Log the rejection
+            await _auditLogService.LogActionAsync("SoftwareChangeRequest", "REJECT", request.Id.ToString(), 
+                request.RequestNumber, $"Status changed from {oldStatus} to Rejected. Reason: {reason}");
+            
             return await GetByIdAsync(request.Id) ?? request;
         }
 

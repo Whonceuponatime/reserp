@@ -8,10 +8,12 @@ namespace MaritimeERP.Services
     public class HardwareChangeRequestService : IHardwareChangeRequestService
     {
         private readonly MaritimeERPContext _context;
+        private readonly IAuditLogService _auditLogService;
 
-        public HardwareChangeRequestService(MaritimeERPContext context)
+        public HardwareChangeRequestService(MaritimeERPContext context, IAuditLogService auditLogService)
         {
             _context = context;
+            _auditLogService = auditLogService;
         }
 
         public async Task<List<HardwareChangeRequest>> GetAllAsync()
@@ -48,13 +50,49 @@ namespace MaritimeERP.Services
             _context.HardwareChangeRequests.Add(request);
             await _context.SaveChangesAsync();
             
+            // Log the create operation
+            await _auditLogService.LogCreateAsync(request, "Hardware Change Request created");
+            
             return await GetByIdAsync(request.Id) ?? request;
         }
 
         public async Task<HardwareChangeRequest> UpdateAsync(HardwareChangeRequest request)
         {
+            // Get the existing entity first for audit logging
+            var existingRequest = await _context.HardwareChangeRequests.FindAsync(request.Id);
+            if (existingRequest == null)
+            {
+                throw new InvalidOperationException($"Hardware Change Request with ID {request.Id} not found");
+            }
+
+            // Store the old values for audit logging
+            var oldRequest = new HardwareChangeRequest
+            {
+                Id = existingRequest.Id,
+                RequestNumber = existingRequest.RequestNumber,
+                Department = existingRequest.Department,
+                PositionTitle = existingRequest.PositionTitle,
+                RequesterName = existingRequest.RequesterName,
+                InstalledCbs = existingRequest.InstalledCbs,
+                InstalledComponent = existingRequest.InstalledComponent,
+                Reason = existingRequest.Reason,
+                BeforeHwManufacturerModel = existingRequest.BeforeHwManufacturerModel,
+                BeforeHwName = existingRequest.BeforeHwName,
+                BeforeHwOs = existingRequest.BeforeHwOs,
+                AfterHwManufacturerModel = existingRequest.AfterHwManufacturerModel,
+                AfterHwName = existingRequest.AfterHwName,
+                AfterHwOs = existingRequest.AfterHwOs,
+                WorkDescription = existingRequest.WorkDescription,
+                SecurityReviewComment = existingRequest.SecurityReviewComment,
+                Status = existingRequest.Status,
+                CreatedDate = existingRequest.CreatedDate
+            };
+
             _context.Entry(request).State = EntityState.Modified;
             await _context.SaveChangesAsync();
+            
+            // Log the update operation
+            await _auditLogService.LogUpdateAsync(oldRequest, request, "Hardware Change Request updated");
             
             return await GetByIdAsync(request.Id) ?? request;
         }
@@ -67,6 +105,10 @@ namespace MaritimeERP.Services
 
             _context.HardwareChangeRequests.Remove(request);
             await _context.SaveChangesAsync();
+            
+            // Log the delete operation
+            await _auditLogService.LogDeleteAsync(request, "Hardware Change Request deleted");
+            
             return true;
         }
 
@@ -99,11 +141,17 @@ namespace MaritimeERP.Services
             if (request == null || request.Status != "Draft")
                 return false;
 
+            var oldStatus = request.Status;
             request.Status = "Submitted";
             request.PreparedByUserId = userId;
             request.PreparedAt = DateTime.Now;
 
             await _context.SaveChangesAsync();
+            
+            // Log the status change
+            await _auditLogService.LogActionAsync("HardwareChangeRequest", "SUBMIT", request.Id.ToString(), 
+                request.RequestNumber, $"Status changed from {oldStatus} to Submitted");
+            
             return true;
         }
 
@@ -128,11 +176,17 @@ namespace MaritimeERP.Services
             if (request == null || request.Status != "Under Review")
                 return false;
 
+            var oldStatus = request.Status;
             request.Status = "Approved";
             request.ApprovedByUserId = approverId;
             request.ApprovedAt = DateTime.Now;
 
             await _context.SaveChangesAsync();
+            
+            // Log the approval
+            await _auditLogService.LogActionAsync("HardwareChangeRequest", "APPROVE", request.Id.ToString(), 
+                request.RequestNumber, $"Status changed from {oldStatus} to Approved");
+            
             return true;
         }
 
@@ -142,12 +196,18 @@ namespace MaritimeERP.Services
             if (request == null || (request.Status != "Submitted" && request.Status != "Under Review"))
                 return false;
 
+            var oldStatus = request.Status;
             request.Status = "Rejected";
             request.ReviewedByUserId = reviewerId;
             request.ReviewedAt = DateTime.Now;
             request.SecurityReviewComment = reason;
 
             await _context.SaveChangesAsync();
+            
+            // Log the rejection
+            await _auditLogService.LogActionAsync("HardwareChangeRequest", "REJECT", request.Id.ToString(), 
+                request.RequestNumber, $"Status changed from {oldStatus} to Rejected. Reason: {reason}");
+            
             return true;
         }
 
