@@ -80,7 +80,7 @@
                 <!-- Total Documents -->
                 <Border Style="{StaticResource StatCardStyle}" MinWidth="200">
                     <StackPanel>
-                        <TextBlock Text="📄" FontSize="24" HorizontalAlignment="Center" Margin="0,0,0,10"/>
+                        <TextBlock Text="DOC" FontSize="24" HorizontalAlignment="Center" Margin="0,0,0,10"/>
                         <TextBlock Text="{Binding TotalDocuments}" FontSize="32" FontWeight="Bold" 
                                   Foreground="#2196F3" HorizontalAlignment="Center"/>
                         <TextBlock Text="Total Documents" FontSize="14" Foreground="#666" HorizontalAlignment="Center"/>
@@ -90,7 +90,7 @@
                 <!-- Approved Documents -->
                 <Border Style="{StaticResource StatCardStyle}" MinWidth="200">
                     <StackPanel>
-                        <TextBlock Text="✅" FontSize="24" HorizontalAlignment="Center" Margin="0,0,0,10"/>
+                        <TextBlock Text="OK" FontSize="24" HorizontalAlignment="Center" Margin="0,0,0,10"/>
                         <TextBlock Text="{Binding ApprovedDocuments}" FontSize="32" FontWeight="Bold" 
                                   Foreground="#4CAF50" HorizontalAlignment="Center"/>
                         <TextBlock Text="Approved" FontSize="14" Foreground="#666" HorizontalAlignment="Center"/>
@@ -100,7 +100,7 @@
                 <!-- Pending Documents -->
                 <Border Style="{StaticResource StatCardStyle}" MinWidth="200">
                     <StackPanel>
-                        <TextBlock Text="⏳" FontSize="24" HorizontalAlignment="Center" Margin="0,0,0,10"/>
+                        <TextBlock Text="..." FontSize="24" HorizontalAlignment="Center" Margin="0,0,0,10"/>
                         <TextBlock Text="{Binding PendingDocuments}" FontSize="32" FontWeight="Bold" 
                                   Foreground="#FF9800" HorizontalAlignment="Center"/>
                         <TextBlock Text="Pending Approval" FontSize="14" Foreground="#666" HorizontalAlignment="Center"/>
@@ -110,7 +110,7 @@
                 <!-- Total File Size -->
                 <Border Style="{StaticResource StatCardStyle}" MinWidth="200">
                     <StackPanel>
-                        <TextBlock Text="💾" FontSize="24" HorizontalAlignment="Center" Margin="0,0,0,10"/>
+                        <TextBlock Text="SIZE" FontSize="24" HorizontalAlignment="Center" Margin="0,0,0,10"/>
                         <TextBlock Text="{Binding TotalFileSize}" FontSize="32" FontWeight="Bold" 
                                   Foreground="#9C27B0" HorizontalAlignment="Center"/>
                         <TextBlock Text="Storage Used" FontSize="14" Foreground="#666" HorizontalAlignment="Center"/>
@@ -130,7 +130,7 @@
             <Border Grid.Column="0" Background="White" BorderBrush="#E0E0E0" BorderThickness="1" 
                     CornerRadius="8" Padding="20" Margin="0,0,10,0">
                 <StackPanel>
-                    <TextBlock Text="Filters & Actions" Style="{StaticResource SubHeaderTextStyle}" Margin="0,0,0,15"/>
+                    <TextBlock Text="Filters &amp; Actions" Style="{StaticResource SubHeaderTextStyle}" Margin="0,0,0,15"/>
 
                     <!-- Upload Button -->
                     <Button Content="Upload Document" 
@@ -260,7 +260,7 @@
                                     <DataTemplate>
                                         <StackPanel Orientation="Horizontal">
                                             <!-- Preview Button -->
-                                            <Button Content="👁" 
+                                            <Button Content="View" 
                                                     Command="{Binding DataContext.PreviewDocumentCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                     CommandParameter="{Binding}"
                                                     ToolTip="Preview Document"
@@ -268,7 +268,7 @@
                                                     Background="#2196F3" Foreground="White" BorderThickness="0"/>
 
                                             <!-- Download Button -->
-                                            <Button Content="💾" 
+                                            <Button Content="Save" 
                                                     Command="{Binding DataContext.DownloadDocumentCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                     CommandParameter="{Binding}"
                                                     ToolTip="Download Document"
@@ -276,7 +276,7 @@
                                                     Background="#4CAF50" Foreground="White" BorderThickness="0"/>
 
                                             <!-- Approve Button (Admin Only) -->
-                                            <Button Content="✅" 
+                                            <Button Content="OK" 
                                                     Command="{Binding DataContext.ApproveDocumentCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                     CommandParameter="{Binding}"
                                                     ToolTip="Approve Document"
@@ -285,7 +285,7 @@
                                                     Visibility="{Binding DataContext.CanApprove, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BoolToVisibilityConverter}}"/>
 
                                             <!-- Reject Button (Admin Only) -->
-                                            <Button Content="❌" 
+                                            <Button Content="X" 
                                                     Command="{Binding DataContext.RejectDocumentCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                     CommandParameter="{Binding}"
                                                     ToolTip="Reject Document"
@@ -294,7 +294,7 @@
                                                     Visibility="{Binding DataContext.CanReject, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BoolToVisibilityConverter}}"/>
 
                                             <!-- Delete Button -->
-                                            <Button Content="🗑" 
+                                            <Button Content="Del" 
                                                     Command="{Binding DataContext.DeleteDocumentCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                     CommandParameter="{Binding}"
                                                     ToolTip="Delete Document"
@@ -326,7 +326,7 @@
                     <ProgressBar Width="20" Height="20" IsIndeterminate="True" 
                                 Visibility="{Binding IsLoading, Converter={StaticResource BoolToVisibilityConverter}}"
                                 Margin="0,0,10,0"/>
-                    <Button Content="🔄 Refresh" 
+                    <Button Content="Refresh" 
                             Command="{Binding LoadDocumentsCommand}"
                             Style="{StaticResource ActionButtonStyle}"
                             Background="#607D8B" Foreground="White" Height="30"/>

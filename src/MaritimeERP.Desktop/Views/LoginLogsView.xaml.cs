@@ -2,7 +2,7 @@ using System.Windows.Controls;
 
 namespace MaritimeERP.Desktop.Views
 {
-    public class LoginLogsView : UserControl
+    public partial class LoginLogsView : UserControl
     {
         public LoginLogsView()
         {

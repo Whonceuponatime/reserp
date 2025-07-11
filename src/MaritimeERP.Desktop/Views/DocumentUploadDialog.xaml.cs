@@ -4,7 +4,7 @@ using MaritimeERP.Services.Interfaces;
 
 namespace MaritimeERP.Desktop.Views
 {
-    public class DocumentUploadDialog : Window
+    public partial class DocumentUploadDialog : Window
     {
         public DocumentUploadDialog(string filePath, IDocumentService documentService, IShipService shipService)
         {

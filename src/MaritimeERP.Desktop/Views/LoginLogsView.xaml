@@ -68,7 +68,7 @@
                 <!-- Total Logins -->
                 <Border Style="{StaticResource StatCardStyle}" MinWidth="180">
                     <StackPanel>
-                        <TextBlock Text="🔐" FontSize="24" HorizontalAlignment="Center" Margin="0,0,0,10"/>
+                        <TextBlock Text="LOG" FontSize="24" HorizontalAlignment="Center" Margin="0,0,0,10"/>
                         <TextBlock Text="{Binding TotalLogins}" FontSize="32" FontWeight="Bold" 
                                   Foreground="#2196F3" HorizontalAlignment="Center"/>
                         <TextBlock Text="Total Logins (30d)" FontSize="12" Foreground="#666" HorizontalAlignment="Center"/>
@@ -78,7 +78,7 @@
                 <!-- Successful Logins -->
                 <Border Style="{StaticResource StatCardStyle}" MinWidth="180">
                     <StackPanel>
-                        <TextBlock Text="✅" FontSize="24" HorizontalAlignment="Center" Margin="0,0,0,10"/>
+                        <TextBlock Text="OK" FontSize="24" HorizontalAlignment="Center" Margin="0,0,0,10"/>
                         <TextBlock Text="{Binding SuccessfulLogins}" FontSize="32" FontWeight="Bold" 
                                   Foreground="#4CAF50" HorizontalAlignment="Center"/>
                         <TextBlock Text="Successful" FontSize="12" Foreground="#666" HorizontalAlignment="Center"/>
@@ -88,7 +88,7 @@
                 <!-- Failed Logins -->
                 <Border Style="{StaticResource StatCardStyle}" MinWidth="180">
                     <StackPanel>
-                        <TextBlock Text="❌" FontSize="24" HorizontalAlignment="Center" Margin="0,0,0,10"/>
+                        <TextBlock Text="X" FontSize="24" HorizontalAlignment="Center" Margin="0,0,0,10"/>
                         <TextBlock Text="{Binding FailedLogins}" FontSize="32" FontWeight="Bold" 
                                   Foreground="#F44336" HorizontalAlignment="Center"/>
                         <TextBlock Text="Failed" FontSize="12" Foreground="#666" HorizontalAlignment="Center"/>
@@ -98,7 +98,7 @@
                 <!-- Security Events -->
                 <Border Style="{StaticResource StatCardStyle}" MinWidth="180">
                     <StackPanel>
-                        <TextBlock Text="⚠️" FontSize="24" HorizontalAlignment="Center" Margin="0,0,0,10"/>
+                        <TextBlock Text="!" FontSize="24" HorizontalAlignment="Center" Margin="0,0,0,10"/>
                         <TextBlock Text="{Binding SecurityEvents}" FontSize="32" FontWeight="Bold" 
                                   Foreground="#FF9800" HorizontalAlignment="Center"/>
                         <TextBlock Text="Security Events" FontSize="12" Foreground="#666" HorizontalAlignment="Center"/>
@@ -108,7 +108,7 @@
                 <!-- Success Rate -->
                 <Border Style="{StaticResource StatCardStyle}" MinWidth="180">
                     <StackPanel>
-                        <TextBlock Text="📊" FontSize="24" HorizontalAlignment="Center" Margin="0,0,0,10"/>
+                        <TextBlock Text="%" FontSize="24" HorizontalAlignment="Center" Margin="0,0,0,10"/>
                         <TextBlock Text="{Binding SuccessRate, StringFormat='{}{0:F1}%'}" FontSize="32" FontWeight="Bold" 
                                   Foreground="#9C27B0" HorizontalAlignment="Center"/>
                         <TextBlock Text="Success Rate" FontSize="12" Foreground="#666" HorizontalAlignment="Center"/>
@@ -128,7 +128,7 @@
             <Border Grid.Column="0" Background="White" BorderBrush="#E0E0E0" BorderThickness="1" 
                     CornerRadius="8" Padding="20" Margin="0,0,10,0">
                 <StackPanel>
-                    <TextBlock Text="Filters & Actions" Style="{StaticResource SubHeaderTextStyle}" Margin="0,0,0,15"/>
+                    <TextBlock Text="Filters &amp; Actions" Style="{StaticResource SubHeaderTextStyle}" Margin="0,0,0,15"/>
 
                     <!-- Export Button -->
                     <Button Content="Export Logs" 
@@ -287,7 +287,7 @@
                             <DataGridTemplateColumn Header="Actions" Width="60">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
-                                        <Button Content="🗑" 
+                                        <Button Content="Del" 
                                                 Command="{Binding DataContext.DeleteLogCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                 CommandParameter="{Binding}"
                                                 ToolTip="Delete Log Entry"
@@ -317,7 +317,7 @@
                     <ProgressBar Width="20" Height="20" IsIndeterminate="True" 
                                 Visibility="{Binding IsLoading, Converter={StaticResource BoolToVisibilityConverter}}"
                                 Margin="0,0,10,0"/>
-                    <Button Content="🔄 Refresh" 
+                    <Button Content="Refresh" 
                             Command="{Binding LoadLogsCommand}"
                             Style="{StaticResource ActionButtonStyle}"
                             Background="#607D8B" Foreground="White" Height="30"/>
