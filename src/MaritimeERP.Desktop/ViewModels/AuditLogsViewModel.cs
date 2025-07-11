@@ -38,7 +38,7 @@ namespace MaritimeERP.Desktop.ViewModels
             get => _selectedEntityType;
             set
             {
-                if (SetProperty(ref _selectedEntityType, value))
+                if (SetProperty(ref _selectedEntityType, value) && _isInitialized)
                 {
                     _ = ApplyFiltersAsync();
                 }
@@ -51,7 +51,7 @@ namespace MaritimeERP.Desktop.ViewModels
             get => _selectedAction;
             set
             {
-                if (SetProperty(ref _selectedAction, value))
+                if (SetProperty(ref _selectedAction, value) && _isInitialized)
                 {
                     _ = ApplyFiltersAsync();
                 }
@@ -64,7 +64,7 @@ namespace MaritimeERP.Desktop.ViewModels
             get => _selectedUser;
             set
             {
-                if (SetProperty(ref _selectedUser, value))
+                if (SetProperty(ref _selectedUser, value) && _isInitialized)
                 {
                     _ = ApplyFiltersAsync();
                 }
@@ -77,7 +77,7 @@ namespace MaritimeERP.Desktop.ViewModels
             get => _startDate;
             set
             {
-                if (SetProperty(ref _startDate, value))
+                if (SetProperty(ref _startDate, value) && _isInitialized)
                 {
                     _ = ApplyFiltersAsync();
                 }
@@ -90,7 +90,7 @@ namespace MaritimeERP.Desktop.ViewModels
             get => _endDate;
             set
             {
-                if (SetProperty(ref _endDate, value))
+                if (SetProperty(ref _endDate, value) && _isInitialized)
                 {
                     _ = ApplyFiltersAsync();
                 }
@@ -104,6 +104,8 @@ namespace MaritimeERP.Desktop.ViewModels
             get => _isLoading;
             set => SetProperty(ref _isLoading, value);
         }
+
+        private bool _isInitialized = false;
 
         private string _statusMessage = string.Empty;
         public string StatusMessage
@@ -322,12 +324,20 @@ namespace MaritimeERP.Desktop.ViewModels
                         Users.Add(user);
                     }
 
+                    // Set default filter values to "All" to show all logs by default
+                    SelectedEntityType = "All";
+                    SelectedAction = "All";
+                    SelectedUser = Users.FirstOrDefault(u => u.Id == 0); // "All Users"
+
                     // Update statistics
                     TotalLogs = auditLogs.Count;
                     FilteredLogCount = auditLogs.Count;
                     TodaysLogs = auditLogs.Count(l => l.Timestamp.Date == DateTime.Today);
 
                     StatusMessage = $"Loaded {auditLogs.Count} audit logs successfully";
+                    
+                    // Mark as initialized to enable filter change handling
+                    _isInitialized = true;
                 });
 
                 _logger.LogInformation("Audit logs data loaded successfully");
