@@ -202,18 +202,21 @@
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
                             
-                            <TextBlock Grid.Column="0" Text="Review Item (검토 항목)" 
-                                      Background="#ECF0F1" Padding="15" 
-                                      VerticalAlignment="Center" FontWeight="Bold" FontSize="13"
-                                      BorderThickness="0,0,1,1" BorderBrush="#BDC3C7"/>
-                            <TextBlock Grid.Column="1" Text="Review Result (검토 결과)" 
-                                      Background="#ECF0F1" Padding="15" 
-                                      VerticalAlignment="Center" FontWeight="Bold" FontSize="13"
-                                      BorderThickness="0,0,1,1" BorderBrush="#BDC3C7"/>
-                            <TextBlock Grid.Column="2" Text="Remarks (비고)" 
-                                      Background="#ECF0F1" Padding="15" 
-                                      VerticalAlignment="Center" FontWeight="Bold" FontSize="13"
-                                      BorderThickness="0,0,0,1" BorderBrush="#BDC3C7"/>
+                            <Border Grid.Column="0" BorderThickness="0,0,1,1" BorderBrush="#BDC3C7">
+                                <TextBlock Text="Review Item (검토 항목)" 
+                                          Background="#ECF0F1" Padding="15" 
+                                          VerticalAlignment="Center" FontWeight="Bold" FontSize="13"/>
+                            </Border>
+                            <Border Grid.Column="1" BorderThickness="0,0,1,1" BorderBrush="#BDC3C7">
+                                <TextBlock Text="Review Result (검토 결과)" 
+                                          Background="#ECF0F1" Padding="15" 
+                                          VerticalAlignment="Center" FontWeight="Bold" FontSize="13"/>
+                            </Border>
+                            <Border Grid.Column="2" BorderThickness="0,0,0,1" BorderBrush="#BDC3C7">
+                                <TextBlock Text="Remarks (비고)" 
+                                          Background="#ECF0F1" Padding="15" 
+                                          VerticalAlignment="Center" FontWeight="Bold" FontSize="13"/>
+                            </Border>
                         </Grid>
                         
                         <!-- Review Item 1 -->

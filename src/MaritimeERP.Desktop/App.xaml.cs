@@ -130,6 +130,8 @@ namespace MaritimeERP.Desktop
             services.AddTransient<ComponentsViewModel>();
             services.AddTransient<SoftwareViewModel>();
             services.AddTransient<ChangeRequestsViewModel>();
+            services.AddTransient<SecurityReviewStatementViewModel>();
+            services.AddTransient<SecurityReviewStatementsViewModel>();
             services.AddTransient<HardwareChangeRequestDialogViewModel>();
             services.AddTransient<SoftwareChangeRequestDialogViewModel>();
             services.AddTransient<SystemChangePlanDialogViewModel>();

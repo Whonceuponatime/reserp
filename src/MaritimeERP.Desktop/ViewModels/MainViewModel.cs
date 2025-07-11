@@ -134,6 +134,14 @@ namespace MaritimeERP.Desktop.ViewModels
 
             NavigationItems.Add(new NavigationItem
             {
+                Title = "Security Review Statements",
+                Icon = "🛡️",
+                Page = "SecurityReviewStatements",
+                IsVisible = true
+            });
+
+            NavigationItems.Add(new NavigationItem
+            {
                 Title = "Documents",
                 Icon = "📁",
                 Page = "Documents",
@@ -180,6 +188,7 @@ namespace MaritimeERP.Desktop.ViewModels
                 "Components" => CreateComponentsViewModel(),
                 "Software" => CreateSoftwareViewModel(),
                 "ChangeRequests" => CreateChangeRequestsViewModel(),
+                "SecurityReviewStatements" => CreateSecurityReviewStatementsViewModel(),
                 "Documents" => CreateDocumentsViewModel(),
                 "Reports" => CreateReportsViewModel(),
                 "Users" => CreateUsersViewModel(),
@@ -261,6 +270,7 @@ namespace MaritimeERP.Desktop.ViewModels
                 "Systems" => CreateSystemsViewModel(),
                 "Software" => CreateSoftwareViewModel(),
                 "ChangeRequests" => CreateChangeRequestsViewModel(),
+                "SecurityReviewStatements" => CreateSecurityReviewStatementsViewModel(),
                 "Documents" => CreateDocumentsViewModel(),
                 "Reports" => CreateReportsViewModel(),
                 "Users" => CreateUsersViewModel(),
@@ -295,6 +305,7 @@ namespace MaritimeERP.Desktop.ViewModels
                 "Systems" => CreateSystemsViewModel(),
                 "Components" => CreateComponentsViewModel(),
                 "ChangeRequests" => CreateChangeRequestsViewModel(),
+                "SecurityReviewStatements" => CreateSecurityReviewStatementsViewModel(),
                 "Documents" => CreateDocumentsViewModel(),
                 "Reports" => CreateReportsViewModel(),
                 "Users" => CreateUsersViewModel(),
@@ -331,6 +342,16 @@ namespace MaritimeERP.Desktop.ViewModels
             {
                 viewModel = _serviceProvider.GetRequiredService<ChangeRequestsViewModel>();
                 _viewModelCache["ChangeRequests"] = viewModel;
+            }
+            return viewModel;
+        }
+
+        private object CreateSecurityReviewStatementsViewModel()
+        {
+            if (!_viewModelCache.TryGetValue("SecurityReviewStatements", out var viewModel))
+            {
+                viewModel = _serviceProvider.GetRequiredService<SecurityReviewStatementsViewModel>();
+                _viewModelCache["SecurityReviewStatements"] = viewModel;
             }
             return viewModel;
         }

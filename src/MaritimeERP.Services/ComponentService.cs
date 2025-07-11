@@ -126,6 +126,8 @@ namespace MaritimeERP.Services
 
             try
             {
+                component.CreatedAt = DateTime.UtcNow;
+                component.UpdatedAt = DateTime.UtcNow;
                 _context.Components.Add(component);
                 await _context.SaveChangesAsync();
                 return component;
@@ -152,6 +154,10 @@ namespace MaritimeERP.Services
                     throw new KeyNotFoundException($"Component with ID {component.Id} not found");
                 }
 
+                component.UpdatedAt = DateTime.UtcNow;
+                // Preserve the original CreatedAt value
+                component.CreatedAt = existingComponent.CreatedAt;
+                
                 _context.Entry(existingComponent).CurrentValues.SetValues(component);
                 await _context.SaveChangesAsync();
                 return existingComponent;
@@ -228,7 +234,7 @@ namespace MaritimeERP.Services
                     .Include(c => c.System)
                         .ThenInclude(s => s.Category)
                     .Where(c => c.Name.ToLower().Contains(lowerSearchTerm) ||
-                               c.Manufacturer.ToLower().Contains(lowerSearchTerm) ||
+                               (c.Manufacturer != null && c.Manufacturer.ToLower().Contains(lowerSearchTerm)) ||
                                c.InstalledLocation.ToLower().Contains(lowerSearchTerm) ||
                                (c.ConnectedCbs != null && c.ConnectedCbs.ToLower().Contains(lowerSearchTerm)) ||
                                c.System.Name.ToLower().Contains(lowerSearchTerm) ||
@@ -274,7 +280,7 @@ namespace MaritimeERP.Services
                 return await _context.Components
                     .Include(c => c.System)
                         .ThenInclude(s => s.Ship)
-                    .Where(c => (c.Manufacturer + " " + c.Model).Contains(makerModel))
+                    .Where(c => ((c.Manufacturer ?? "") + " " + (c.Model ?? "")).Contains(makerModel))
                     .OrderBy(c => c.Name)
                     .ToListAsync();
             }
@@ -308,7 +314,7 @@ namespace MaritimeERP.Services
             try
             {
                 return await _context.Components
-                    .Select(c => (c.Manufacturer + " " + c.Model).Trim())
+                    .Select(c => ((c.Manufacturer ?? "") + " " + (c.Model ?? "")).Trim())
                     .Distinct()
                     .OrderBy(m => m)
                     .ToListAsync();
@@ -387,7 +393,7 @@ namespace MaritimeERP.Services
             try
             {
                 return await _context.Components
-                    .GroupBy(c => (c.Manufacturer + " " + c.Model).Trim())
+                    .GroupBy(c => ((c.Manufacturer ?? "") + " " + (c.Model ?? "")).Trim())
                     .Select(g => new { MakerModel = g.Key, Count = g.Count() })
                     .OrderByDescending(x => x.Count)
                     .ToDictionaryAsync(x => x.MakerModel, x => x.Count);

@@ -23,7 +23,7 @@ namespace MaritimeERP.Core.Entities
         public bool IsApproved { get; set; } = false;
         
         // Request information (등록요청 번호, 작성 일자)
-        public DateTime ReviewDate { get; set; } = DateTime.Now;
+        public DateTime? ReviewDate { get; set; }
         
         // Reviewer information (검토자)
         [StringLength(100)]
@@ -35,14 +35,29 @@ namespace MaritimeERP.Core.Entities
         [StringLength(100)]
         public string ReviewerName { get; set; } = string.Empty;
         
-        // Review sections (구분 - 검토 항목/검토 결과/비고)
-        // We'll store these as structured text fields for simplicity
-        public string ReviewItems { get; set; } = string.Empty; // JSON or structured format
-        public string ReviewResults { get; set; } = string.Empty; // JSON or structured format
-        public string ReviewNotes { get; set; } = string.Empty; // JSON or structured format
+        // Review items (검토 항목) - Individual items
+        public string ReviewItem1 { get; set; } = string.Empty;
+        public string ReviewResult1 { get; set; } = string.Empty;
+        public string ReviewRemarks1 { get; set; } = string.Empty;
+        
+        public string ReviewItem2 { get; set; } = string.Empty;
+        public string ReviewResult2 { get; set; } = string.Empty;
+        public string ReviewRemarks2 { get; set; } = string.Empty;
+        
+        public string ReviewItem3 { get; set; } = string.Empty;
+        public string ReviewResult3 { get; set; } = string.Empty;
+        public string ReviewRemarks3 { get; set; } = string.Empty;
+        
+        public string ReviewItem4 { get; set; } = string.Empty;
+        public string ReviewResult4 { get; set; } = string.Empty;
+        public string ReviewRemarks4 { get; set; } = string.Empty;
+        
+        public string ReviewItem5 { get; set; } = string.Empty;
+        public string ReviewResult5 { get; set; } = string.Empty;
+        public string ReviewRemarks5 { get; set; } = string.Empty;
         
         // Overall review results (검토 결과)
-        public string OverallResult { get; set; } = string.Empty;
+        public string OverallReviewResult { get; set; } = string.Empty;
         
         // Review opinion (검토 의견)
         public string ReviewOpinion { get; set; } = string.Empty;
@@ -52,5 +67,16 @@ namespace MaritimeERP.Core.Entities
         public User? User { get; set; }
         
         public DateTime UpdatedDate { get; set; } = DateTime.Now;
+        
+        // Display properties
+        public string StatusDisplay
+        {
+            get
+            {
+                if (IsApproved) return "Approved";
+                if (IsUnderReview) return "Under Review";
+                return "Draft";
+            }
+        }
     }
 } 

@@ -17,17 +17,20 @@ namespace MaritimeERP.Desktop.ViewModels
         private readonly ISecurityReviewStatementService _securityReviewStatementService;
         private readonly IAuthenticationService _authenticationService;
         private readonly IShipService _shipService;
+        private readonly IChangeRequestService _changeRequestService;
         private SecurityReviewStatement _securityReviewStatement;
         private bool _isEditMode;
 
         public SecurityReviewStatementDialogViewModel(
             ISecurityReviewStatementService securityReviewStatementService,
             IAuthenticationService authenticationService,
-            IShipService shipService)
+            IShipService shipService,
+            IChangeRequestService changeRequestService)
         {
             _securityReviewStatementService = securityReviewStatementService;
             _authenticationService = authenticationService;
             _shipService = shipService;
+            _changeRequestService = changeRequestService;
             _securityReviewStatement = new SecurityReviewStatement();
             
             Ships = new ObservableCollection<Ship>();
@@ -417,6 +420,23 @@ namespace MaritimeERP.Desktop.ViewModels
                 else
                 {
                     await _securityReviewStatementService.CreateSecurityReviewStatementAsync(_securityReviewStatement);
+                    
+                    // Also create a ChangeRequest record for the main UI
+                    var changeRequest = new ChangeRequest
+                    {
+                        RequestNo = _securityReviewStatement.RequestNumber,
+                        RequestTypeId = 4, // Security Review Statement
+                        StatusId = 1, // Draft
+                        RequestedById = _authenticationService.CurrentUser?.Id ?? 1,
+                        ShipId = SelectedShip?.Id,
+                        Purpose = "Security Review Statement",
+                        Description = $"Security Review Statement for {SelectedShip?.ShipName ?? "Unknown Ship"}",
+                        RequestedAt = DateTime.UtcNow,
+                        CreatedAt = DateTime.UtcNow
+                    };
+                    
+                    await _changeRequestService.CreateChangeRequestAsync(changeRequest);
+                    
                     MessageBox.Show("Security review statement created successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
                     IsEditMode = true;
                 }

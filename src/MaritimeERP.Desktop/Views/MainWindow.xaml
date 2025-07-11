@@ -16,6 +16,14 @@
             <views:DashboardView />
         </DataTemplate>
         
+        <DataTemplate DataType="{x:Type viewModels:SecurityReviewStatementViewModel}">
+            <views:SecurityReviewStatementView />
+        </DataTemplate>
+        
+        <DataTemplate DataType="{x:Type viewModels:SecurityReviewStatementsViewModel}">
+            <views:SecurityReviewStatementsView />
+        </DataTemplate>
+        
         <DataTemplate DataType="{x:Type viewModels:PlaceholderViewModel}">
             <Border Background="White" Padding="40" CornerRadius="8" HorizontalAlignment="Center" VerticalAlignment="Center">
                 <Border.Effect>

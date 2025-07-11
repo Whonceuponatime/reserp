@@ -482,7 +482,7 @@ namespace MaritimeERP.Desktop.ViewModels
 
         private void OpenSecurityReviewStatementForm()
         {
-            var viewModel = new SecurityReviewStatementDialogViewModel(_securityReviewStatementService, _authenticationService, _shipService);
+            var viewModel = new SecurityReviewStatementDialogViewModel(_securityReviewStatementService, _authenticationService, _shipService, _changeRequestService);
             var dialog = new SecurityReviewStatementDialog(viewModel);
             var result = dialog.ShowDialog();
 
