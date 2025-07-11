@@ -3,18 +3,38 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:converters="clr-namespace:MaritimeERP.Desktop.Converters"
              mc:Ignorable="d" 
              d:DesignHeight="800" d:DesignWidth="1200"
              Background="#FAFAFA">
 
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+        <converters:StatusToColorConverter x:Key="StatusToColorConverter"/>
+        <converters:StatusToTextColorConverter x:Key="StatusToTextColorConverter"/>
         
-        <!-- Status color converter would go here in a real implementation -->
+        <!-- 
+        Status Color Legend:
+        • Draft: Gray (#9E9E9E) - Request being prepared
+        • Submitted: Orange (#FF9800) - Submitted for review
+        • Under Review: Blue (#2196F3) - Currently being reviewed
+        • Approved: Green (#4CAF50) - Approved and ready for implementation
+        • Rejected: Red (#F44336) - Rejected and needs revision
+        • Completed: Blue Grey (#607D8B) - Implementation completed
+        -->
+        
+        <!-- Status badge style with dynamic colors and shadow effect -->
         <Style x:Key="StatusBadgeStyle" TargetType="Border">
-            <Setter Property="CornerRadius" Value="10"/>
-            <Setter Property="Padding" Value="8,2"/>
-            <Setter Property="Background" Value="#E3F2FD"/>
+            <Setter Property="CornerRadius" Value="12"/>
+            <Setter Property="Padding" Value="10,4"/>
+            <Setter Property="Effect">
+                <Setter.Value>
+                    <DropShadowEffect BlurRadius="3" 
+                                      ShadowDepth="1" 
+                                      Color="Gray" 
+                                      Opacity="0.3"/>
+                </Setter.Value>
+            </Setter>
         </Style>
     </UserControl.Resources>
     
@@ -141,7 +161,7 @@
                     </StackPanel>
                 </Border>
 
-                <!-- Quick Actions -->
+                <!-- Quick Actions & Status Legend -->
                 <Border Grid.Column="3" 
                         Background="White"
                         CornerRadius="8"
@@ -153,7 +173,7 @@
                                    FontSize="12" 
                                    Foreground="#757575"
                                    Margin="0,0,0,8"/>
-                        <StackPanel Orientation="Horizontal">
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
                             <Button Content="Submit" 
                                     Command="{Binding SubmitForApprovalCommand}"
                                     Background="#4CAF50"
@@ -180,6 +200,34 @@
                                     Height="24"
                                     Padding="8,0"
                                     FontSize="11"/>
+                        </StackPanel>
+                        
+                        <!-- Status Legend -->
+                        <TextBlock Text="Status Colors" 
+                                   FontSize="11" 
+                                   Foreground="#757575"
+                                   Margin="0,0,0,4"/>
+                        <StackPanel>
+                            <StackPanel Orientation="Horizontal" Margin="0,2">
+                                <Ellipse Width="8" Height="8" Fill="#9E9E9E" Margin="0,0,4,0" VerticalAlignment="Center"/>
+                                <TextBlock Text="Draft" FontSize="10" Foreground="#757575" VerticalAlignment="Center"/>
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal" Margin="0,2">
+                                <Ellipse Width="8" Height="8" Fill="#FF9800" Margin="0,0,4,0" VerticalAlignment="Center"/>
+                                <TextBlock Text="Submitted" FontSize="10" Foreground="#757575" VerticalAlignment="Center"/>
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal" Margin="0,2">
+                                <Ellipse Width="8" Height="8" Fill="#2196F3" Margin="0,0,4,0" VerticalAlignment="Center"/>
+                                <TextBlock Text="Under Review" FontSize="10" Foreground="#757575" VerticalAlignment="Center"/>
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal" Margin="0,2">
+                                <Ellipse Width="8" Height="8" Fill="#4CAF50" Margin="0,0,4,0" VerticalAlignment="Center"/>
+                                <TextBlock Text="Approved" FontSize="10" Foreground="#757575" VerticalAlignment="Center"/>
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal" Margin="0,2">
+                                <Ellipse Width="8" Height="8" Fill="#F44336" Margin="0,0,4,0" VerticalAlignment="Center"/>
+                                <TextBlock Text="Rejected" FontSize="10" Foreground="#757575" VerticalAlignment="Center"/>
+                            </StackPanel>
                         </StackPanel>
                     </StackPanel>
                 </Border>
@@ -353,11 +401,14 @@
                             <DataGridTemplateColumn Header="Status" Width="100" MinWidth="80">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
-                                        <Border Style="{StaticResource StatusBadgeStyle}">
+                                        <Border Style="{StaticResource StatusBadgeStyle}"
+                                                Background="{Binding StatusDisplay, Converter={StaticResource StatusToColorConverter}}"
+                                                HorizontalAlignment="Center">
                                             <TextBlock Text="{Binding StatusDisplay}" 
                                                        FontSize="10" 
                                                        FontWeight="SemiBold"
-                                                       TextAlignment="Center"/>
+                                                       TextAlignment="Center"
+                                                       Foreground="{Binding StatusDisplay, Converter={StaticResource StatusToTextColorConverter}}"/>
                                         </Border>
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
