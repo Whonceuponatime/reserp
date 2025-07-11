@@ -284,13 +284,14 @@
                                                     Width="25" Height="20" Margin="1" FontSize="10"
                                                     Background="#2196F3" Foreground="White" BorderThickness="0"/>
 
-                                            <!-- Download Button -->
+                                            <!-- Download Button (Admin Only) -->
                                             <Button Content="Save" 
                                                     Command="{Binding DataContext.DownloadDocumentCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                     CommandParameter="{Binding}"
                                                     ToolTip="Download Document"
                                                     Width="25" Height="20" Margin="1" FontSize="10"
-                                                    Background="#4CAF50" Foreground="White" BorderThickness="0"/>
+                                                    Background="#4CAF50" Foreground="White" BorderThickness="0"
+                                                    Visibility="{Binding DataContext.CanDownload, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BoolToVisibilityConverter}}"/>
 
                                             <!-- Approve Button (Admin Only) -->
                                             <Button Content="OK" 
