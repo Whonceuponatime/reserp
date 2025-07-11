@@ -9,26 +9,49 @@ namespace MaritimeERP.Core.Entities
         public int DocumentId { get; set; }
         public Document Document { get; set; } = null!;
 
-        public short VersionNo { get; set; }
+        public int VersionNumber { get; set; }
+
+        [Required]
+        [MaxLength(100)]
+        public string FileName { get; set; } = string.Empty;
 
         [Required]
         [MaxLength(500)]
         public string FilePath { get; set; } = string.Empty;
 
-        public int UploadedById { get; set; }
+        [Required]
+        public long FileSizeBytes { get; set; }
+
+        [Required]
+        [MaxLength(32)]
+        public string FileHash { get; set; } = string.Empty;
+
+        [Required]
+        [MaxLength(200)]
+        public string ContentType { get; set; } = string.Empty;
+
+        public int UploadedByUserId { get; set; }
         public User UploadedBy { get; set; } = null!;
 
-        public DateTime UploadedAt { get; set; }
+        public DateTime UploadedAt { get; set; } = DateTime.UtcNow;
 
         [MaxLength(1000)]
-        public string? ChangeNote { get; set; }
+        public string? ChangeDescription { get; set; }
 
-        public int StatusId { get; set; }
-        public DocumentStatus Status { get; set; } = null!;
+        public bool IsActive { get; set; } = true;
 
         // Display properties
-        public string DisplayName => $"v{VersionNo} - {Document?.Filename}";
-        public string VersionDisplay => $"Version {VersionNo}";
-        public string UploadInfo => $"Uploaded by {UploadedBy?.FullName} on {UploadedAt:yyyy-MM-dd HH:mm}";
+        public string DisplayName => $"v{VersionNumber} - {FileName}";
+        public string FileSizeDisplay => FormatFileSize(FileSizeBytes);
+        public string UploadedAtDisplay => UploadedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm");
+        public string UploaderDisplay => UploadedBy?.FullName ?? "Unknown";
+
+        private static string FormatFileSize(long bytes)
+        {
+            if (bytes < 1024) return $"{bytes} B";
+            if (bytes < 1024 * 1024) return $"{bytes / 1024:F1} KB";
+            if (bytes < 1024 * 1024 * 1024) return $"{bytes / (1024 * 1024):F1} MB";
+            return $"{bytes / (1024 * 1024 * 1024):F1} GB";
+        }
     }
 } 

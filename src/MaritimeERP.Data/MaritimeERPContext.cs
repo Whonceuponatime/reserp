@@ -42,6 +42,14 @@ namespace MaritimeERP.Data
 
         // Audit Logs
         public DbSet<AuditLog> AuditLogs { get; set; }
+        
+        // Document Management
+        public DbSet<Document> Documents { get; set; }
+        public DbSet<DocumentCategory> DocumentCategories { get; set; }
+        public DbSet<DocumentVersion> DocumentVersions { get; set; }
+        
+        // Login Logs
+        public DbSet<LoginLog> LoginLogs { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -313,6 +321,113 @@ namespace MaritimeERP.Data
                 entity.HasIndex(e => e.UserId);
             });
 
+            // Configure Document relationships
+            modelBuilder.Entity<Document>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Name).HasMaxLength(200).IsRequired();
+                entity.Property(e => e.FileName).HasMaxLength(100).IsRequired();
+                entity.Property(e => e.FileExtension).HasMaxLength(10).IsRequired();
+                entity.Property(e => e.FileHash).HasMaxLength(32).IsRequired();
+                entity.Property(e => e.FilePath).HasMaxLength(500).IsRequired();
+                entity.Property(e => e.ContentType).HasMaxLength(200).IsRequired();
+                entity.Property(e => e.Description).HasMaxLength(500);
+                entity.Property(e => e.Comments).HasMaxLength(1000);
+
+                entity.HasOne(d => d.Category)
+                      .WithMany(p => p.Documents)
+                      .HasForeignKey(d => d.CategoryId)
+                      .OnDelete(DeleteBehavior.Restrict);
+                      
+                entity.HasOne(d => d.Ship)
+                      .WithMany()
+                      .HasForeignKey(d => d.ShipId)
+                      .OnDelete(DeleteBehavior.SetNull);
+                      
+                entity.HasOne(d => d.UploadedBy)
+                      .WithMany()
+                      .HasForeignKey(d => d.UploadedByUserId)
+                      .OnDelete(DeleteBehavior.Restrict);
+                      
+                entity.HasOne(d => d.ApprovedBy)
+                      .WithMany()
+                      .HasForeignKey(d => d.ApprovedByUserId)
+                      .OnDelete(DeleteBehavior.SetNull);
+                      
+                entity.HasOne(d => d.PreviousVersion)
+                      .WithMany(p => p.NewerVersions)
+                      .HasForeignKey(d => d.PreviousVersionId)
+                      .OnDelete(DeleteBehavior.SetNull);
+
+                entity.HasIndex(e => e.FileHash);
+                entity.HasIndex(e => e.UploadedAt);
+                entity.HasIndex(e => e.CategoryId);
+                entity.HasIndex(e => e.ShipId);
+            });
+
+            // Configure DocumentCategory
+            modelBuilder.Entity<DocumentCategory>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Name).HasMaxLength(100).IsRequired();
+                entity.Property(e => e.Category).HasMaxLength(100).IsRequired();
+                entity.Property(e => e.Description).HasMaxLength(500);
+                entity.Property(e => e.AllowedFileTypes).HasMaxLength(500);
+
+                entity.HasIndex(e => e.Category);
+                entity.HasIndex(e => e.DisplayOrder);
+            });
+
+            // Configure DocumentVersion relationships
+            modelBuilder.Entity<DocumentVersion>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.FileName).HasMaxLength(100).IsRequired();
+                entity.Property(e => e.FilePath).HasMaxLength(500).IsRequired();
+                entity.Property(e => e.FileHash).HasMaxLength(32).IsRequired();
+                entity.Property(e => e.ContentType).HasMaxLength(200).IsRequired();
+                entity.Property(e => e.ChangeDescription).HasMaxLength(1000);
+
+                entity.HasOne(d => d.Document)
+                      .WithMany(p => p.Versions)
+                      .HasForeignKey(d => d.DocumentId)
+                      .OnDelete(DeleteBehavior.Cascade);
+                      
+                entity.HasOne(d => d.UploadedBy)
+                      .WithMany()
+                      .HasForeignKey(d => d.UploadedByUserId)
+                      .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasIndex(e => e.DocumentId);
+                entity.HasIndex(e => e.VersionNumber);
+                entity.HasIndex(e => e.UploadedAt);
+            });
+
+            // Configure LoginLog
+            modelBuilder.Entity<LoginLog>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Username).HasMaxLength(100).IsRequired();
+                entity.Property(e => e.Action).HasMaxLength(50).IsRequired();
+                entity.Property(e => e.FailureReason).HasMaxLength(500);
+                entity.Property(e => e.IpAddress).HasMaxLength(100);
+                entity.Property(e => e.UserAgent).HasMaxLength(500);
+                entity.Property(e => e.Device).HasMaxLength(200);
+                entity.Property(e => e.Location).HasMaxLength(100);
+                entity.Property(e => e.AdditionalInfo).HasMaxLength(500);
+
+                entity.HasOne(d => d.User)
+                      .WithMany()
+                      .HasForeignKey(d => d.UserId)
+                      .OnDelete(DeleteBehavior.SetNull);
+
+                entity.HasIndex(e => e.Username);
+                entity.HasIndex(e => e.Action);
+                entity.HasIndex(e => e.Timestamp);
+                entity.HasIndex(e => e.IsSuccessful);
+                entity.HasIndex(e => e.IsSecurityEvent);
+            });
+
             // Seed data
             modelBuilder.Entity<Role>().HasData(
                 new Role { Id = 1, Name = "Administrator", Description = "Full system access - can manage users, approve/reject forms, edit all data" },
@@ -351,6 +466,83 @@ namespace MaritimeERP.Data
                 new ChangeStatus { Id = 4, Name = "Approved", Description = "Change request approved" },
                 new ChangeStatus { Id = 5, Name = "Rejected", Description = "Change request rejected" },
                 new ChangeStatus { Id = 6, Name = "Completed", Description = "Change request completed" }
+            );
+
+            // Seed Document Categories
+            modelBuilder.Entity<DocumentCategory>().HasData(
+                // Approved Supplier Documentation
+                new DocumentCategory 
+                { 
+                    Id = 1, 
+                    Name = "Zones and Conduit Diagram", 
+                    Category = "Approved Supplier Documentation",
+                    Description = "Detailed diagrams showing vessel zones and conduit layouts for cyber security planning",
+                    IsRequired = true,
+                    AllowedFileTypes = "pdf,dwg,dxf,png,jpg,jpeg",
+                    MaxFileSizeBytes = 100 * 1024 * 1024, // 100MB
+                    DisplayOrder = 1,
+                    IsActive = true
+                },
+                new DocumentCategory 
+                { 
+                    Id = 2, 
+                    Name = "Cyber Security Design Description", 
+                    Category = "Approved Supplier Documentation",
+                    Description = "Comprehensive document describing the cyber security design and architecture",
+                    IsRequired = true,
+                    AllowedFileTypes = "pdf,doc,docx",
+                    MaxFileSizeBytes = 50 * 1024 * 1024, // 50MB
+                    DisplayOrder = 2,
+                    IsActive = true
+                },
+                new DocumentCategory 
+                { 
+                    Id = 3, 
+                    Name = "Vessel Asset Inventory", 
+                    Category = "Approved Supplier Documentation",
+                    Description = "Complete inventory of all vessel assets including IT and OT systems",
+                    IsRequired = true,
+                    AllowedFileTypes = "pdf,doc,docx,xlsx,csv",
+                    MaxFileSizeBytes = 25 * 1024 * 1024, // 25MB
+                    DisplayOrder = 3,
+                    IsActive = true
+                },
+                new DocumentCategory 
+                { 
+                    Id = 4, 
+                    Name = "Risk Assessment for Exclusion of CBSs", 
+                    Category = "Approved Supplier Documentation",
+                    Description = "Risk assessment documentation for the exclusion of Critical Business Systems",
+                    IsRequired = true,
+                    AllowedFileTypes = "pdf,doc,docx",
+                    MaxFileSizeBytes = 50 * 1024 * 1024, // 50MB
+                    DisplayOrder = 4,
+                    IsActive = true
+                },
+                new DocumentCategory 
+                { 
+                    Id = 5, 
+                    Name = "Description of Compensating Countermeasures", 
+                    Category = "Approved Supplier Documentation",
+                    Description = "Documentation describing compensating countermeasures for identified security gaps",
+                    IsRequired = true,
+                    AllowedFileTypes = "pdf,doc,docx",
+                    MaxFileSizeBytes = 50 * 1024 * 1024, // 50MB
+                    DisplayOrder = 5,
+                    IsActive = true
+                },
+                new DocumentCategory 
+                { 
+                    Id = 6, 
+                    Name = "Ship Cyber Resilience Test Procedure", 
+                    Category = "Approved Supplier Documentation",
+                    Description = "Detailed procedures for testing ship cyber resilience and security measures",
+                    IsRequired = true,
+                    AllowedFileTypes = "pdf,doc,docx",
+                    MaxFileSizeBytes = 50 * 1024 * 1024, // 50MB
+                    DisplayOrder = 6,
+                    IsActive = true
+                }
             );
         }
     }

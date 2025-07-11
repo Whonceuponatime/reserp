@@ -119,6 +119,8 @@ namespace MaritimeERP.Desktop
             services.AddScoped<IHardwareChangeRequestService, HardwareChangeRequestService>();
             services.AddScoped<ISoftwareChangeRequestService, SoftwareChangeRequestService>();
             services.AddScoped<ISecurityReviewStatementService, SecurityReviewStatementService>();
+            services.AddScoped<IDocumentService, DocumentService>();
+            services.AddScoped<ILoginLogService, LoginLogService>();
             services.AddSingleton<INavigationService, NavigationService>();
             services.AddSingleton<ViewLocator>();
             // Add other services here as they are implemented
@@ -570,6 +572,222 @@ namespace MaritimeERP.Desktop
                 else
                 {
                     Console.WriteLine("AuditLogs table already exists");
+                }
+                
+                // Check if DocumentCategories table exists, if not create it
+                command.CommandText = "SELECT name FROM sqlite_master WHERE type='table' AND name='DocumentCategories'";
+                result = await command.ExecuteScalarAsync();
+                
+                if (result == null)
+                {
+                    Console.WriteLine("Creating DocumentCategories table...");
+                    
+                    // Create the table manually
+                    command.CommandText = @"
+                        CREATE TABLE DocumentCategories (
+                            Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                            Name TEXT NOT NULL,
+                            Description TEXT,
+                            Category TEXT NOT NULL,
+                            IsRequired BOOLEAN NOT NULL DEFAULT 0,
+                            AllowedFileTypes TEXT DEFAULT 'pdf,doc,docx',
+                            MaxFileSizeBytes INTEGER DEFAULT 52428800,
+                            IsActive BOOLEAN NOT NULL DEFAULT 1,
+                            DisplayOrder INTEGER NOT NULL DEFAULT 0,
+                            CreatedAt DATETIME NOT NULL,
+                            UpdatedAt DATETIME
+                        );";
+                    await command.ExecuteNonQueryAsync();
+                    
+                    // Create indexes
+                    command.CommandText = "CREATE INDEX IX_DocumentCategories_Category ON DocumentCategories(Category);";
+                    await command.ExecuteNonQueryAsync();
+                    
+                    command.CommandText = "CREATE INDEX IX_DocumentCategories_DisplayOrder ON DocumentCategories(DisplayOrder);";
+                    await command.ExecuteNonQueryAsync();
+                    
+                    // Insert seed data
+                    var seedData = new[]
+                    {
+                        (1, "Zones and Conduit Diagram", "Detailed diagrams showing vessel zones and conduit layouts for cyber security planning", "Approved Supplier Documentation", 1, "pdf,dwg,dxf,png,jpg,jpeg", 104857600, 1, 1),
+                        (2, "Cyber Security Design Description", "Comprehensive document describing the cyber security design and architecture", "Approved Supplier Documentation", 1, "pdf,doc,docx", 52428800, 1, 2),
+                        (3, "Vessel Asset Inventory", "Complete inventory of all vessel assets including IT and OT systems", "Approved Supplier Documentation", 1, "pdf,doc,docx,xlsx,csv", 26214400, 1, 3),
+                        (4, "Risk Assessment for Exclusion of CBSs", "Risk assessment documentation for the exclusion of Critical Business Systems", "Approved Supplier Documentation", 1, "pdf,doc,docx", 52428800, 1, 4),
+                        (5, "Description of Compensating Countermeasures", "Documentation describing compensating countermeasures for identified security gaps", "Approved Supplier Documentation", 1, "pdf,doc,docx", 52428800, 1, 5),
+                        (6, "Ship Cyber Resilience Test Procedure", "Detailed procedures for testing ship cyber resilience and security measures", "Approved Supplier Documentation", 1, "pdf,doc,docx", 52428800, 1, 6)
+                    };
+                    
+                    foreach (var (id, name, description, category, isRequired, allowedFileTypes, maxFileSize, isActive, displayOrder) in seedData)
+                    {
+                        command.CommandText = $@"
+                            INSERT OR IGNORE INTO DocumentCategories 
+                            (Id, Name, Description, Category, IsRequired, AllowedFileTypes, MaxFileSizeBytes, IsActive, DisplayOrder, CreatedAt) 
+                            VALUES ({id}, '{name}', '{description}', '{category}', {isRequired}, '{allowedFileTypes}', {maxFileSize}, {isActive}, {displayOrder}, datetime('now'))";
+                        await command.ExecuteNonQueryAsync();
+                    }
+                    
+                    Console.WriteLine("DocumentCategories table created successfully");
+                }
+                else
+                {
+                    Console.WriteLine("DocumentCategories table already exists");
+                }
+                
+                // Check if Documents table exists, if not create it
+                command.CommandText = "SELECT name FROM sqlite_master WHERE type='table' AND name='Documents'";
+                result = await command.ExecuteScalarAsync();
+                
+                if (result == null)
+                {
+                    Console.WriteLine("Creating Documents table...");
+                    
+                    // Create the table manually
+                    command.CommandText = @"
+                        CREATE TABLE Documents (
+                            Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                            Name TEXT NOT NULL,
+                            Description TEXT,
+                            FileName TEXT NOT NULL,
+                            FileExtension TEXT NOT NULL,
+                            FileSizeBytes INTEGER NOT NULL,
+                            FileHash TEXT NOT NULL,
+                            FilePath TEXT NOT NULL,
+                            ContentType TEXT NOT NULL,
+                            CategoryId INTEGER NOT NULL,
+                            ShipId INTEGER,
+                            UploadedByUserId INTEGER NOT NULL,
+                            UploadedAt DATETIME NOT NULL,
+                            UpdatedAt DATETIME,
+                            IsActive BOOLEAN NOT NULL DEFAULT 1,
+                            IsApproved BOOLEAN NOT NULL DEFAULT 0,
+                            ApprovedByUserId INTEGER,
+                            ApprovedAt DATETIME,
+                            Comments TEXT,
+                            Version INTEGER NOT NULL DEFAULT 1,
+                            PreviousVersionId INTEGER,
+                            FOREIGN KEY (CategoryId) REFERENCES DocumentCategories(Id) ON DELETE RESTRICT,
+                            FOREIGN KEY (ShipId) REFERENCES Ships(Id) ON DELETE SET NULL,
+                            FOREIGN KEY (UploadedByUserId) REFERENCES Users(Id) ON DELETE RESTRICT,
+                            FOREIGN KEY (ApprovedByUserId) REFERENCES Users(Id) ON DELETE SET NULL,
+                            FOREIGN KEY (PreviousVersionId) REFERENCES Documents(Id) ON DELETE SET NULL
+                        );";
+                    await command.ExecuteNonQueryAsync();
+                    
+                    // Create indexes
+                    command.CommandText = "CREATE INDEX IX_Documents_FileHash ON Documents(FileHash);";
+                    await command.ExecuteNonQueryAsync();
+                    
+                    command.CommandText = "CREATE INDEX IX_Documents_UploadedAt ON Documents(UploadedAt);";
+                    await command.ExecuteNonQueryAsync();
+                    
+                    command.CommandText = "CREATE INDEX IX_Documents_CategoryId ON Documents(CategoryId);";
+                    await command.ExecuteNonQueryAsync();
+                    
+                    command.CommandText = "CREATE INDEX IX_Documents_ShipId ON Documents(ShipId);";
+                    await command.ExecuteNonQueryAsync();
+                    
+                    Console.WriteLine("Documents table created successfully");
+                }
+                else
+                {
+                    Console.WriteLine("Documents table already exists");
+                }
+                
+                // Check if DocumentVersions table exists, if not create it
+                command.CommandText = "SELECT name FROM sqlite_master WHERE type='table' AND name='DocumentVersions'";
+                result = await command.ExecuteScalarAsync();
+                
+                if (result == null)
+                {
+                    Console.WriteLine("Creating DocumentVersions table...");
+                    
+                    // Create the table manually
+                    command.CommandText = @"
+                        CREATE TABLE DocumentVersions (
+                            Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                            DocumentId INTEGER NOT NULL,
+                            VersionNumber INTEGER NOT NULL,
+                            FileName TEXT NOT NULL,
+                            FilePath TEXT NOT NULL,
+                            FileSizeBytes INTEGER NOT NULL,
+                            FileHash TEXT NOT NULL,
+                            ContentType TEXT NOT NULL,
+                            UploadedByUserId INTEGER NOT NULL,
+                            UploadedAt DATETIME NOT NULL,
+                            ChangeDescription TEXT,
+                            IsActive BOOLEAN NOT NULL DEFAULT 1,
+                            FOREIGN KEY (DocumentId) REFERENCES Documents(Id) ON DELETE CASCADE,
+                            FOREIGN KEY (UploadedByUserId) REFERENCES Users(Id) ON DELETE RESTRICT
+                        );";
+                    await command.ExecuteNonQueryAsync();
+                    
+                    // Create indexes
+                    command.CommandText = "CREATE INDEX IX_DocumentVersions_DocumentId ON DocumentVersions(DocumentId);";
+                    await command.ExecuteNonQueryAsync();
+                    
+                    command.CommandText = "CREATE INDEX IX_DocumentVersions_VersionNumber ON DocumentVersions(VersionNumber);";
+                    await command.ExecuteNonQueryAsync();
+                    
+                    command.CommandText = "CREATE INDEX IX_DocumentVersions_UploadedAt ON DocumentVersions(UploadedAt);";
+                    await command.ExecuteNonQueryAsync();
+                    
+                    Console.WriteLine("DocumentVersions table created successfully");
+                }
+                else
+                {
+                    Console.WriteLine("DocumentVersions table already exists");
+                }
+                
+                // Check if LoginLogs table exists, if not create it
+                command.CommandText = "SELECT name FROM sqlite_master WHERE type='table' AND name='LoginLogs'";
+                result = await command.ExecuteScalarAsync();
+                
+                if (result == null)
+                {
+                    Console.WriteLine("Creating LoginLogs table...");
+                    
+                    // Create the table manually
+                    command.CommandText = @"
+                        CREATE TABLE LoginLogs (
+                            Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                            UserId INTEGER,
+                            Username TEXT NOT NULL,
+                            Action TEXT NOT NULL,
+                            IsSuccessful BOOLEAN NOT NULL,
+                            FailureReason TEXT,
+                            IpAddress TEXT,
+                            UserAgent TEXT,
+                            Device TEXT,
+                            Location TEXT,
+                            Timestamp DATETIME NOT NULL,
+                            AdditionalInfo TEXT,
+                            SessionDurationMinutes INTEGER,
+                            IsSecurityEvent BOOLEAN NOT NULL DEFAULT 0,
+                            FOREIGN KEY (UserId) REFERENCES Users(Id) ON DELETE SET NULL
+                        );";
+                    await command.ExecuteNonQueryAsync();
+                    
+                    // Create indexes
+                    command.CommandText = "CREATE INDEX IX_LoginLogs_Username ON LoginLogs(Username);";
+                    await command.ExecuteNonQueryAsync();
+                    
+                    command.CommandText = "CREATE INDEX IX_LoginLogs_Action ON LoginLogs(Action);";
+                    await command.ExecuteNonQueryAsync();
+                    
+                    command.CommandText = "CREATE INDEX IX_LoginLogs_Timestamp ON LoginLogs(Timestamp);";
+                    await command.ExecuteNonQueryAsync();
+                    
+                    command.CommandText = "CREATE INDEX IX_LoginLogs_IsSuccessful ON LoginLogs(IsSuccessful);";
+                    await command.ExecuteNonQueryAsync();
+                    
+                    command.CommandText = "CREATE INDEX IX_LoginLogs_IsSecurityEvent ON LoginLogs(IsSecurityEvent);";
+                    await command.ExecuteNonQueryAsync();
+                    
+                    Console.WriteLine("LoginLogs table created successfully");
+                }
+                else
+                {
+                    Console.WriteLine("LoginLogs table already exists");
                 }
                 
                 // Clean up and ensure only correct roles exist (non-critical operation)
