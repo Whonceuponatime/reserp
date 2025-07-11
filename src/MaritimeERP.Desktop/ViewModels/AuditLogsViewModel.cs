@@ -220,6 +220,24 @@ namespace MaritimeERP.Desktop.ViewModels
             
             LogTypeFilters.Add(new LogTypeFilter 
             { 
+                Name = "Document Management", 
+                Description = "Document uploads, approvals, and management",
+                EntityType = "Document",
+                Action = null,
+                Icon = "📄"
+            });
+            
+            LogTypeFilters.Add(new LogTypeFilter 
+            { 
+                Name = "Login Activities", 
+                Description = "User login, logout, and authentication events",
+                EntityType = "LoginActivity",
+                Action = null,
+                Icon = "🔐"
+            });
+            
+            LogTypeFilters.Add(new LogTypeFilter 
+            { 
                 Name = "User Management", 
                 Description = "User account changes and activities",
                 EntityType = "User",
