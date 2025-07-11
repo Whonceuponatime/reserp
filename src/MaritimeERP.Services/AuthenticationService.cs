@@ -95,12 +95,8 @@ namespace MaritimeERP.Services
                     return null;
                 }
 
-                // Temporary bypass for testing - accept "admin" for admin user
-                if (username == "admin" && password == "admin")
-                {
-                    // Bypass BCrypt verification for admin
-                }
-                else if (!BCrypt.Net.BCrypt.Verify(password, user.PasswordHash))
+                // Always verify password against database hash
+                if (!BCrypt.Net.BCrypt.Verify(password, user.PasswordHash))
                 {
                     _logger.LogWarning("Authentication failed: Invalid password for user {Username}", username);
                     return null;

@@ -309,6 +309,20 @@ namespace MaritimeERP.Desktop.ViewModels
 
                     var updatedUser = await _userService.UpdateUserAsync(SelectedUser);
                     
+                    // If password was provided, reset the password
+                    if (!string.IsNullOrWhiteSpace(Password) && Password.Length >= 8)
+                    {
+                        var passwordSuccess = await _userService.ResetPasswordAsync(SelectedUser.Id, Password);
+                        if (!passwordSuccess)
+                        {
+                            await Application.Current.Dispatcher.InvokeAsync(() =>
+                            {
+                                StatusMessage = "User updated but password change failed";
+                            });
+                            MessageBox.Show("User was updated successfully, but password change failed.", "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
+                        }
+                    }
+                    
                     await Application.Current.Dispatcher.InvokeAsync(() =>
                     {
                         // Update the user in the collection
@@ -323,7 +337,12 @@ namespace MaritimeERP.Desktop.ViewModels
                         ActiveUsers = Users.Count(u => u.IsActive);
                         InactiveUsers = Users.Count(u => !u.IsActive);
                         
-                        StatusMessage = "User updated successfully";
+                        var message = "User updated successfully";
+                        if (!string.IsNullOrWhiteSpace(Password))
+                        {
+                            message += " with new password";
+                        }
+                        StatusMessage = message;
                     });
                 }
 

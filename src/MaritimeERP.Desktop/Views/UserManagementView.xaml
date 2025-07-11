@@ -205,18 +205,30 @@
 
                         <!-- Password (only for new users or when editing) -->
                         <Label Content="Password:" FontWeight="Medium" Margin="0,8,0,4"/>
-                        <PasswordBox x:Name="PasswordBox" Height="32" Padding="8,6" BorderBrush="#BDBDBD"/>
+                        <TextBox Text="{Binding Password, UpdateSourceTrigger=PropertyChanged}" 
+                                 Height="32" Padding="8,6" BorderBrush="#BDBDBD"
+                                 FontFamily="Consolas" 
+                                 ToolTip="Enter new password (minimum 8 characters) or leave empty to keep current password"/>
 
                         <!-- Confirm Password -->
                         <Label Content="Confirm Password:" FontWeight="Medium" Margin="0,8,0,4"/>
-                        <PasswordBox x:Name="ConfirmPasswordBox" Height="32" Padding="8,6" BorderBrush="#BDBDBD"/>
+                        <TextBox Text="{Binding ConfirmPassword, UpdateSourceTrigger=PropertyChanged}" 
+                                 Height="32" Padding="8,6" BorderBrush="#BDBDBD"
+                                 FontFamily="Consolas"
+                                 ToolTip="Confirm the new password"/>
 
                         <!-- Active Status -->
                         <CheckBox Content="Active" IsChecked="{Binding IsActive}" Margin="0,16,0,8" FontWeight="Medium"/>
 
                         <!-- Form Note -->
-                        <TextBlock Text="{Binding SelectedUser, Converter={x:Null}, TargetNullValue='Password is required for new users', FallbackValue='Leave password fields empty to keep current password'}" 
-                                   FontSize="12" Foreground="#757575" Margin="0,8,0,0" TextWrapping="Wrap"/>
+                        <TextBlock FontSize="12" Foreground="#757575" Margin="0,8,0,0" TextWrapping="Wrap">
+                            <TextBlock.Text>
+                                <Binding Path="SelectedUser">
+                                    <Binding.TargetNullValue>Password is required for new users (minimum 8 characters)</Binding.TargetNullValue>
+                                    <Binding.FallbackValue>For existing users: Leave password fields empty to keep current password, or enter new password to change it. You can also use "Reset Password" button for quick password reset.</Binding.FallbackValue>
+                                </Binding>
+                            </TextBlock.Text>
+                        </TextBlock>
                     </StackPanel>
 
                     <!-- Form Buttons -->
