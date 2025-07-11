@@ -45,6 +45,7 @@ namespace MaritimeERP.Desktop.ViewModels
             DownloadDocumentCommand = new RelayCommand<Document>(async (doc) => await DownloadDocumentAsync(doc));
             FilterDocumentsCommand = new RelayCommand(() => FilterDocuments());
             ClearFiltersCommand = new RelayCommand(() => ClearFilters());
+            ClearShipFilterCommand = new RelayCommand(() => ClearShipFilter());
 
             // Initialize
             Task.Run(async () => await InitializeAsync());
@@ -95,13 +96,25 @@ namespace MaritimeERP.Desktop.ViewModels
             }
         }
 
-        private string _searchText = string.Empty;
-        public string SearchText
+        private string? _searchText;
+        public string? SearchText
         {
             get => _searchText;
             set
             {
                 _searchText = value;
+                OnPropertyChanged();
+                FilterDocuments();
+            }
+        }
+
+        private string? _searchTerm;
+        public string? SearchTerm
+        {
+            get => _searchTerm;
+            set
+            {
+                _searchTerm = value;
                 OnPropertyChanged();
                 FilterDocuments();
             }
@@ -221,6 +234,7 @@ namespace MaritimeERP.Desktop.ViewModels
         public ICommand DownloadDocumentCommand { get; }
         public ICommand FilterDocumentsCommand { get; }
         public ICommand ClearFiltersCommand { get; }
+        public ICommand ClearShipFilterCommand { get; }
 
         #endregion
 
@@ -524,56 +538,61 @@ namespace MaritimeERP.Desktop.ViewModels
         {
             var filtered = Documents.AsEnumerable();
 
-            // Filter by category
-            if (SelectedCategory != null && SelectedCategory.Id > 0)
+            // Search filter
+            if (!string.IsNullOrWhiteSpace(SearchTerm))
+            {
+                var searchLower = SearchTerm.ToLower();
+                filtered = filtered.Where(d => 
+                    d.Name.ToLower().Contains(searchLower) ||
+                    d.FileName.ToLower().Contains(searchLower) ||
+                    (d.Description?.ToLower().Contains(searchLower) ?? false) ||
+                    (d.Category?.Name?.ToLower().Contains(searchLower) ?? false) ||
+                    (d.Ship?.ShipName?.ToLower().Contains(searchLower) ?? false));
+            }
+
+            // Category filter
+            if (SelectedCategory != null)
             {
                 filtered = filtered.Where(d => d.CategoryId == SelectedCategory.Id);
             }
 
-            // Filter by ship
-            if (SelectedShip != null && SelectedShip.Id > 0)
+            // Ship filter
+            if (SelectedShip != null)
             {
                 filtered = filtered.Where(d => d.ShipId == SelectedShip.Id);
             }
 
-            // Filter by search text
-            if (!string.IsNullOrEmpty(SearchText))
-            {
-                var searchLower = SearchText.ToLowerInvariant();
-                filtered = filtered.Where(d => 
-                    d.Name.ToLowerInvariant().Contains(searchLower) ||
-                    d.FileName.ToLowerInvariant().Contains(searchLower) ||
-                    (d.Description?.ToLowerInvariant().Contains(searchLower) ?? false) ||
-                    (d.Category?.Name.ToLowerInvariant().Contains(searchLower) ?? false));
-            }
-
-            // Filter by approval status
+            // Status filters
             if (ShowApprovedOnly)
             {
                 filtered = filtered.Where(d => d.IsApproved);
             }
-            else if (ShowPendingOnly)
+
+            if (ShowPendingOnly)
             {
                 filtered = filtered.Where(d => !d.IsApproved);
             }
 
-            Application.Current.Dispatcher.Invoke(() =>
+            FilteredDocuments.Clear();
+            foreach (var doc in filtered.OrderByDescending(d => d.UploadedAt))
             {
-                FilteredDocuments.Clear();
-                foreach (var document in filtered)
-                {
-                    FilteredDocuments.Add(document);
-                }
-            });
+                FilteredDocuments.Add(doc);
+            }
         }
 
         private void ClearFilters()
         {
-            SelectedCategory = DocumentCategories.FirstOrDefault();
-            SelectedShip = Ships.FirstOrDefault();
-            SearchText = string.Empty;
+            SearchTerm = string.Empty;
+            SelectedCategory = null;
+            SelectedShip = null;
             ShowApprovedOnly = false;
             ShowPendingOnly = false;
+            FilterDocuments();
+        }
+
+        private void ClearShipFilter()
+        {
+            SelectedShip = Ships.FirstOrDefault();
             FilterDocuments();
         }
 
