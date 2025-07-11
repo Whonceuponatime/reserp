@@ -1,9 +1,11 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Windows.Input;
+using System.IO;
 using MaritimeERP.Core.Entities;
 using MaritimeERP.Services.Interfaces;
 using MaritimeERP.Desktop.Commands;
+using MaritimeERP.Desktop.Views;
 using Microsoft.Extensions.Logging;
 using System.Windows;
 using Microsoft.Win32;
@@ -409,10 +411,9 @@ namespace MaritimeERP.Desktop.ViewModels
             {
                 if (document == null) return;
 
-                var reason = Microsoft.VisualBasic.Interaction.InputBox(
+                var reason = InputDialog.ShowDialog(
                     "Please provide a reason for rejecting this document:",
-                    "Rejection Reason",
-                    "");
+                    "Rejection Reason");
 
                 if (!string.IsNullOrEmpty(reason))
                 {

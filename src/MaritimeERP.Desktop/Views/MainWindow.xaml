@@ -28,6 +28,13 @@
             <views:AuditLogsView />
         </DataTemplate>
         
+        <DataTemplate DataType="{x:Type viewModels:DocumentsViewModel}">
+            <views:DocumentsView />
+        </DataTemplate>
+        
+        <DataTemplate DataType="{x:Type viewModels:LoginLogsViewModel}">
+            <views:LoginLogsView />
+        </DataTemplate>
 
         
         <DataTemplate DataType="{x:Type viewModels:PlaceholderViewModel}">

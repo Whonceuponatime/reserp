@@ -1,0 +1,304 @@
+<UserControl x:Class="MaritimeERP.Desktop.Views.LoginLogsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" 
+             d:DesignHeight="800" d:DesignWidth="1200">
+
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
+        
+        <Style x:Key="StatCardStyle" TargetType="Border">
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="BorderBrush" Value="#E0E0E0"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="Padding" Value="20"/>
+            <Setter Property="Margin" Value="5"/>
+            <Setter Property="Effect">
+                <Setter.Value>
+                    <DropShadowEffect Color="Gray" Direction="270" ShadowDepth="2" Opacity="0.2" BlurRadius="5"/>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="HeaderTextStyle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="24"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Foreground" Value="#333333"/>
+        </Style>
+
+        <Style x:Key="SubHeaderTextStyle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="#555555"/>
+        </Style>
+
+        <Style x:Key="ActionButtonStyle" TargetType="Button">
+            <Setter Property="Padding" Value="15,8"/>
+            <Setter Property="Margin" Value="5,0"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Height" Value="35"/>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <Border Grid.Row="0" Background="#FF5722" Padding="20">
+            <StackPanel>
+                <TextBlock Text="Login Logs" Style="{StaticResource HeaderTextStyle}" Foreground="White"/>
+                <TextBlock Text="Monitor user login activities and security events" 
+                          FontSize="14" Foreground="White" Opacity="0.9" Margin="0,5,0,0"/>
+            </StackPanel>
+        </Border>
+
+        <!-- Statistics Cards -->
+        <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled" Margin="20,20,20,0">
+            <StackPanel Orientation="Horizontal">
+                <!-- Total Logins -->
+                <Border Style="{StaticResource StatCardStyle}" MinWidth="180">
+                    <StackPanel>
+                        <TextBlock Text="🔐" FontSize="24" HorizontalAlignment="Center" Margin="0,0,0,10"/>
+                        <TextBlock Text="{Binding TotalLogins}" FontSize="32" FontWeight="Bold" 
+                                  Foreground="#2196F3" HorizontalAlignment="Center"/>
+                        <TextBlock Text="Total Logins (30d)" FontSize="12" Foreground="#666" HorizontalAlignment="Center"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Successful Logins -->
+                <Border Style="{StaticResource StatCardStyle}" MinWidth="180">
+                    <StackPanel>
+                        <TextBlock Text="✅" FontSize="24" HorizontalAlignment="Center" Margin="0,0,0,10"/>
+                        <TextBlock Text="{Binding SuccessfulLogins}" FontSize="32" FontWeight="Bold" 
+                                  Foreground="#4CAF50" HorizontalAlignment="Center"/>
+                        <TextBlock Text="Successful" FontSize="12" Foreground="#666" HorizontalAlignment="Center"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Failed Logins -->
+                <Border Style="{StaticResource StatCardStyle}" MinWidth="180">
+                    <StackPanel>
+                        <TextBlock Text="❌" FontSize="24" HorizontalAlignment="Center" Margin="0,0,0,10"/>
+                        <TextBlock Text="{Binding FailedLogins}" FontSize="32" FontWeight="Bold" 
+                                  Foreground="#F44336" HorizontalAlignment="Center"/>
+                        <TextBlock Text="Failed" FontSize="12" Foreground="#666" HorizontalAlignment="Center"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Security Events -->
+                <Border Style="{StaticResource StatCardStyle}" MinWidth="180">
+                    <StackPanel>
+                        <TextBlock Text="⚠️" FontSize="24" HorizontalAlignment="Center" Margin="0,0,0,10"/>
+                        <TextBlock Text="{Binding SecurityEvents}" FontSize="32" FontWeight="Bold" 
+                                  Foreground="#FF9800" HorizontalAlignment="Center"/>
+                        <TextBlock Text="Security Events" FontSize="12" Foreground="#666" HorizontalAlignment="Center"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Success Rate -->
+                <Border Style="{StaticResource StatCardStyle}" MinWidth="180">
+                    <StackPanel>
+                        <TextBlock Text="📊" FontSize="24" HorizontalAlignment="Center" Margin="0,0,0,10"/>
+                        <TextBlock Text="{Binding SuccessRate, StringFormat={}{0:F1}%}" FontSize="32" FontWeight="Bold" 
+                                  Foreground="#9C27B0" HorizontalAlignment="Center"/>
+                        <TextBlock Text="Success Rate" FontSize="12" Foreground="#666" HorizontalAlignment="Center"/>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- Main Content -->
+        <Grid Grid.Row="2" Margin="20">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="300"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Filters Panel -->
+            <Border Grid.Column="0" Background="White" BorderBrush="#E0E0E0" BorderThickness="1" 
+                    CornerRadius="8" Padding="20" Margin="0,0,10,0">
+                <StackPanel>
+                    <TextBlock Text="Filters & Actions" Style="{StaticResource SubHeaderTextStyle}" Margin="0,0,0,15"/>
+
+                    <!-- Export Button -->
+                    <Button Content="📊 Export Logs" 
+                            Command="{Binding ExportLogsCommand}"
+                            Style="{StaticResource ActionButtonStyle}"
+                            Background="#4CAF50" Foreground="White" Margin="0,0,0,20"/>
+
+                    <!-- Username Filter -->
+                    <Label Content="Username" FontWeight="SemiBold"/>
+                    <TextBox Text="{Binding UsernameFilter, UpdateSourceTrigger=PropertyChanged}" 
+                             Padding="8" Height="35" Margin="0,5,0,15"
+                             ToolTip="Filter by username"/>
+
+                    <!-- Action Filter -->
+                    <Label Content="Action" FontWeight="SemiBold"/>
+                    <ComboBox ItemsSource="{Binding Actions}"
+                              SelectedItem="{Binding SelectedAction}"
+                              Height="35" Margin="0,5,0,15"/>
+
+                    <!-- Success Filter -->
+                    <Label Content="Success Status" FontWeight="SemiBold"/>
+                    <ComboBox ItemsSource="{Binding SuccessOptions}"
+                              SelectedItem="{Binding SelectedSuccessOption}"
+                              Height="35" Margin="0,5,0,15"/>
+
+                    <!-- Security Event Filter -->
+                    <Label Content="Event Type" FontWeight="SemiBold"/>
+                    <ComboBox ItemsSource="{Binding SecurityEventOptions}"
+                              SelectedItem="{Binding SelectedSecurityOption}"
+                              Height="35" Margin="0,5,0,15"/>
+
+                    <!-- Date Range -->
+                    <Label Content="Start Date" FontWeight="SemiBold"/>
+                    <DatePicker SelectedDate="{Binding StartDate}" Height="35" Margin="0,5,0,10"/>
+
+                    <Label Content="End Date" FontWeight="SemiBold"/>
+                    <DatePicker SelectedDate="{Binding EndDate}" Height="35" Margin="0,5,0,15"/>
+
+                    <!-- Action Buttons -->
+                    <Button Content="Apply Filters" 
+                            Command="{Binding FilterLogsCommand}"
+                            Style="{StaticResource ActionButtonStyle}"
+                            Background="#2196F3" Foreground="White" Margin="0,0,0,10"/>
+
+                    <Button Content="Clear Filters" 
+                            Command="{Binding ClearFiltersCommand}"
+                            Style="{StaticResource ActionButtonStyle}"
+                            Background="#757575" Foreground="White"/>
+                </StackPanel>
+            </Border>
+
+            <!-- Login Logs List -->
+            <Border Grid.Column="1" Background="White" BorderBrush="#E0E0E0" BorderThickness="1" 
+                    CornerRadius="8" Padding="20" Margin="10,0,0,0">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Logs Header -->
+                    <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,15">
+                        <TextBlock Text="Login Logs" Style="{StaticResource SubHeaderTextStyle}"/>
+                        <TextBlock Text="{Binding FilteredLoginLogs.Count, StringFormat=({0} entries)}" 
+                                  FontSize="14" Foreground="#666" VerticalAlignment="Bottom" Margin="10,0,0,2"/>
+                    </StackPanel>
+
+                    <!-- Logs DataGrid -->
+                    <DataGrid Grid.Row="1" ItemsSource="{Binding FilteredLoginLogs}" 
+                              SelectedItem="{Binding SelectedLoginLog}"
+                              AutoGenerateColumns="False" 
+                              CanUserAddRows="False"
+                              CanUserDeleteRows="False"
+                              GridLinesVisibility="Horizontal"
+                              HeadersVisibility="Column"
+                              SelectionMode="Single"
+                              AlternatingRowBackground="#F8F9FA">
+                        
+                        <DataGrid.Columns>
+                            <!-- Timestamp -->
+                            <DataGridTextColumn Header="Timestamp" Binding="{Binding TimestampDisplay}" Width="140">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="FontWeight" Value="SemiBold"/>
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+
+                            <!-- Username -->
+                            <DataGridTextColumn Header="Username" Binding="{Binding Username}" Width="120"/>
+
+                            <!-- Action -->
+                            <DataGridTextColumn Header="Action" Binding="{Binding ActionDisplay}" Width="140"/>
+
+                            <!-- Status -->
+                            <DataGridTemplateColumn Header="Status" Width="80">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <Border Background="{Binding IsSuccessful, Converter={StaticResource BoolToStatusColorConverter}}"
+                                                CornerRadius="12" Padding="6,3">
+                                            <TextBlock Text="{Binding StatusDisplay}" 
+                                                      Foreground="White" 
+                                                      FontWeight="SemiBold" 
+                                                      FontSize="10"
+                                                      HorizontalAlignment="Center"/>
+                                        </Border>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+
+                            <!-- IP Address -->
+                            <DataGridTextColumn Header="IP Address" Binding="{Binding IpAddress}" Width="120"/>
+
+                            <!-- Security Event -->
+                            <DataGridTemplateColumn Header="Security" Width="100">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding SecurityDisplay}" 
+                                                  FontWeight="{Binding IsSecurityEvent, Converter={StaticResource BoolToFontWeightConverter}}"
+                                                  Foreground="{Binding IsSecurityEvent, Converter={StaticResource BoolToSecurityColorConverter}}"/>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+
+                            <!-- Session Duration -->
+                            <DataGridTextColumn Header="Duration" Binding="{Binding DurationDisplay}" Width="80"/>
+
+                            <!-- Failure Reason -->
+                            <DataGridTextColumn Header="Failure Reason" Binding="{Binding FailureReason}" Width="150"/>
+
+                            <!-- Actions -->
+                            <DataGridTemplateColumn Header="Actions" Width="60">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <Button Content="🗑" 
+                                                Command="{Binding DataContext.DeleteLogCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                CommandParameter="{Binding}"
+                                                ToolTip="Delete Log Entry"
+                                                Width="30" Height="25" 
+                                                Background="#F44336" Foreground="White" BorderThickness="0"/>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <!-- Status Bar -->
+        <Border Grid.Row="3" Background="#F5F5F5" BorderBrush="#E0E0E0" BorderThickness="0,1,0,0" Padding="20,10">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <TextBlock Grid.Column="0" Text="{Binding StatusMessage}" 
+                          VerticalAlignment="Center" Foreground="#666"/>
+
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                    <ProgressBar Width="20" Height="20" IsIndeterminate="True" 
+                                Visibility="{Binding IsLoading, Converter={StaticResource BoolToVisibilityConverter}}"
+                                Margin="0,0,10,0"/>
+                    <Button Content="🔄 Refresh" 
+                            Command="{Binding LoadLogsCommand}"
+                            Style="{StaticResource ActionButtonStyle}"
+                            Background="#607D8B" Foreground="White" Height="30"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl> 

@@ -1,0 +1,314 @@
+<UserControl x:Class="MaritimeERP.Desktop.Views.DocumentsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" 
+             d:DesignHeight="800" d:DesignWidth="1200">
+
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
+        
+        <Style x:Key="StatCardStyle" TargetType="Border">
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="BorderBrush" Value="#E0E0E0"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="Padding" Value="20"/>
+            <Setter Property="Margin" Value="5"/>
+            <Setter Property="Effect">
+                <Setter.Value>
+                    <DropShadowEffect Color="Gray" Direction="270" ShadowDepth="2" Opacity="0.2" BlurRadius="5"/>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="HeaderTextStyle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="24"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Foreground" Value="#333333"/>
+        </Style>
+
+        <Style x:Key="SubHeaderTextStyle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="#555555"/>
+        </Style>
+
+        <Style x:Key="ActionButtonStyle" TargetType="Button">
+            <Setter Property="Padding" Value="15,8"/>
+            <Setter Property="Margin" Value="5,0"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Height" Value="35"/>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <Border Grid.Row="0" Background="#2196F3" Padding="20">
+            <StackPanel>
+                <TextBlock Text="Document Management" Style="{StaticResource HeaderTextStyle}" Foreground="White"/>
+                <TextBlock Text="Manage vessel documentation and approved supplier documents" 
+                          FontSize="14" Foreground="White" Opacity="0.9" Margin="0,5,0,0"/>
+            </StackPanel>
+        </Border>
+
+        <!-- Statistics Cards -->
+        <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled" Margin="20,20,20,0">
+            <StackPanel Orientation="Horizontal">
+                <!-- Total Documents -->
+                <Border Style="{StaticResource StatCardStyle}" MinWidth="200">
+                    <StackPanel>
+                        <TextBlock Text="📄" FontSize="24" HorizontalAlignment="Center" Margin="0,0,0,10"/>
+                        <TextBlock Text="{Binding TotalDocuments}" FontSize="32" FontWeight="Bold" 
+                                  Foreground="#2196F3" HorizontalAlignment="Center"/>
+                        <TextBlock Text="Total Documents" FontSize="14" Foreground="#666" HorizontalAlignment="Center"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Approved Documents -->
+                <Border Style="{StaticResource StatCardStyle}" MinWidth="200">
+                    <StackPanel>
+                        <TextBlock Text="✅" FontSize="24" HorizontalAlignment="Center" Margin="0,0,0,10"/>
+                        <TextBlock Text="{Binding ApprovedDocuments}" FontSize="32" FontWeight="Bold" 
+                                  Foreground="#4CAF50" HorizontalAlignment="Center"/>
+                        <TextBlock Text="Approved" FontSize="14" Foreground="#666" HorizontalAlignment="Center"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Pending Documents -->
+                <Border Style="{StaticResource StatCardStyle}" MinWidth="200">
+                    <StackPanel>
+                        <TextBlock Text="⏳" FontSize="24" HorizontalAlignment="Center" Margin="0,0,0,10"/>
+                        <TextBlock Text="{Binding PendingDocuments}" FontSize="32" FontWeight="Bold" 
+                                  Foreground="#FF9800" HorizontalAlignment="Center"/>
+                        <TextBlock Text="Pending Approval" FontSize="14" Foreground="#666" HorizontalAlignment="Center"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Total File Size -->
+                <Border Style="{StaticResource StatCardStyle}" MinWidth="200">
+                    <StackPanel>
+                        <TextBlock Text="💾" FontSize="24" HorizontalAlignment="Center" Margin="0,0,0,10"/>
+                        <TextBlock Text="{Binding TotalFileSize}" FontSize="32" FontWeight="Bold" 
+                                  Foreground="#9C27B0" HorizontalAlignment="Center"/>
+                        <TextBlock Text="Storage Used" FontSize="14" Foreground="#666" HorizontalAlignment="Center"/>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- Main Content -->
+        <Grid Grid.Row="2" Margin="20">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="300"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Filters Panel -->
+            <Border Grid.Column="0" Background="White" BorderBrush="#E0E0E0" BorderThickness="1" 
+                    CornerRadius="8" Padding="20" Margin="0,0,10,0">
+                <StackPanel>
+                    <TextBlock Text="Filters & Actions" Style="{StaticResource SubHeaderTextStyle}" Margin="0,0,0,15"/>
+
+                    <!-- Upload Button -->
+                    <Button Content="📤 Upload Document" 
+                            Command="{Binding UploadDocumentCommand}"
+                            Style="{StaticResource ActionButtonStyle}"
+                            Background="#4CAF50" Foreground="White" Margin="0,0,0,20"/>
+
+                    <!-- Search -->
+                    <Label Content="Search Documents" FontWeight="SemiBold"/>
+                    <TextBox Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" 
+                             Padding="8" Height="35" Margin="0,5,0,15"
+                             ToolTip="Search by document name, filename, or description"/>
+
+                    <!-- Category Filter -->
+                    <Label Content="Category" FontWeight="SemiBold"/>
+                    <ComboBox ItemsSource="{Binding DocumentCategories}"
+                              SelectedItem="{Binding SelectedCategory}"
+                              DisplayMemberPath="Name"
+                              Height="35" Margin="0,5,0,15"/>
+
+                    <!-- Ship Filter -->
+                    <Label Content="Ship" FontWeight="SemiBold"/>
+                    <ComboBox ItemsSource="{Binding Ships}"
+                              SelectedItem="{Binding SelectedShip}"
+                              DisplayMemberPath="ShipName"
+                              Height="35" Margin="0,5,0,15"/>
+
+                    <!-- Status Filters -->
+                    <Label Content="Status Filters" FontWeight="SemiBold"/>
+                    <CheckBox Content="Show Approved Only" 
+                              IsChecked="{Binding ShowApprovedOnly}" 
+                              Margin="0,5,0,5"/>
+                    <CheckBox Content="Show Pending Only" 
+                              IsChecked="{Binding ShowPendingOnly}" 
+                              Margin="0,0,0,15"/>
+
+                    <!-- Clear Filters -->
+                    <Button Content="Clear Filters" 
+                            Command="{Binding ClearFiltersCommand}"
+                            Style="{StaticResource ActionButtonStyle}"
+                            Background="#757575" Foreground="White"/>
+                </StackPanel>
+            </Border>
+
+            <!-- Documents List -->
+            <Border Grid.Column="1" Background="White" BorderBrush="#E0E0E0" BorderThickness="1" 
+                    CornerRadius="8" Padding="20" Margin="10,0,0,0">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Documents Header -->
+                    <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,15">
+                        <TextBlock Text="Documents" Style="{StaticResource SubHeaderTextStyle}"/>
+                        <TextBlock Text="{Binding FilteredDocuments.Count, StringFormat=({0} documents)}" 
+                                  FontSize="14" Foreground="#666" VerticalAlignment="Bottom" Margin="10,0,0,2"/>
+                    </StackPanel>
+
+                    <!-- Documents DataGrid -->
+                    <DataGrid Grid.Row="1" ItemsSource="{Binding FilteredDocuments}" 
+                              SelectedItem="{Binding SelectedDocument}"
+                              AutoGenerateColumns="False" 
+                              CanUserAddRows="False"
+                              CanUserDeleteRows="False"
+                              GridLinesVisibility="Horizontal"
+                              HeadersVisibility="Column"
+                              SelectionMode="Single"
+                              AlternatingRowBackground="#F8F9FA">
+                        
+                        <DataGrid.Columns>
+                            <!-- Document Name -->
+                            <DataGridTextColumn Header="Document Name" Binding="{Binding Name}" Width="200">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="FontWeight" Value="SemiBold"/>
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+
+                            <!-- Category -->
+                            <DataGridTextColumn Header="Category" Binding="{Binding Category.Name}" Width="150"/>
+
+                            <!-- Ship -->
+                            <DataGridTextColumn Header="Ship" Binding="{Binding Ship.ShipName}" Width="120"/>
+
+                            <!-- File Size -->
+                            <DataGridTextColumn Header="Size" Binding="{Binding FileSizeDisplay}" Width="80"/>
+
+                            <!-- Uploaded Date -->
+                            <DataGridTextColumn Header="Uploaded" Binding="{Binding UploadedAtDisplay}" Width="120"/>
+
+                            <!-- Uploaded By -->
+                            <DataGridTextColumn Header="Uploaded By" Binding="{Binding UploaderDisplay}" Width="120"/>
+
+                            <!-- Status -->
+                            <DataGridTemplateColumn Header="Status" Width="120">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <Border Background="{Binding IsApproved, Converter={StaticResource BoolToStatusColorConverter}}"
+                                                CornerRadius="12" Padding="8,4">
+                                            <TextBlock Text="{Binding StatusDisplay}" 
+                                                      Foreground="White" 
+                                                      FontWeight="SemiBold" 
+                                                      FontSize="11"
+                                                      HorizontalAlignment="Center"/>
+                                        </Border>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+
+                            <!-- Actions -->
+                            <DataGridTemplateColumn Header="Actions" Width="200">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Orientation="Horizontal">
+                                            <!-- Preview Button -->
+                                            <Button Content="👁" 
+                                                    Command="{Binding DataContext.PreviewDocumentCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                    CommandParameter="{Binding}"
+                                                    ToolTip="Preview Document"
+                                                    Width="30" Height="25" Margin="2" 
+                                                    Background="#2196F3" Foreground="White" BorderThickness="0"/>
+
+                                            <!-- Download Button -->
+                                            <Button Content="💾" 
+                                                    Command="{Binding DataContext.DownloadDocumentCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                    CommandParameter="{Binding}"
+                                                    ToolTip="Download Document"
+                                                    Width="30" Height="25" Margin="2" 
+                                                    Background="#4CAF50" Foreground="White" BorderThickness="0"/>
+
+                                            <!-- Approve Button (Admin Only) -->
+                                            <Button Content="✅" 
+                                                    Command="{Binding DataContext.ApproveDocumentCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                    CommandParameter="{Binding}"
+                                                    ToolTip="Approve Document"
+                                                    Width="30" Height="25" Margin="2" 
+                                                    Background="#4CAF50" Foreground="White" BorderThickness="0"
+                                                    Visibility="{Binding DataContext.CanApprove, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BoolToVisibilityConverter}}"/>
+
+                                            <!-- Reject Button (Admin Only) -->
+                                            <Button Content="❌" 
+                                                    Command="{Binding DataContext.RejectDocumentCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                    CommandParameter="{Binding}"
+                                                    ToolTip="Reject Document"
+                                                    Width="30" Height="25" Margin="2" 
+                                                    Background="#F44336" Foreground="White" BorderThickness="0"
+                                                    Visibility="{Binding DataContext.CanReject, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BoolToVisibilityConverter}}"/>
+
+                                            <!-- Delete Button -->
+                                            <Button Content="🗑" 
+                                                    Command="{Binding DataContext.DeleteDocumentCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                    CommandParameter="{Binding}"
+                                                    ToolTip="Delete Document"
+                                                    Width="30" Height="25" Margin="2" 
+                                                    Background="#F44336" Foreground="White" BorderThickness="0"
+                                                    Visibility="{Binding DataContext.CanDelete, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <!-- Status Bar -->
+        <Border Grid.Row="3" Background="#F5F5F5" BorderBrush="#E0E0E0" BorderThickness="0,1,0,0" Padding="20,10">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <TextBlock Grid.Column="0" Text="{Binding StatusMessage}" 
+                          VerticalAlignment="Center" Foreground="#666"/>
+
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                    <ProgressBar Width="20" Height="20" IsIndeterminate="True" 
+                                Visibility="{Binding IsLoading, Converter={StaticResource BoolToVisibilityConverter}}"
+                                Margin="0,0,10,0"/>
+                    <Button Content="🔄 Refresh" 
+                            Command="{Binding LoadDocumentsCommand}"
+                            Style="{StaticResource ActionButtonStyle}"
+                            Background="#607D8B" Foreground="White" Height="30"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl> 

@@ -141,6 +141,15 @@ namespace MaritimeERP.Desktop.ViewModels
                 IsVisible = true
             });
 
+            // Documents - Engineers can upload, Admins can approve
+            NavigationItems.Add(new NavigationItem
+            {
+                Title = "Documents",
+                Icon = "📄",
+                Page = "Documents",
+                IsVisible = true
+            });
+
             // Admin-only sections
             NavigationItems.Add(new NavigationItem
             {
@@ -155,6 +164,14 @@ namespace MaritimeERP.Desktop.ViewModels
                 Title = "Auditable Logs",
                 Icon = "📋",
                 Page = "AuditLogs",
+                IsVisible = isAdmin
+            });
+
+            NavigationItems.Add(new NavigationItem
+            {
+                Title = "Login Logs",
+                Icon = "🔐",
+                Page = "LoginLogs",
                 IsVisible = isAdmin
             });
         }
@@ -182,9 +199,10 @@ namespace MaritimeERP.Desktop.ViewModels
                 "Components" => CreateComponentsViewModel(),
                 "Software" => CreateSoftwareViewModel(),
                 "ChangeRequests" => CreateChangeRequestsViewModel(),
+                "Documents" => CreateDocumentsViewModel(),
                 "UserManagement" => CreateUserManagementViewModel(),
                 "AuditLogs" => CreateAuditLogsViewModel(),
-                "Documents" => CreateDocumentsViewModel(),
+                "LoginLogs" => CreateLoginLogsViewModel(),
                 "Reports" => CreateReportsViewModel(),
                 "Users" => CreateUsersViewModel(),
                 _ => CreateDashboardViewModel()
@@ -265,9 +283,10 @@ namespace MaritimeERP.Desktop.ViewModels
                 "Systems" => CreateSystemsViewModel(),
                 "Software" => CreateSoftwareViewModel(),
                 "ChangeRequests" => CreateChangeRequestsViewModel(),
+                "Documents" => CreateDocumentsViewModel(),
                 "UserManagement" => CreateUserManagementViewModel(),
                 "AuditLogs" => CreateAuditLogsViewModel(),
-                "Documents" => CreateDocumentsViewModel(),
+                "LoginLogs" => CreateLoginLogsViewModel(),
                 "Reports" => CreateReportsViewModel(),
                 "Users" => CreateUsersViewModel(),
                 _ => CreateDashboardViewModel()
@@ -301,9 +320,10 @@ namespace MaritimeERP.Desktop.ViewModels
                 "Systems" => CreateSystemsViewModel(),
                 "Components" => CreateComponentsViewModel(),
                 "ChangeRequests" => CreateChangeRequestsViewModel(),
+                "Documents" => CreateDocumentsViewModel(),
                 "UserManagement" => CreateUserManagementViewModel(),
                 "AuditLogs" => CreateAuditLogsViewModel(),
-                "Documents" => CreateDocumentsViewModel(),
+                "LoginLogs" => CreateLoginLogsViewModel(),
                 "Reports" => CreateReportsViewModel(),
                 "Users" => CreateUsersViewModel(),
                 _ => CreateDashboardViewModel()
@@ -363,11 +383,25 @@ namespace MaritimeERP.Desktop.ViewModels
             return viewModel;
         }
 
+        private object CreateLoginLogsViewModel()
+        {
+            if (!_viewModelCache.TryGetValue("LoginLogs", out var viewModel))
+            {
+                viewModel = _serviceProvider.GetRequiredService<LoginLogsViewModel>();
+                _viewModelCache["LoginLogs"] = viewModel;
+            }
+            return viewModel;
+        }
 
 
         private object CreateDocumentsViewModel()
         {
-            return new PlaceholderViewModel("Document Management", "Manage ship documents and files", "📁");
+            if (!_viewModelCache.TryGetValue("Documents", out var viewModel))
+            {
+                viewModel = _serviceProvider.GetRequiredService<DocumentsViewModel>();
+                _viewModelCache["Documents"] = viewModel;
+            }
+            return viewModel;
         }
 
         private object CreateReportsViewModel()
