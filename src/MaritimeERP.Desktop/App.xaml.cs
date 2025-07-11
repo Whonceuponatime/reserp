@@ -523,6 +523,55 @@ namespace MaritimeERP.Desktop
                     }
                 }
                 
+                // Check if AuditLogs table exists, if not create it
+                command.CommandText = "SELECT name FROM sqlite_master WHERE type='table' AND name='AuditLogs'";
+                result = await command.ExecuteScalarAsync();
+                
+                if (result == null)
+                {
+                    Console.WriteLine("Creating AuditLogs table...");
+                    
+                    // Create the table manually
+                    command.CommandText = @"
+                        CREATE TABLE AuditLogs (
+                            Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                            EntityType TEXT NOT NULL,
+                            Action TEXT NOT NULL,
+                            EntityId TEXT NOT NULL,
+                            EntityName TEXT,
+                            TableName TEXT,
+                            OldValues TEXT,
+                            NewValues TEXT,
+                            Timestamp DATETIME NOT NULL,
+                            UserId INTEGER,
+                            UserName TEXT,
+                            IpAddress TEXT,
+                            UserAgent TEXT,
+                            AdditionalInfo TEXT,
+                            FOREIGN KEY (UserId) REFERENCES Users(Id) ON DELETE SET NULL
+                        );";
+                    await command.ExecuteNonQueryAsync();
+                    
+                    // Create indexes
+                    command.CommandText = "CREATE INDEX IX_AuditLogs_EntityType ON AuditLogs(EntityType);";
+                    await command.ExecuteNonQueryAsync();
+                    
+                    command.CommandText = "CREATE INDEX IX_AuditLogs_Action ON AuditLogs(Action);";
+                    await command.ExecuteNonQueryAsync();
+                    
+                    command.CommandText = "CREATE INDEX IX_AuditLogs_Timestamp ON AuditLogs(Timestamp);";
+                    await command.ExecuteNonQueryAsync();
+                    
+                    command.CommandText = "CREATE INDEX IX_AuditLogs_UserId ON AuditLogs(UserId);";
+                    await command.ExecuteNonQueryAsync();
+                    
+                    Console.WriteLine("AuditLogs table created successfully");
+                }
+                else
+                {
+                    Console.WriteLine("AuditLogs table already exists");
+                }
+                
                 await connection.CloseAsync();
                 Console.WriteLine("Database initialization completed");
             }
