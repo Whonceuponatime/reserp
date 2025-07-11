@@ -178,8 +178,25 @@
                     </Grid.RowDefinitions>
 
                     <!-- Form Header -->
-                    <TextBlock Grid.Row="0" Text="{Binding SelectedUser, Converter={x:Null}, TargetNullValue='Add New User', FallbackValue='Edit User'}" 
-                               FontSize="16" FontWeight="SemiBold" Margin="0,0,0,16"/>
+                    <TextBlock Grid.Row="0" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,16">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Text" Value="User Details"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsEditing}" Value="True">
+                                        <Setter Property="Text" Value="Edit User"/>
+                                    </DataTrigger>
+                                    <MultiDataTrigger>
+                                        <MultiDataTrigger.Conditions>
+                                            <Condition Binding="{Binding IsEditing}" Value="True"/>
+                                            <Condition Binding="{Binding SelectedUser}" Value="{x:Null}"/>
+                                        </MultiDataTrigger.Conditions>
+                                        <Setter Property="Text" Value="Add New User"/>
+                                    </MultiDataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
 
                     <!-- Form Fields -->
                     <StackPanel Grid.Row="1" IsEnabled="{Binding IsEditing}">

@@ -572,6 +572,57 @@ namespace MaritimeERP.Desktop
                     Console.WriteLine("AuditLogs table already exists");
                 }
                 
+                // Clean up and ensure only correct roles exist
+                Console.WriteLine("Cleaning up roles...");
+                
+                // Get current roles
+                command.CommandText = "SELECT Id, Name FROM Roles";
+                using var roleReader = await command.ExecuteReaderAsync();
+                var currentRoles = new List<(int Id, string Name)>();
+                while (await roleReader.ReadAsync())
+                {
+                    currentRoles.Add((roleReader.GetInt32(0), roleReader.GetString(1)));
+                }
+                await roleReader.CloseAsync();
+                
+                Console.WriteLine($"Found {currentRoles.Count} roles in database");
+                
+                // Delete any roles that shouldn't exist
+                var validRoles = new[] { "Administrator", "Engineer" };
+                foreach (var role in currentRoles)
+                {
+                    if (!validRoles.Contains(role.Name))
+                    {
+                        Console.WriteLine($"Deleting invalid role: {role.Name}");
+                        command.CommandText = $"DELETE FROM Roles WHERE Id = {role.Id}";
+                        await command.ExecuteNonQueryAsync();
+                    }
+                }
+                
+                // Ensure the correct roles exist
+                foreach (var (id, name, description) in new[]
+                {
+                    (1, "Administrator", "Full system access - can manage users, approve/reject forms, edit all data"),
+                    (2, "Engineer", "Normal user - can submit forms and view data (read-only)")
+                })
+                {
+                    command.CommandText = $"SELECT COUNT(*) FROM Roles WHERE Name = '{name}'";
+                    var count = (long)(await command.ExecuteScalarAsync() ?? 0);
+                    
+                    if (count == 0)
+                    {
+                        Console.WriteLine($"Creating role: {name}");
+                        command.CommandText = $"INSERT INTO Roles (Id, Name, Description) VALUES ({id}, '{name}', '{description}')";
+                        await command.ExecuteNonQueryAsync();
+                    }
+                    else
+                    {
+                        Console.WriteLine($"Role '{name}' already exists");
+                    }
+                }
+                
+                Console.WriteLine("Role cleanup completed");
+                
                 await connection.CloseAsync();
                 Console.WriteLine("Database initialization completed");
             }
