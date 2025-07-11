@@ -340,7 +340,7 @@ namespace MaritimeERP.Data
                       .OnDelete(DeleteBehavior.Restrict);
                       
                 entity.HasOne(d => d.Ship)
-                      .WithMany()
+                      .WithMany(s => s.Documents)
                       .HasForeignKey(d => d.ShipId)
                       .OnDelete(DeleteBehavior.SetNull);
                       
