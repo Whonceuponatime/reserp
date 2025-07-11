@@ -366,8 +366,7 @@ namespace MaritimeERP.Desktop.ViewModels
                     IsEditMode = true;
                 }
 
-                // Close dialog after successful save
-                RequestClose?.Invoke();
+                // Don't close dialog after save - let user submit if needed
             }
             catch (Exception ex)
             {
@@ -379,10 +378,28 @@ namespace MaritimeERP.Desktop.ViewModels
         {
             try
             {
-                _systemChangePlan.IsUnderReview = true;
-                await _systemChangePlanService.UpdateSystemChangePlanAsync(_systemChangePlan);
-                MessageBox.Show("System change plan submitted for review!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
-                CloseDialog();
+                await SaveAsync(); // Save first
+                
+                if (_authenticationService.CurrentUser?.Id != null)
+                {
+                    _systemChangePlan.IsUnderReview = true;
+                    await _systemChangePlanService.UpdateSystemChangePlanAsync(_systemChangePlan);
+                    
+                    // Also update the corresponding ChangeRequest status
+                    var changeRequests = await _changeRequestService.GetAllChangeRequestsAsync();
+                    var correspondingChangeRequest = changeRequests.FirstOrDefault(cr => cr.RequestNo == _systemChangePlan.RequestNumber);
+                    if (correspondingChangeRequest != null)
+                    {
+                        await _changeRequestService.SubmitForApprovalAsync(correspondingChangeRequest.Id, _authenticationService.CurrentUser.Id);
+                    }
+                    
+                    MessageBox.Show("System change plan submitted for review!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                    RequestClose?.Invoke();
+                }
+                else
+                {
+                    MessageBox.Show("Unable to submit: User not authenticated.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
             }
             catch (Exception ex)
             {

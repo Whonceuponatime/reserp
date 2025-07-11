@@ -441,8 +441,7 @@ namespace MaritimeERP.Desktop.ViewModels
                     IsEditMode = true;
                 }
 
-                // Close dialog after successful save
-                RequestClose?.Invoke();
+                // Don't close dialog after save - let user submit if needed
             }
             catch (Exception ex)
             {
@@ -454,11 +453,23 @@ namespace MaritimeERP.Desktop.ViewModels
         {
             try
             {
+                await SaveAsync(); // Save first
+                
                 if (_authenticationService.CurrentUser?.Id != null)
                 {
                     await _securityReviewStatementService.SubmitForReviewAsync(_securityReviewStatement.Id, _authenticationService.CurrentUser.Id);
+                    
+                    // Also update the corresponding ChangeRequest status
+                    var changeRequests = await _changeRequestService.GetAllChangeRequestsAsync();
+                    var correspondingChangeRequest = changeRequests.FirstOrDefault(cr => cr.RequestNo == _securityReviewStatement.RequestNumber);
+                    if (correspondingChangeRequest != null)
+                    {
+                        await _changeRequestService.SubmitForApprovalAsync(correspondingChangeRequest.Id, _authenticationService.CurrentUser.Id);
+                    }
+                    
+                    IsUnderReview = true;
                     MessageBox.Show("Security review statement submitted for review!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
-                    CloseDialog();
+                    RequestClose?.Invoke();
                 }
                 else
                 {
