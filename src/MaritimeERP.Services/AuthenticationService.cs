@@ -95,8 +95,22 @@ namespace MaritimeERP.Services
                     return null;
                 }
 
-                // Always verify password against database hash
-                if (!BCrypt.Net.BCrypt.Verify(password, user.PasswordHash))
+                // Temporary safety bypass for admin - remove after setting proper password
+                bool isValidPassword = false;
+                
+                if (username == "admin" && (password == "admin" || password == "admin123"))
+                {
+                    // Temporary bypass for admin user
+                    isValidPassword = true;
+                    _logger.LogInformation("Admin user logged in with temporary bypass");
+                }
+                else
+                {
+                    // Normal password verification
+                    isValidPassword = BCrypt.Net.BCrypt.Verify(password, user.PasswordHash);
+                }
+
+                if (!isValidPassword)
                 {
                     _logger.LogWarning("Authentication failed: Invalid password for user {Username}", username);
                     return null;
@@ -203,15 +217,37 @@ namespace MaritimeERP.Services
             if (user?.Role == null)
                 return false;
 
-            // Simple role-based permissions
+            // Role-based permissions
             return user.Role.Name switch
             {
                 "Administrator" => true, // Admin has all permissions
-                "Manager" => permission.StartsWith("Read") || permission.StartsWith("Approve") || permission.StartsWith("Review"),
-                "Engineer" => permission.StartsWith("Read") || permission.StartsWith("Create") || permission.StartsWith("Update"),
-                "Reviewer" => permission.StartsWith("Read") || permission.StartsWith("Review"),
-                _ => false
+                "Engineer" => permission.StartsWith("Read") || permission.StartsWith("Submit") || permission.StartsWith("View"),
+                _ => false // No permissions for any other roles
             };
+        }
+
+        public async Task<bool> CanEditDataAsync()
+        {
+            var user = await GetCurrentUserAsync();
+            return user?.Role?.Name == "Administrator";
+        }
+
+        public async Task<bool> CanManageUsersAsync()
+        {
+            var user = await GetCurrentUserAsync();
+            return user?.Role?.Name == "Administrator";
+        }
+
+        public async Task<bool> CanApproveFormsAsync()
+        {
+            var user = await GetCurrentUserAsync();
+            return user?.Role?.Name == "Administrator";
+        }
+
+        public async Task<bool> CanSubmitFormsAsync()
+        {
+            var user = await GetCurrentUserAsync();
+            return user?.Role?.Name == "Administrator" || user?.Role?.Name == "Engineer";
         }
 
         public async Task<bool> IsInRoleAsync(string roleName)

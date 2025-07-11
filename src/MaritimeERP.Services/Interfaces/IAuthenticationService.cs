@@ -10,6 +10,10 @@ namespace MaritimeERP.Services.Interfaces
         Task LogoutAsync();
         Task<bool> HasPermissionAsync(string permission);
         Task<bool> IsInRoleAsync(string roleName);
+        Task<bool> CanEditDataAsync();
+        Task<bool> CanManageUsersAsync();
+        Task<bool> CanApproveFormsAsync();
+        Task<bool> CanSubmitFormsAsync();
         bool IsAuthenticated { get; }
         User? CurrentUser { get; }
     }

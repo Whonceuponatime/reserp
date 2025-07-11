@@ -84,6 +84,10 @@ namespace MaritimeERP.Desktop.ViewModels
         {
             NavigationItems.Clear();
             
+            var isAdmin = CurrentUser?.Role?.Name == "Administrator";
+            var isEngineer = CurrentUser?.Role?.Name == "Engineer";
+            
+            // Dashboard - visible to all users
             NavigationItems.Add(new NavigationItem
             {
                 Title = "Dashboard",
@@ -92,6 +96,7 @@ namespace MaritimeERP.Desktop.ViewModels
                 IsVisible = true
             });
 
+            // Fleet Management - Engineers get read-only view
             NavigationItems.Add(new NavigationItem
             {
                 Title = "Fleet Management",
@@ -100,6 +105,7 @@ namespace MaritimeERP.Desktop.ViewModels
                 IsVisible = true
             });
 
+            // Systems - Engineers get read-only view
             NavigationItems.Add(new NavigationItem
             {
                 Title = "Systems",
@@ -108,6 +114,7 @@ namespace MaritimeERP.Desktop.ViewModels
                 IsVisible = true
             });
 
+            // Components - Engineers get read-only view
             NavigationItems.Add(new NavigationItem
             {
                 Title = "Components",
@@ -116,6 +123,7 @@ namespace MaritimeERP.Desktop.ViewModels
                 IsVisible = true
             });
 
+            // Software - Engineers get read-only view
             NavigationItems.Add(new NavigationItem
             {
                 Title = "Software",
@@ -124,6 +132,7 @@ namespace MaritimeERP.Desktop.ViewModels
                 IsVisible = true
             });
 
+            // Change Requests - Engineers can submit, Admins can approve
             NavigationItems.Add(new NavigationItem
             {
                 Title = "Change Requests",
@@ -132,12 +141,13 @@ namespace MaritimeERP.Desktop.ViewModels
                 IsVisible = true
             });
 
+            // Admin-only sections
             NavigationItems.Add(new NavigationItem
             {
                 Title = "User Management",
                 Icon = "👥",
                 Page = "UserManagement",
-                IsVisible = CurrentUser?.Role?.Name == "Administrator"
+                IsVisible = isAdmin
             });
 
             NavigationItems.Add(new NavigationItem
@@ -145,33 +155,7 @@ namespace MaritimeERP.Desktop.ViewModels
                 Title = "Auditable Logs",
                 Icon = "📋",
                 Page = "AuditLogs",
-                IsVisible = CurrentUser?.Role?.Name == "Administrator"
-            });
-
-
-
-            NavigationItems.Add(new NavigationItem
-            {
-                Title = "Documents",
-                Icon = "📁",
-                Page = "Documents",
-                IsVisible = true
-            });
-
-            NavigationItems.Add(new NavigationItem
-            {
-                Title = "Reports",
-                Icon = "📈",
-                Page = "Reports",
-                IsVisible = true
-            });
-
-            NavigationItems.Add(new NavigationItem
-            {
-                Title = "User Management",
-                Icon = "👥",
-                Page = "Users",
-                IsVisible = CurrentUser?.Role?.Name == "Administrator"
+                IsVisible = isAdmin
             });
         }
 

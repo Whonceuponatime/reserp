@@ -315,10 +315,8 @@ namespace MaritimeERP.Data
 
             // Seed data
             modelBuilder.Entity<Role>().HasData(
-                new Role { Id = 1, Name = "Administrator", Description = "Full system access" },
-                new Role { Id = 2, Name = "Manager", Description = "Management access" },
-                new Role { Id = 3, Name = "Engineer", Description = "Engineering access" },
-                new Role { Id = 4, Name = "Reviewer", Description = "Review access" }
+                new Role { Id = 1, Name = "Administrator", Description = "Full system access - can manage users, approve/reject forms, edit all data" },
+                new Role { Id = 2, Name = "Engineer", Description = "Normal user - can submit forms and view data (read-only)" }
             );
 
             modelBuilder.Entity<SystemCategory>().HasData(

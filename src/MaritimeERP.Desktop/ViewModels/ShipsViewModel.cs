@@ -15,6 +15,7 @@ namespace MaritimeERP.Desktop.ViewModels
     {
         private readonly IShipService _shipService;
         private readonly IServiceProvider _serviceProvider;
+        private readonly IAuthenticationService _authenticationService;
         private ObservableCollection<Ship> _ships = new();
         private ObservableCollection<Ship> _filteredShips = new();
         private ObservableCollection<ShipType> _shipTypes = new();
@@ -28,10 +29,11 @@ namespace MaritimeERP.Desktop.ViewModels
         private bool _isLoading = false;
         private string _statusMessage = "Ready";
 
-        public ShipsViewModel(IShipService shipService, IServiceProvider serviceProvider)
+        public ShipsViewModel(IShipService shipService, IServiceProvider serviceProvider, IAuthenticationService authenticationService)
         {
             _shipService = shipService;
             _serviceProvider = serviceProvider;
+            _authenticationService = authenticationService;
             
             InitializeCommands();
             _ = LoadDataAsync();
@@ -140,6 +142,10 @@ namespace MaritimeERP.Desktop.ViewModels
         
         public int ActiveShips => Ships.Count(s => s.IsActive);
 
+        // Permission properties
+        public bool CanEditData => _authenticationService.CurrentUser?.Role?.Name == "Administrator";
+        public bool IsReadOnlyUser => _authenticationService.CurrentUser?.Role?.Name == "Engineer";
+
         // Commands
         public ICommand AddShipCommand { get; private set; } = null!;
         public ICommand EditShipCommand { get; private set; } = null!;
@@ -149,9 +155,9 @@ namespace MaritimeERP.Desktop.ViewModels
 
         private void InitializeCommands()
         {
-            AddShipCommand = new AsyncRelayCommand(AddShipAsync);
-            EditShipCommand = new AsyncRelayCommand(EditShipAsync, () => HasSelectedShip);
-            DeleteShipCommand = new AsyncRelayCommand(DeleteShipAsync, () => HasSelectedShip);
+            AddShipCommand = new AsyncRelayCommand(AddShipAsync, () => CanEditData);
+            EditShipCommand = new AsyncRelayCommand(EditShipAsync, () => HasSelectedShip && CanEditData);
+            DeleteShipCommand = new AsyncRelayCommand(DeleteShipAsync, () => HasSelectedShip && CanEditData);
             ViewDetailsCommand = new RelayCommand(ViewDetails, () => HasSelectedShip);
             RefreshCommand = new AsyncRelayCommand(LoadDataAsync);
         }
