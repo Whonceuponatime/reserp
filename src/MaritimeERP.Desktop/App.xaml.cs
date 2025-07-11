@@ -587,24 +587,14 @@ namespace MaritimeERP.Desktop
                 
                 Console.WriteLine($"Found {currentRoles.Count} roles in database");
                 
-                // Delete any roles that shouldn't exist
-                var validRoles = new[] { "Administrator", "Engineer" };
-                foreach (var role in currentRoles)
-                {
-                    if (!validRoles.Contains(role.Name))
-                    {
-                        Console.WriteLine($"Deleting invalid role: {role.Name}");
-                        command.CommandText = $"DELETE FROM Roles WHERE Id = {role.Id}";
-                        await command.ExecuteNonQueryAsync();
-                    }
-                }
-                
-                // Ensure the correct roles exist
-                foreach (var (id, name, description) in new[]
+                // Ensure the correct roles exist first
+                var validRoles = new[]
                 {
                     (1, "Administrator", "Full system access - can manage users, approve/reject forms, edit all data"),
                     (2, "Engineer", "Normal user - can submit forms and view data (read-only)")
-                })
+                };
+                
+                foreach (var (id, name, description) in validRoles)
                 {
                     command.CommandText = $"SELECT COUNT(*) FROM Roles WHERE Name = '{name}'";
                     var count = (long)(await command.ExecuteScalarAsync() ?? 0);
@@ -612,12 +602,39 @@ namespace MaritimeERP.Desktop
                     if (count == 0)
                     {
                         Console.WriteLine($"Creating role: {name}");
-                        command.CommandText = $"INSERT INTO Roles (Id, Name, Description) VALUES ({id}, '{name}', '{description}')";
+                        command.CommandText = $"INSERT OR IGNORE INTO Roles (Id, Name, Description) VALUES ({id}, '{name}', '{description}')";
                         await command.ExecuteNonQueryAsync();
                     }
                     else
                     {
                         Console.WriteLine($"Role '{name}' already exists");
+                    }
+                }
+                
+                // Now safely handle invalid roles by reassigning users first
+                var validRoleNames = validRoles.Select(r => r.Item2).ToArray();
+                foreach (var role in currentRoles)
+                {
+                    if (!validRoleNames.Contains(role.Name))
+                    {
+                        Console.WriteLine($"Found invalid role: {role.Name} (ID: {role.Id})");
+                        
+                        // Check if any users are assigned to this role
+                        command.CommandText = $"SELECT COUNT(*) FROM Users WHERE RoleId = {role.Id}";
+                        var userCount = (long)(await command.ExecuteScalarAsync() ?? 0);
+                        
+                        if (userCount > 0)
+                        {
+                            Console.WriteLine($"Reassigning {userCount} users from invalid role '{role.Name}' to 'Engineer' role");
+                            // Reassign users to Engineer role (ID: 2)
+                            command.CommandText = $"UPDATE Users SET RoleId = 2 WHERE RoleId = {role.Id}";
+                            await command.ExecuteNonQueryAsync();
+                        }
+                        
+                        // Now safely delete the invalid role
+                        Console.WriteLine($"Deleting invalid role: {role.Name}");
+                        command.CommandText = $"DELETE FROM Roles WHERE Id = {role.Id}";
+                        await command.ExecuteNonQueryAsync();
                     }
                 }
                 
