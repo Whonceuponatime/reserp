@@ -572,73 +572,111 @@ namespace MaritimeERP.Desktop
                     Console.WriteLine("AuditLogs table already exists");
                 }
                 
-                // Clean up and ensure only correct roles exist
-                Console.WriteLine("Cleaning up roles...");
-                
-                // Get current roles
-                command.CommandText = "SELECT Id, Name FROM Roles";
-                using var roleReader = await command.ExecuteReaderAsync();
-                var currentRoles = new List<(int Id, string Name)>();
-                while (await roleReader.ReadAsync())
+                // Clean up and ensure only correct roles exist (non-critical operation)
+                try
                 {
-                    currentRoles.Add((roleReader.GetInt32(0), roleReader.GetString(1)));
-                }
-                await roleReader.CloseAsync();
-                
-                Console.WriteLine($"Found {currentRoles.Count} roles in database");
-                
-                // Ensure the correct roles exist first
-                var validRoles = new[]
-                {
-                    (1, "Administrator", "Full system access - can manage users, approve/reject forms, edit all data"),
-                    (2, "Engineer", "Normal user - can submit forms and view data (read-only)")
-                };
-                
-                foreach (var (id, name, description) in validRoles)
-                {
-                    command.CommandText = $"SELECT COUNT(*) FROM Roles WHERE Name = '{name}'";
-                    var count = (long)(await command.ExecuteScalarAsync() ?? 0);
+                    Console.WriteLine("Attempting role cleanup...");
                     
-                    if (count == 0)
+                    // Temporarily disable foreign key constraints for cleanup
+                    command.CommandText = "PRAGMA foreign_keys = OFF";
+                    await command.ExecuteNonQueryAsync();
+                    
+                    // Ensure the correct roles exist first
+                    var validRoles = new[]
                     {
-                        Console.WriteLine($"Creating role: {name}");
-                        command.CommandText = $"INSERT OR IGNORE INTO Roles (Id, Name, Description) VALUES ({id}, '{name}', '{description}')";
-                        await command.ExecuteNonQueryAsync();
-                    }
-                    else
+                        (1, "Administrator", "Full system access - can manage users, approve/reject forms, edit all data"),
+                        (2, "Engineer", "Normal user - can submit forms and view data (read-only)")
+                    };
+                    
+                    foreach (var (id, name, description) in validRoles)
                     {
-                        Console.WriteLine($"Role '{name}' already exists");
-                    }
-                }
-                
-                // Now safely handle invalid roles by reassigning users first
-                var validRoleNames = validRoles.Select(r => r.Item2).ToArray();
-                foreach (var role in currentRoles)
-                {
-                    if (!validRoleNames.Contains(role.Name))
-                    {
-                        Console.WriteLine($"Found invalid role: {role.Name} (ID: {role.Id})");
+                        command.CommandText = $"SELECT COUNT(*) FROM Roles WHERE Name = '{name}'";
+                        var count = (long)(await command.ExecuteScalarAsync() ?? 0);
                         
-                        // Check if any users are assigned to this role
-                        command.CommandText = $"SELECT COUNT(*) FROM Users WHERE RoleId = {role.Id}";
-                        var userCount = (long)(await command.ExecuteScalarAsync() ?? 0);
-                        
-                        if (userCount > 0)
+                        if (count == 0)
                         {
-                            Console.WriteLine($"Reassigning {userCount} users from invalid role '{role.Name}' to 'Engineer' role");
-                            // Reassign users to Engineer role (ID: 2)
-                            command.CommandText = $"UPDATE Users SET RoleId = 2 WHERE RoleId = {role.Id}";
+                            Console.WriteLine($"Creating role: {name}");
+                            command.CommandText = $"INSERT OR IGNORE INTO Roles (Id, Name, Description) VALUES ({id}, '{name}', '{description}')";
                             await command.ExecuteNonQueryAsync();
                         }
-                        
-                        // Now safely delete the invalid role
-                        Console.WriteLine($"Deleting invalid role: {role.Name}");
-                        command.CommandText = $"DELETE FROM Roles WHERE Id = {role.Id}";
+                        else
+                        {
+                            Console.WriteLine($"Role '{name}' already exists");
+                        }
+                    }
+                    
+                    // Get current roles
+                    command.CommandText = "SELECT Id, Name FROM Roles";
+                    using var roleReader = await command.ExecuteReaderAsync();
+                    var currentRoles = new List<(int Id, string Name)>();
+                    while (await roleReader.ReadAsync())
+                    {
+                        currentRoles.Add((roleReader.GetInt32(0), roleReader.GetString(1)));
+                    }
+                    await roleReader.CloseAsync();
+                    
+                    Console.WriteLine($"Found {currentRoles.Count} roles in database");
+                    
+                    // Clean up invalid roles safely
+                    var validRoleNames = validRoles.Select(r => r.Item2).ToArray();
+                    foreach (var role in currentRoles)
+                    {
+                        if (!validRoleNames.Contains(role.Name))
+                        {
+                            Console.WriteLine($"Found invalid role: {role.Name} (ID: {role.Id})");
+                            
+                            // Check if any users are assigned to this role
+                            command.CommandText = $"SELECT COUNT(*) FROM Users WHERE RoleId = {role.Id}";
+                            var userCount = (long)(await command.ExecuteScalarAsync() ?? 0);
+                            
+                            if (userCount > 0)
+                            {
+                                Console.WriteLine($"Reassigning {userCount} users from invalid role '{role.Name}' to 'Engineer' role");
+                                // Reassign users to Engineer role (ID: 2)
+                                command.CommandText = $"UPDATE Users SET RoleId = 2 WHERE RoleId = {role.Id}";
+                                await command.ExecuteNonQueryAsync();
+                            }
+                            
+                            // Now safely delete the invalid role
+                            Console.WriteLine($"Deleting invalid role: {role.Name}");
+                            command.CommandText = $"DELETE FROM Roles WHERE Id = {role.Id}";
+                            await command.ExecuteNonQueryAsync();
+                        }
+                    }
+                    
+                    // Re-enable foreign key constraints
+                    command.CommandText = "PRAGMA foreign_keys = ON";
+                    await command.ExecuteNonQueryAsync();
+                    
+                    Console.WriteLine("Role cleanup completed successfully");
+                }
+                catch (Exception roleEx)
+                {
+                    Console.WriteLine($"Role cleanup failed (non-critical): {roleEx.Message}");
+                    
+                    // Re-enable foreign key constraints even if cleanup failed
+                    try
+                    {
+                        command.CommandText = "PRAGMA foreign_keys = ON";
                         await command.ExecuteNonQueryAsync();
                     }
+                    catch
+                    {
+                        // Ignore errors when re-enabling constraints
+                    }
+                    
+                    // Ensure minimum required roles exist even if cleanup failed
+                    try
+                    {
+                        command.CommandText = "INSERT OR IGNORE INTO Roles (Id, Name, Description) VALUES (1, 'Administrator', 'Full system access'), (2, 'Engineer', 'Normal user')";
+                        await command.ExecuteNonQueryAsync();
+                        Console.WriteLine("Ensured minimum required roles exist");
+                    }
+                    catch
+                    {
+                        Console.WriteLine("Could not ensure minimum roles - application will continue with existing roles");
+                    }
                 }
-                
-                Console.WriteLine("Role cleanup completed");
                 
                 await connection.CloseAsync();
                 Console.WriteLine("Database initialization completed");
