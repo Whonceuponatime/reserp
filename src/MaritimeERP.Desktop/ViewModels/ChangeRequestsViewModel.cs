@@ -1033,6 +1033,9 @@ namespace MaritimeERP.Desktop.ViewModels
                 case 3: // System Plan
                     EditSystemPlanChangeRequest(changeRequest);
                     break;
+                case 4: // Security Review Statement
+                    EditSecurityReviewStatement(changeRequest);
+                    break;
                 default:
                     MessageBox.Show("Unknown change request type.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                     break;
