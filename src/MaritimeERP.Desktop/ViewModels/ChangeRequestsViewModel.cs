@@ -1209,6 +1209,61 @@ namespace MaritimeERP.Desktop.ViewModels
             });
         }
 
+        private void EditSecurityReviewStatement(ChangeRequest changeRequest)
+        {
+            // Find the SecurityReviewStatement by request number
+            Task.Run(async () =>
+            {
+                try
+                {
+                    var securityReviewStatements = await _securityReviewStatementService.GetAllSecurityReviewStatementsAsync();
+                    var securityReviewStatement = securityReviewStatements.FirstOrDefault(srs => srs.RequestNumber == changeRequest.RequestNo);
+                    
+                    await Application.Current.Dispatcher.InvokeAsync(() =>
+                    {
+                        if (securityReviewStatement != null)
+                        {
+                            var viewModel = new SecurityReviewStatementDialogViewModel(_securityReviewStatementService, _authenticationService, _shipService, _changeRequestService);
+                            
+                            // Set the security review statement data
+                            viewModel.SecurityReviewStatement = securityReviewStatement;
+                            viewModel.IsEditMode = true;
+                            
+                            // Set the selected ship from the change request
+                            if (changeRequest.ShipId.HasValue)
+                            {
+                                var selectedShip = viewModel.Ships.FirstOrDefault(s => s.Id == changeRequest.ShipId.Value);
+                                if (selectedShip != null)
+                                {
+                                    viewModel.SelectedShip = selectedShip;
+                                }
+                            }
+                            
+                            var dialog = new SecurityReviewStatementDialog(viewModel);
+                            var result = dialog.ShowDialog();
+
+                            if (result == true)
+                            {
+                                // Refresh the change requests list
+                                _ = LoadDataAsync();
+                            }
+                        }
+                        else
+                        {
+                            MessageBox.Show("Security Review Statement data not found.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                        }
+                    });
+                }
+                catch (Exception ex)
+                {
+                    await Application.Current.Dispatcher.InvokeAsync(() =>
+                    {
+                        MessageBox.Show($"Error loading Security Review Statement: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    });
+                }
+            });
+        }
+
         private async Task UpdateChangeRequestAsync(ChangeRequest changeRequest)
         {
             try
