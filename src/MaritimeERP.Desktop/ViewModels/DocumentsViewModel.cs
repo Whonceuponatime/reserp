@@ -45,7 +45,6 @@ namespace MaritimeERP.Desktop.ViewModels
             DownloadDocumentCommand = new RelayCommand<Document>(async (doc) => await DownloadDocumentAsync(doc));
             FilterDocumentsCommand = new RelayCommand(() => FilterDocuments());
             ClearFiltersCommand = new RelayCommand(() => ClearFilters());
-            ClearShipFilterCommand = new RelayCommand(() => ClearShipFilter());
 
             // Initialize
             Task.Run(async () => await InitializeAsync());
@@ -96,25 +95,13 @@ namespace MaritimeERP.Desktop.ViewModels
             }
         }
 
-        private string? _searchText;
-        public string? SearchText
+        private string _searchText = string.Empty;
+        public string SearchText
         {
             get => _searchText;
             set
             {
                 _searchText = value;
-                OnPropertyChanged();
-                FilterDocuments();
-            }
-        }
-
-        private string? _searchTerm;
-        public string? SearchTerm
-        {
-            get => _searchTerm;
-            set
-            {
-                _searchTerm = value;
                 OnPropertyChanged();
                 FilterDocuments();
             }
@@ -234,7 +221,6 @@ namespace MaritimeERP.Desktop.ViewModels
         public ICommand DownloadDocumentCommand { get; }
         public ICommand FilterDocumentsCommand { get; }
         public ICommand ClearFiltersCommand { get; }
-        public ICommand ClearShipFilterCommand { get; }
 
         #endregion
 
@@ -304,6 +290,9 @@ namespace MaritimeERP.Desktop.ViewModels
                     {
                         DocumentCategories.Add(category);
                     }
+                    
+                    // Set default selection to "All Categories"
+                    SelectedCategory = DocumentCategories.FirstOrDefault();
                 });
             }
             catch (Exception ex)
@@ -327,6 +316,9 @@ namespace MaritimeERP.Desktop.ViewModels
                     {
                         Ships.Add(ship);
                     }
+                    
+                    // Set default selection to "All Ships"
+                    SelectedShip = Ships.FirstOrDefault();
                 });
             }
             catch (Exception ex)
@@ -538,61 +530,56 @@ namespace MaritimeERP.Desktop.ViewModels
         {
             var filtered = Documents.AsEnumerable();
 
-            // Search filter
-            if (!string.IsNullOrWhiteSpace(SearchTerm))
-            {
-                var searchLower = SearchTerm.ToLower();
-                filtered = filtered.Where(d => 
-                    d.Name.ToLower().Contains(searchLower) ||
-                    d.FileName.ToLower().Contains(searchLower) ||
-                    (d.Description?.ToLower().Contains(searchLower) ?? false) ||
-                    (d.Category?.Name?.ToLower().Contains(searchLower) ?? false) ||
-                    (d.Ship?.ShipName?.ToLower().Contains(searchLower) ?? false));
-            }
-
-            // Category filter
-            if (SelectedCategory != null)
+            // Filter by category
+            if (SelectedCategory != null && SelectedCategory.Id > 0)
             {
                 filtered = filtered.Where(d => d.CategoryId == SelectedCategory.Id);
             }
 
-            // Ship filter
-            if (SelectedShip != null)
+            // Filter by ship
+            if (SelectedShip != null && SelectedShip.Id > 0)
             {
                 filtered = filtered.Where(d => d.ShipId == SelectedShip.Id);
             }
 
-            // Status filters
+            // Filter by search text
+            if (!string.IsNullOrEmpty(SearchText))
+            {
+                var searchLower = SearchText.ToLowerInvariant();
+                filtered = filtered.Where(d => 
+                    d.Name.ToLowerInvariant().Contains(searchLower) ||
+                    d.FileName.ToLowerInvariant().Contains(searchLower) ||
+                    (d.Description?.ToLowerInvariant().Contains(searchLower) ?? false) ||
+                    (d.Category?.Name.ToLowerInvariant().Contains(searchLower) ?? false));
+            }
+
+            // Filter by approval status
             if (ShowApprovedOnly)
             {
                 filtered = filtered.Where(d => d.IsApproved);
             }
-
-            if (ShowPendingOnly)
+            else if (ShowPendingOnly)
             {
                 filtered = filtered.Where(d => !d.IsApproved);
             }
 
-            FilteredDocuments.Clear();
-            foreach (var doc in filtered.OrderByDescending(d => d.UploadedAt))
+            Application.Current.Dispatcher.Invoke(() =>
             {
-                FilteredDocuments.Add(doc);
-            }
+                FilteredDocuments.Clear();
+                foreach (var document in filtered)
+                {
+                    FilteredDocuments.Add(document);
+                }
+            });
         }
 
         private void ClearFilters()
         {
-            SearchTerm = string.Empty;
-            SelectedCategory = null;
-            SelectedShip = null;
+            SelectedCategory = DocumentCategories.FirstOrDefault();
+            SelectedShip = Ships.FirstOrDefault();
+            SearchText = string.Empty;
             ShowApprovedOnly = false;
             ShowPendingOnly = false;
-            FilterDocuments();
-        }
-
-        private void ClearShipFilter()
-        {
-            SelectedShip = Ships.FirstOrDefault();
             FilterDocuments();
         }
 

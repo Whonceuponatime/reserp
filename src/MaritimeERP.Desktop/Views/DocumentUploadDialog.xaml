@@ -11,6 +11,18 @@
         ResizeMode="NoResize">
     
     <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
+        
+        <!-- Bool to Color Converter -->
+        <Style x:Key="BoolToColorConverter" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="Red"/>
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IsValid}" Value="True">
+                    <Setter Property="Foreground" Value="Green"/>
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+        
         <Style TargetType="Label">
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="Margin" Value="0,10,0,5"/>
@@ -116,7 +128,7 @@
                     <StackPanel>
                         <TextBlock Text="{Binding ValidationMessage}" 
                                    FontWeight="Medium"
-                                   Foreground="{Binding IsValid, Converter={StaticResource BoolToColorConverter}}"/>
+                                   Style="{StaticResource BoolToColorConverter}"/>
                         
                         <Button Content="Validate File" 
                                 Command="{Binding ValidateFileCommand}" 

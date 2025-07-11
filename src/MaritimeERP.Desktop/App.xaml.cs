@@ -26,6 +26,8 @@ namespace MaritimeERP.Desktop
     {
         private readonly IHost _host;
         private readonly ILogger<App> _logger;
+        
+        public IServiceProvider ServiceProvider => _host.Services;
 
         [DllImport("kernel32.dll")]
         private static extern bool AllocConsole();
