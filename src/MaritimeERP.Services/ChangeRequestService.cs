@@ -166,12 +166,28 @@ namespace MaritimeERP.Services
         {
             try
             {
-                changeRequest.UpdatedAt = DateTime.UtcNow;
-                _context.ChangeRequests.Update(changeRequest);
+                // Get the existing entity from the database to avoid tracking conflicts
+                var existingRequest = await _context.ChangeRequests.FindAsync(changeRequest.Id);
+                if (existingRequest == null)
+                {
+                    throw new InvalidOperationException($"ChangeRequest with ID {changeRequest.Id} not found");
+                }
+
+                // Update the properties of the existing tracked entity
+                existingRequest.RequestNo = changeRequest.RequestNo;
+                existingRequest.ShipId = changeRequest.ShipId;
+                existingRequest.RequestTypeId = changeRequest.RequestTypeId;
+                existingRequest.StatusId = changeRequest.StatusId;
+                existingRequest.RequestedById = changeRequest.RequestedById;
+                existingRequest.RequestedAt = changeRequest.RequestedAt;
+                existingRequest.Purpose = changeRequest.Purpose;
+                existingRequest.Description = changeRequest.Description;
+                existingRequest.UpdatedAt = DateTime.UtcNow;
+
                 await _context.SaveChangesAsync();
 
                 // Reload with includes
-                return await GetChangeRequestByIdAsync(changeRequest.Id) ?? changeRequest;
+                return await GetChangeRequestByIdAsync(changeRequest.Id) ?? existingRequest;
             }
             catch (Exception ex)
             {

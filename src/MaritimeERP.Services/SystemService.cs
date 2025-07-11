@@ -88,12 +88,31 @@ namespace MaritimeERP.Services
                     throw new InvalidOperationException($"Serial number '{system.SerialNumber}' already exists");
                 }
 
-                system.UpdatedAt = DateTime.UtcNow;
-                _context.Systems.Update(system);
+                // Get the existing entity from the database to avoid tracking conflicts
+                var existingSystem = await _context.Systems.FindAsync(system.Id);
+                if (existingSystem == null)
+                {
+                    throw new InvalidOperationException($"System with ID {system.Id} not found");
+                }
+
+                // Update the properties of the existing tracked entity
+                existingSystem.Name = system.Name;
+                existingSystem.ShipId = system.ShipId;
+                existingSystem.CategoryId = system.CategoryId;
+                existingSystem.SecurityZoneId = system.SecurityZoneId;
+                existingSystem.Manufacturer = system.Manufacturer;
+                existingSystem.Model = system.Model;
+                existingSystem.SerialNumber = system.SerialNumber;
+                existingSystem.Description = system.Description;
+                existingSystem.HasRemoteConnection = system.HasRemoteConnection;
+                existingSystem.UpdatedAt = DateTime.UtcNow;
+
                 await _context.SaveChangesAsync();
 
                 _logger.LogInformation("System updated: {SystemId} - {SystemName}", system.Id, system.Name);
-                return system;
+                
+                // Return the updated entity with all related data
+                return await GetSystemByIdAsync(system.Id) ?? existingSystem;
             }
             catch (Exception ex)
             {

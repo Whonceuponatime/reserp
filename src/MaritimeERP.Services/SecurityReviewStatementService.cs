@@ -60,10 +60,44 @@ namespace MaritimeERP.Services
 
         public async Task<SecurityReviewStatement> UpdateSecurityReviewStatementAsync(SecurityReviewStatement securityReviewStatement)
         {
-            securityReviewStatement.UpdatedDate = DateTime.Now;
-            _context.SecurityReviewStatements.Update(securityReviewStatement);
+            // Get the existing entity from the database to avoid tracking conflicts
+            var existingStatement = await _context.SecurityReviewStatements.FindAsync(securityReviewStatement.Id);
+            if (existingStatement == null)
+            {
+                throw new InvalidOperationException($"SecurityReviewStatement with ID {securityReviewStatement.Id} not found");
+            }
+
+            // Update the properties of the existing tracked entity
+            existingStatement.RequestNumber = securityReviewStatement.RequestNumber;
+            existingStatement.ReviewerDepartment = securityReviewStatement.ReviewerDepartment;
+            existingStatement.ReviewerPosition = securityReviewStatement.ReviewerPosition;
+            existingStatement.ReviewerName = securityReviewStatement.ReviewerName;
+            existingStatement.ReviewDate = securityReviewStatement.ReviewDate;
+            existingStatement.ReviewItem1 = securityReviewStatement.ReviewItem1;
+            existingStatement.ReviewResult1 = securityReviewStatement.ReviewResult1;
+            existingStatement.ReviewRemarks1 = securityReviewStatement.ReviewRemarks1;
+            existingStatement.ReviewItem2 = securityReviewStatement.ReviewItem2;
+            existingStatement.ReviewResult2 = securityReviewStatement.ReviewResult2;
+            existingStatement.ReviewRemarks2 = securityReviewStatement.ReviewRemarks2;
+            existingStatement.ReviewItem3 = securityReviewStatement.ReviewItem3;
+            existingStatement.ReviewResult3 = securityReviewStatement.ReviewResult3;
+            existingStatement.ReviewRemarks3 = securityReviewStatement.ReviewRemarks3;
+            existingStatement.ReviewItem4 = securityReviewStatement.ReviewItem4;
+            existingStatement.ReviewResult4 = securityReviewStatement.ReviewResult4;
+            existingStatement.ReviewRemarks4 = securityReviewStatement.ReviewRemarks4;
+            existingStatement.ReviewItem5 = securityReviewStatement.ReviewItem5;
+            existingStatement.ReviewResult5 = securityReviewStatement.ReviewResult5;
+            existingStatement.ReviewRemarks5 = securityReviewStatement.ReviewRemarks5;
+            existingStatement.OverallReviewResult = securityReviewStatement.OverallReviewResult;
+            existingStatement.ReviewOpinion = securityReviewStatement.ReviewOpinion;
+            existingStatement.IsUnderReview = securityReviewStatement.IsUnderReview;
+            existingStatement.IsApproved = securityReviewStatement.IsApproved;
+            existingStatement.ShipId = securityReviewStatement.ShipId;
+            existingStatement.UserId = securityReviewStatement.UserId;
+            existingStatement.UpdatedDate = DateTime.Now;
+
             await _context.SaveChangesAsync();
-            return securityReviewStatement;
+            return existingStatement;
         }
 
         public async Task<bool> DeleteSecurityReviewStatementAsync(int id)

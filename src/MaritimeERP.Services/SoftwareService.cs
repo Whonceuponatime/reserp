@@ -75,8 +75,21 @@ namespace MaritimeERP.Services
         {
             try
             {
-                software.UpdatedAt = DateTime.UtcNow;
-                _context.Software.Update(software);
+                // Get the existing entity from the database to avoid tracking conflicts
+                var existingSoftware = await _context.Software.FindAsync(software.Id);
+                if (existingSoftware == null)
+                {
+                    throw new InvalidOperationException($"Software with ID {software.Id} not found");
+                }
+
+                // Update the properties of the existing tracked entity
+                existingSoftware.Name = software.Name;
+                existingSoftware.Version = software.Version;
+                existingSoftware.Manufacturer = software.Manufacturer;
+                existingSoftware.SoftwareType = software.SoftwareType;
+                existingSoftware.InstalledComponentId = software.InstalledComponentId;
+                existingSoftware.UpdatedAt = DateTime.UtcNow;
+
                 await _context.SaveChangesAsync();
                 
                 // Reload the software with related data

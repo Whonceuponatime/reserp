@@ -50,10 +50,37 @@ namespace MaritimeERP.Services
 
         public async Task<SystemChangePlan> UpdateSystemChangePlanAsync(SystemChangePlan systemChangePlan)
         {
-            systemChangePlan.UpdatedDate = DateTime.Now;
-            _context.SystemChangePlans.Update(systemChangePlan);
+            // Get the existing entity from the database to avoid tracking conflicts
+            var existingPlan = await _context.SystemChangePlans.FindAsync(systemChangePlan.Id);
+            if (existingPlan == null)
+            {
+                throw new InvalidOperationException($"SystemChangePlan with ID {systemChangePlan.Id} not found");
+            }
+
+            // Update the properties of the existing tracked entity
+            existingPlan.RequestNumber = systemChangePlan.RequestNumber;
+            existingPlan.Department = systemChangePlan.Department;
+            existingPlan.PositionTitle = systemChangePlan.PositionTitle;
+            existingPlan.RequesterName = systemChangePlan.RequesterName;
+            existingPlan.InstalledCbs = systemChangePlan.InstalledCbs;
+            existingPlan.InstalledComponent = systemChangePlan.InstalledComponent;
+            existingPlan.Reason = systemChangePlan.Reason;
+            existingPlan.BeforeManufacturerModel = systemChangePlan.BeforeManufacturerModel;
+            existingPlan.BeforeHwSwName = systemChangePlan.BeforeHwSwName;
+            existingPlan.BeforeVersion = systemChangePlan.BeforeVersion;
+            existingPlan.AfterManufacturerModel = systemChangePlan.AfterManufacturerModel;
+            existingPlan.AfterHwSwName = systemChangePlan.AfterHwSwName;
+            existingPlan.AfterVersion = systemChangePlan.AfterVersion;
+            existingPlan.PlanDetails = systemChangePlan.PlanDetails;
+            existingPlan.SecurityReviewComments = systemChangePlan.SecurityReviewComments;
+            existingPlan.IsUnderReview = systemChangePlan.IsUnderReview;
+            existingPlan.IsApproved = systemChangePlan.IsApproved;
+            existingPlan.ShipId = systemChangePlan.ShipId;
+            existingPlan.UserId = systemChangePlan.UserId;
+            existingPlan.UpdatedDate = DateTime.Now;
+
             await _context.SaveChangesAsync();
-            return systemChangePlan;
+            return existingPlan;
         }
 
         public async Task<bool> DeleteSystemChangePlanAsync(int id)
