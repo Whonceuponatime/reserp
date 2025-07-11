@@ -60,7 +60,7 @@ namespace MaritimeERP.Core.Entities
             _ => Action
         };
 
-        public string TimestampDisplay => Timestamp.ToString("yyyy-MM-dd HH:mm:ss");
+        public string TimestampDisplay => Timestamp.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss");
         
         public string UserDisplay => !string.IsNullOrEmpty(UserName) ? UserName : $"User {UserId}";
         

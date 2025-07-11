@@ -39,6 +39,7 @@ namespace MaritimeERP.Core.Entities
         // Display properties
         public string DisplayName => $"{FullName} ({Username})";
         public string StatusDisplay => IsActive ? "Active" : "Inactive";
-        public string LastLoginDisplay => LastLoginAt?.ToString("yyyy-MM-dd HH:mm") ?? "Never";
+        public string LastLoginDisplay => LastLoginAt?.ToLocalTime().ToString("yyyy-MM-dd HH:mm") ?? "Never";
+        public string CreatedAtDisplay => CreatedAt.ToLocalTime().ToString("yyyy-MM-dd");
     }
 } 

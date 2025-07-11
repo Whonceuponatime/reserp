@@ -422,7 +422,7 @@
                                                 Width="120"
                                                 MinWidth="100"/>
                             <DataGridTextColumn Header="Created"
-                                                Binding="{Binding CreatedAt, StringFormat='{}{0:yyyy-MM-dd}'}"
+                                                Binding="{Binding CreatedAtDisplay}"
                                                 Width="90"
                                                 MinWidth="80"/>
                             <DataGridTemplateColumn Header="Actions" Width="100" MinWidth="80">

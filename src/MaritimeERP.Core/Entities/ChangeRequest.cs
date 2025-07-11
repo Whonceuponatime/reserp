@@ -46,5 +46,7 @@ namespace MaritimeERP.Core.Entities
         public string StatusDisplay => Status?.Name ?? "Unknown";
         public string TypeDisplay => RequestType?.Name ?? "Unknown";
         public string ShipDisplay => Ship?.ShipName ?? "N/A";
+        public string CreatedAtDisplay => CreatedAt.ToLocalTime().ToString("yyyy-MM-dd");
+        public string RequestedAtDisplay => RequestedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm");
     }
 } 
