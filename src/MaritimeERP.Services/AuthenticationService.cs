@@ -50,7 +50,7 @@ namespace MaritimeERP.Services
                     var adminUser = new User
                     {
                         Username = "admin",
-                        PasswordHash = "$2a$11$dummy.hash.for.admin123", // This will be bypassed in AuthenticateAsync
+                        PasswordHash = BCrypt.Net.BCrypt.HashPassword("admin"), // Properly hashed password for "admin"
                         FullName = "System Administrator",
                         Email = "admin@maritime.com",
                         RoleId = adminRole.Id,
@@ -95,8 +95,8 @@ namespace MaritimeERP.Services
                     return null;
                 }
 
-                // Temporary bypass for testing - accept "admin123" for admin user
-                if (username == "admin" && password == "admin123")
+                // Temporary bypass for testing - accept "admin" for admin user
+                if (username == "admin" && password == "admin")
                 {
                     // Bypass BCrypt verification for admin
                 }
