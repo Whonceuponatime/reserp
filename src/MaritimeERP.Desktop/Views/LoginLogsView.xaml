@@ -109,7 +109,7 @@
                 <Border Style="{StaticResource StatCardStyle}" MinWidth="180">
                     <StackPanel>
                         <TextBlock Text="📊" FontSize="24" HorizontalAlignment="Center" Margin="0,0,0,10"/>
-                        <TextBlock Text="{Binding SuccessRate, StringFormat={}{0:F1}%}" FontSize="32" FontWeight="Bold" 
+                        <TextBlock Text="{Binding SuccessRate, StringFormat='{}{0:F1}%'}" FontSize="32" FontWeight="Bold" 
                                   Foreground="#9C27B0" HorizontalAlignment="Center"/>
                         <TextBlock Text="Success Rate" FontSize="12" Foreground="#666" HorizontalAlignment="Center"/>
                     </StackPanel>
@@ -131,7 +131,7 @@
                     <TextBlock Text="Filters & Actions" Style="{StaticResource SubHeaderTextStyle}" Margin="0,0,0,15"/>
 
                     <!-- Export Button -->
-                    <Button Content="📊 Export Logs" 
+                    <Button Content="Export Logs" 
                             Command="{Binding ExportLogsCommand}"
                             Style="{StaticResource ActionButtonStyle}"
                             Background="#4CAF50" Foreground="White" Margin="0,0,0,20"/>
@@ -192,7 +192,7 @@
                     <!-- Logs Header -->
                     <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,15">
                         <TextBlock Text="Login Logs" Style="{StaticResource SubHeaderTextStyle}"/>
-                        <TextBlock Text="{Binding FilteredLoginLogs.Count, StringFormat=({0} entries)}" 
+                        <TextBlock Text="{Binding FilteredLoginLogs.Count, StringFormat='({0} entries)'}" 
                                   FontSize="14" Foreground="#666" VerticalAlignment="Bottom" Margin="10,0,0,2"/>
                     </StackPanel>
 
@@ -227,8 +227,19 @@
                             <DataGridTemplateColumn Header="Status" Width="80">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
-                                        <Border Background="{Binding IsSuccessful, Converter={StaticResource BoolToStatusColorConverter}}"
-                                                CornerRadius="12" Padding="6,3">
+                                        <Border CornerRadius="12" Padding="6,3">
+                                            <Border.Style>
+                                                <Style TargetType="Border">
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsSuccessful}" Value="True">
+                                                            <Setter Property="Background" Value="#4CAF50"/>
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding IsSuccessful}" Value="False">
+                                                            <Setter Property="Background" Value="#F44336"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Border.Style>
                                             <TextBlock Text="{Binding StatusDisplay}" 
                                                       Foreground="White" 
                                                       FontWeight="SemiBold" 
@@ -246,9 +257,22 @@
                             <DataGridTemplateColumn Header="Security" Width="100">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
-                                        <TextBlock Text="{Binding SecurityDisplay}" 
-                                                  FontWeight="{Binding IsSecurityEvent, Converter={StaticResource BoolToFontWeightConverter}}"
-                                                  Foreground="{Binding IsSecurityEvent, Converter={StaticResource BoolToSecurityColorConverter}}"/>
+                                        <TextBlock Text="{Binding SecurityDisplay}">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsSecurityEvent}" Value="True">
+                                                            <Setter Property="FontWeight" Value="Bold"/>
+                                                            <Setter Property="Foreground" Value="#FF5722"/>
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding IsSecurityEvent}" Value="False">
+                                                            <Setter Property="FontWeight" Value="Normal"/>
+                                                            <Setter Property="Foreground" Value="#666"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>

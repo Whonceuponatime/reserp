@@ -9,6 +9,18 @@
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
         
+        <!-- Status Color Converter -->
+        <Style x:Key="BoolToStatusColorConverter" TargetType="Border">
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IsApproved}" Value="True">
+                    <Setter Property="Background" Value="#4CAF50"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding IsApproved}" Value="False">
+                    <Setter Property="Background" Value="#FF9800"/>
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+        
         <Style x:Key="StatCardStyle" TargetType="Border">
             <Setter Property="Background" Value="White"/>
             <Setter Property="BorderBrush" Value="#E0E0E0"/>
@@ -121,7 +133,7 @@
                     <TextBlock Text="Filters & Actions" Style="{StaticResource SubHeaderTextStyle}" Margin="0,0,0,15"/>
 
                     <!-- Upload Button -->
-                    <Button Content="📤 Upload Document" 
+                    <Button Content="Upload Document" 
                             Command="{Binding UploadDocumentCommand}"
                             Style="{StaticResource ActionButtonStyle}"
                             Background="#4CAF50" Foreground="White" Margin="0,0,0,20"/>
@@ -175,7 +187,7 @@
                     <!-- Documents Header -->
                     <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,15">
                         <TextBlock Text="Documents" Style="{StaticResource SubHeaderTextStyle}"/>
-                        <TextBlock Text="{Binding FilteredDocuments.Count, StringFormat=({0} documents)}" 
+                        <TextBlock Text="{Binding FilteredDocuments.Count, StringFormat='({0} documents)'}" 
                                   FontSize="14" Foreground="#666" VerticalAlignment="Bottom" Margin="10,0,0,2"/>
                     </StackPanel>
 
@@ -219,8 +231,19 @@
                             <DataGridTemplateColumn Header="Status" Width="120">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
-                                        <Border Background="{Binding IsApproved, Converter={StaticResource BoolToStatusColorConverter}}"
-                                                CornerRadius="12" Padding="8,4">
+                                        <Border CornerRadius="12" Padding="8,4">
+                                            <Border.Style>
+                                                <Style TargetType="Border">
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsApproved}" Value="True">
+                                                            <Setter Property="Background" Value="#4CAF50"/>
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding IsApproved}" Value="False">
+                                                            <Setter Property="Background" Value="#FF9800"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Border.Style>
                                             <TextBlock Text="{Binding StatusDisplay}" 
                                                       Foreground="White" 
                                                       FontWeight="SemiBold" 
