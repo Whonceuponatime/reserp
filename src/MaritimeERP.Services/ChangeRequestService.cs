@@ -42,6 +42,46 @@ namespace MaritimeERP.Services
             }
         }
 
+        public async Task<IEnumerable<ChangeRequest>> GetChangeRequestsForUserAsync(int userId, string userRole)
+        {
+            try
+            {
+                var query = _context.ChangeRequests
+                    .Include(cr => cr.Ship)
+                    .Include(cr => cr.RequestType)
+                    .Include(cr => cr.Status)
+                    .Include(cr => cr.RequestedBy)
+                    .Include(cr => cr.Approvals)
+                        .ThenInclude(a => a.ActionBy)
+                    .Include(cr => cr.HardwareChangeDetail)
+                    .Include(cr => cr.SoftwareChangeDetail)
+                    .Include(cr => cr.SystemPlanDetail)
+                    .Include(cr => cr.SecurityReviewItems);
+
+                // Role-based filtering
+                if (userRole == "Administrator")
+                {
+                    // Admins can see all change requests
+                    return await query
+                        .OrderByDescending(cr => cr.CreatedAt)
+                        .ToListAsync();
+                }
+                else
+                {
+                    // Normal users (Engineers) can only see their own change requests
+                    return await query
+                        .Where(cr => cr.RequestedById == userId)
+                        .OrderByDescending(cr => cr.CreatedAt)
+                        .ToListAsync();
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving change requests for user {UserId} with role {UserRole}", userId, userRole);
+                throw;
+            }
+        }
+
         public async Task<ChangeRequest?> GetChangeRequestByIdAsync(int id)
         {
             try

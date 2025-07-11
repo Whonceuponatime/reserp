@@ -5,6 +5,7 @@ namespace MaritimeERP.Services.Interfaces
     public interface IChangeRequestService
     {
         Task<IEnumerable<ChangeRequest>> GetAllChangeRequestsAsync();
+        Task<IEnumerable<ChangeRequest>> GetChangeRequestsForUserAsync(int userId, string userRole);
         Task<ChangeRequest?> GetChangeRequestByIdAsync(int id);
         Task<ChangeRequest?> GetChangeRequestByRequestNoAsync(string requestNo);
         Task<ChangeRequest> CreateChangeRequestAsync(ChangeRequest changeRequest);

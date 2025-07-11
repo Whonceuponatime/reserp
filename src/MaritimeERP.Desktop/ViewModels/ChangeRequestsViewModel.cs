@@ -280,8 +280,8 @@ namespace MaritimeERP.Desktop.ViewModels
             // Initialize commands
             LoadDataCommand = new RelayCommand(async () => await LoadDataAsync(), () => !IsLoading);
             AddChangeRequestCommand = new RelayCommand(AddChangeRequest, () => !IsLoading && !IsEditing);
-            EditChangeRequestCommand = new RelayCommand<ChangeRequest>(EditChangeRequest, (cr) => cr != null && !IsLoading && !IsEditing);
-            DeleteChangeRequestCommand = new RelayCommand(async () => await DeleteChangeRequestAsync(), () => SelectedChangeRequest != null && !IsLoading && !IsEditing);
+            EditChangeRequestCommand = new RelayCommand<ChangeRequest>(EditChangeRequest, (cr) => cr != null && !IsLoading && !IsEditing && CanEditChangeRequest(cr));
+            DeleteChangeRequestCommand = new RelayCommand(async () => await DeleteChangeRequestAsync(), () => CanDeleteChangeRequest());
             SaveChangeRequestCommand = new RelayCommand(async () => await SaveChangeRequestAsync(), () => CanSaveChangeRequest());
             CancelEditCommand = new RelayCommand(CancelEdit);
             SubmitForApprovalCommand = new RelayCommand(async () => await SubmitForApprovalAsync(), () => CanSubmitForApproval());
@@ -306,8 +306,15 @@ namespace MaritimeERP.Desktop.ViewModels
                     StatusMessage = "Loading change requests...";
                 });
 
-                // Load all data in parallel
-                var changeRequestsTask = _changeRequestService.GetAllChangeRequestsAsync();
+                // Load data in parallel - use role-based filtering for change requests
+                var currentUser = _authenticationService.CurrentUser;
+                if (currentUser == null)
+                {
+                    StatusMessage = "User not authenticated";
+                    return;
+                }
+
+                var changeRequestsTask = _changeRequestService.GetChangeRequestsForUserAsync(currentUser.Id, currentUser.Role?.Name ?? "");
                 var shipsTask = _shipService.GetAllShipsAsync();
                 var statisticsTask = _changeRequestService.GetChangeRequestStatisticsAsync();
 
@@ -332,13 +339,32 @@ namespace MaritimeERP.Desktop.ViewModels
                         Ships.Add(ship);
                     }
 
-                    // Update statistics
-                    TotalRequests = statistics.TotalRequests;
-                    PendingApprovals = statistics.PendingApproval;
+                    // Update statistics based on user role
+                    if (currentUser.Role?.Name == "Administrator")
+                    {
+                        // Admins see global statistics
+                        TotalRequests = statistics.TotalRequests;
+                        PendingApprovals = statistics.PendingApproval;
+                    }
+                    else
+                    {
+                        // Normal users see only their own statistics
+                        TotalRequests = changeRequests.Count();
+                        PendingApprovals = changeRequests.Count(cr => cr.StatusId == 2 || cr.StatusId == 3); // Submitted or Under Review
+                    }
 
-                    // Calculate my requests
+                    // Calculate my requests (for normal users, this is the same as total since they only see their own)
                     var currentUserId = _authenticationService.CurrentUser?.Id ?? 0;
-                    MyRequests = changeRequests.Count(cr => cr.RequestedById == currentUserId);
+                    if (currentUser.Role?.Name == "Administrator")
+                    {
+                        // Admins see all requests, so calculate their own requests separately
+                        MyRequests = changeRequests.Count(cr => cr.RequestedById == currentUserId);
+                    }
+                    else
+                    {
+                        // Normal users only see their own requests, so MyRequests = TotalRequests for them
+                        MyRequests = changeRequests.Count();
+                    }
 
                     StatusMessage = $"Loaded {ChangeRequests.Count} change requests";
                 });
@@ -956,7 +982,7 @@ namespace MaritimeERP.Desktop.ViewModels
         {
             return SelectedChangeRequest != null &&
                    SelectedChangeRequest.StatusId == 1 && // Draft
-                   SelectedChangeRequest.RequestedById == _authenticationService.CurrentUser?.Id &&
+                   SelectedChangeRequest.RequestedById == _authenticationService.CurrentUser?.Id && // Can only submit own requests
                    !IsLoading &&
                    !IsEditing;
         }
@@ -965,14 +991,18 @@ namespace MaritimeERP.Desktop.ViewModels
         {
             return SelectedChangeRequest != null &&
                    (SelectedChangeRequest.StatusId == 2 || SelectedChangeRequest.StatusId == 3) && // Submitted or Under Review
-                   SelectedChangeRequest.RequestedById != _authenticationService.CurrentUser?.Id &&
+                   _authenticationService.CurrentUser?.Role?.Name == "Administrator" && // Only admins can approve
                    !IsLoading &&
                    !IsEditing;
         }
 
         private bool CanReject()
         {
-            return CanApprove(); // Same conditions as approve
+            return SelectedChangeRequest != null &&
+                   (SelectedChangeRequest.StatusId == 2 || SelectedChangeRequest.StatusId == 3) && // Submitted or Under Review
+                   _authenticationService.CurrentUser?.Role?.Name == "Administrator" && // Only admins can reject
+                   !IsLoading &&
+                   !IsEditing;
         }
 
         private bool CanImplement()
@@ -1019,6 +1049,13 @@ namespace MaritimeERP.Desktop.ViewModels
         {
             if (changeRequest == null) return;
 
+            // Check if user has permission to edit this change request
+            if (!CanEditChangeRequest(changeRequest))
+            {
+                MessageBox.Show("You don't have permission to edit this change request. You can only edit requests that you created.", "Access Denied", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
             SelectedChangeRequest = changeRequest;
             
             // Open the appropriate form based on the change request type
@@ -1040,6 +1077,34 @@ namespace MaritimeERP.Desktop.ViewModels
                     MessageBox.Show("Unknown change request type.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                     break;
             }
+        }
+
+        private bool CanEditChangeRequest(ChangeRequest? changeRequest)
+        {
+            if (changeRequest == null) return false;
+            
+            var currentUser = _authenticationService.CurrentUser;
+            if (currentUser == null) return false;
+
+            // Admins can edit any change request
+            if (currentUser.Role?.Name == "Administrator") return true;
+
+            // Normal users can only edit their own change requests that are still in Draft status
+            return changeRequest.RequestedById == currentUser.Id && changeRequest.StatusId == 1; // Draft
+        }
+
+        private bool CanDeleteChangeRequest()
+        {
+            if (SelectedChangeRequest == null || IsLoading || IsEditing) return false;
+            
+            var currentUser = _authenticationService.CurrentUser;
+            if (currentUser == null) return false;
+
+            // Admins can delete any change request
+            if (currentUser.Role?.Name == "Administrator") return true;
+
+            // Normal users can only delete their own change requests that are still in Draft status
+            return SelectedChangeRequest.RequestedById == currentUser.Id && SelectedChangeRequest.StatusId == 1; // Draft
         }
 
         private async void EditHardwareChangeRequest(ChangeRequest changeRequest)
