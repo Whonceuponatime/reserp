@@ -28,10 +28,16 @@ namespace MaritimeERP.Services
         {
             try
             {
-                return await _context.AuditLogs
+                var auditLogs = await _context.AuditLogs
                     .Include(a => a.User)
                     .OrderByDescending(a => a.Timestamp)
                     .ToListAsync();
+
+                // Include login logs as security audit entries
+                var loginLogs = await GetLoginLogsAsAuditEntriesAsync();
+                auditLogs.AddRange(loginLogs);
+
+                return auditLogs.OrderByDescending(a => a.Timestamp).ToList();
             }
             catch (Exception ex)
             {
@@ -44,6 +50,12 @@ namespace MaritimeERP.Services
         {
             try
             {
+                if (entityType == "Security")
+                {
+                    // Return only login logs as security audit entries
+                    return await GetLoginLogsAsAuditEntriesAsync();
+                }
+
                 return await _context.AuditLogs
                     .Include(a => a.User)
                     .Where(a => a.EntityType == entityType)
@@ -116,7 +128,7 @@ namespace MaritimeERP.Services
                     .Include(a => a.User)
                     .AsQueryable();
 
-                if (!string.IsNullOrEmpty(entityType))
+                if (!string.IsNullOrEmpty(entityType) && entityType != "Security")
                     query = query.Where(a => a.EntityType == entityType);
 
                 if (!string.IsNullOrEmpty(action))
@@ -131,9 +143,18 @@ namespace MaritimeERP.Services
                 if (endDate.HasValue)
                     query = query.Where(a => a.Timestamp <= endDate.Value);
 
-                return await query
+                var auditLogs = await query
                     .OrderByDescending(a => a.Timestamp)
                     .ToListAsync();
+
+                // Include login logs if Security category is selected or no specific entity type is selected
+                if (string.IsNullOrEmpty(entityType) || entityType == "Security")
+                {
+                    var loginLogs = await GetFilteredLoginLogsAsAuditEntriesAsync(action, userId, startDate, endDate);
+                    auditLogs.AddRange(loginLogs);
+                }
+
+                return auditLogs.OrderByDescending(a => a.Timestamp).ToList();
             }
             catch (Exception ex)
             {
@@ -146,11 +167,16 @@ namespace MaritimeERP.Services
         {
             try
             {
-                return await _context.AuditLogs
+                var entityTypes = await _context.AuditLogs
                     .Select(a => a.EntityType)
                     .Distinct()
                     .OrderBy(et => et)
                     .ToListAsync();
+
+                // Add Security category for login logs
+                entityTypes.Add("Security");
+
+                return entityTypes.OrderBy(et => et).ToList();
             }
             catch (Exception ex)
             {
@@ -363,6 +389,94 @@ namespace MaritimeERP.Services
                    type == typeof(decimal) ||
                    type == typeof(Guid) ||
                    type.IsEnum;
+        }
+
+        private async Task<List<AuditLog>> GetLoginLogsAsAuditEntriesAsync()
+        {
+            try
+            {
+                var loginLogs = await _context.LoginLogs
+                    .Include(l => l.User)
+                    .OrderByDescending(l => l.Timestamp)
+                    .ToListAsync();
+
+                return loginLogs.Select(ConvertLoginLogToAuditLog).ToList();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving login logs as audit entries");
+                return new List<AuditLog>();
+            }
+        }
+
+        private async Task<List<AuditLog>> GetFilteredLoginLogsAsAuditEntriesAsync(string? action = null, int? userId = null, DateTime? startDate = null, DateTime? endDate = null)
+        {
+            try
+            {
+                var query = _context.LoginLogs
+                    .Include(l => l.User)
+                    .AsQueryable();
+
+                if (!string.IsNullOrEmpty(action))
+                    query = query.Where(l => l.Action == action);
+
+                if (userId.HasValue)
+                    query = query.Where(l => l.UserId == userId.Value);
+
+                if (startDate.HasValue)
+                    query = query.Where(l => l.Timestamp >= startDate.Value);
+
+                if (endDate.HasValue)
+                    query = query.Where(l => l.Timestamp <= endDate.Value);
+
+                var loginLogs = await query
+                    .OrderByDescending(l => l.Timestamp)
+                    .ToListAsync();
+
+                return loginLogs.Select(ConvertLoginLogToAuditLog).ToList();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving filtered login logs as audit entries");
+                return new List<AuditLog>();
+            }
+        }
+
+        private AuditLog ConvertLoginLogToAuditLog(LoginLog loginLog)
+        {
+            var statusInfo = loginLog.IsSuccessful ? "SUCCESS" : "FAILED";
+            var additionalInfo = "";
+
+            if (!loginLog.IsSuccessful && !string.IsNullOrEmpty(loginLog.FailureReason))
+            {
+                additionalInfo = $"Reason: {loginLog.FailureReason}";
+            }
+
+            if (!string.IsNullOrEmpty(loginLog.IpAddress))
+            {
+                additionalInfo += string.IsNullOrEmpty(additionalInfo) ? $"IP: {loginLog.IpAddress}" : $", IP: {loginLog.IpAddress}";
+            }
+
+            if (loginLog.SessionDurationMinutes.HasValue)
+            {
+                additionalInfo += string.IsNullOrEmpty(additionalInfo) ? $"Duration: {loginLog.SessionDurationMinutes}min" : $", Duration: {loginLog.SessionDurationMinutes}min";
+            }
+
+            return new AuditLog
+            {
+                Id = loginLog.Id + 1000000, // Offset to avoid ID conflicts
+                EntityType = "Security",
+                Action = loginLog.Action,
+                EntityId = loginLog.Id.ToString(),
+                EntityName = loginLog.Username,
+                OldValues = null,
+                NewValues = statusInfo,
+                AdditionalInfo = additionalInfo,
+                Timestamp = loginLog.Timestamp,
+                UserId = loginLog.UserId,
+                UserName = loginLog.User?.FullName ?? loginLog.Username,
+                User = loginLog.User
+            };
         }
     }
 } 

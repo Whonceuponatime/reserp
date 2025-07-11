@@ -9,7 +9,6 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
@@ -23,7 +22,7 @@
                 
                 <StackPanel Grid.Column="0" Orientation="Horizontal">
                     <TextBlock Text="📋" FontSize="24" VerticalAlignment="Center" Foreground="White"/>
-                    <TextBlock Text="Auditable Logs" FontSize="20" FontWeight="SemiBold" 
+                    <TextBlock Text="Audit &amp; Security Logs" FontSize="20" FontWeight="SemiBold" 
                                Foreground="White" Margin="12,0,0,0" VerticalAlignment="Center"/>
                 </StackPanel>
                 
@@ -97,38 +96,8 @@
             </Grid>
         </Border>
 
-        <!-- Quick Filter Buttons -->
-        <Border Grid.Row="2" Background="#FAFAFA" Padding="16,12">
-            <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
-                <StackPanel Orientation="Horizontal">
-                    <ItemsControl ItemsSource="{Binding LogTypeFilters}">
-                        <ItemsControl.ItemsPanel>
-                            <ItemsPanelTemplate>
-                                <StackPanel Orientation="Horizontal"/>
-                            </ItemsPanelTemplate>
-                        </ItemsControl.ItemsPanel>
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate>
-                                <Button Command="{Binding DataContext.ApplyLogTypeFilterCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                        CommandParameter="{Binding}"
-                                        Background="#E3F2FD" Foreground="#1976D2" 
-                                        BorderThickness="1" BorderBrush="#1976D2"
-                                        Padding="12,6" Margin="0,0,8,0" 
-                                        FontWeight="Medium" ToolTip="{Binding Description}">
-                                    <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="{Binding Icon}" FontSize="14" VerticalAlignment="Center"/>
-                                        <TextBlock Text="{Binding Name}" FontSize="12" VerticalAlignment="Center" Margin="4,0,0,0"/>
-                                    </StackPanel>
-                                </Button>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
-                </StackPanel>
-            </ScrollViewer>
-        </Border>
-
         <!-- Main Content -->
-        <Grid Grid.Row="3" Margin="16">
+        <Grid Grid.Row="2" Margin="16">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="300"/>
                 <ColumnDefinition Width="*"/>
@@ -191,7 +160,8 @@
 
                     <!-- DataGrid -->
                     <DataGrid Grid.Row="1" ItemsSource="{Binding FilteredAuditLogs}" SelectedItem="{Binding SelectedAuditLog}"
-                              AutoGenerateColumns="False" CanUserAddRows="False" 
+                              AutoGenerateColumns="False" CanUserAddRows="False" CanUserDeleteRows="False"
+                              IsReadOnly="True"
                               GridLinesVisibility="Horizontal" HeadersVisibility="Column"
                               Background="White" BorderThickness="0" Margin="1"
                               AlternatingRowBackground="#F8F9FA">

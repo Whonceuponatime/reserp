@@ -136,15 +136,11 @@ namespace MaritimeERP.Desktop.ViewModels
             set => SetProperty(ref _todaysLogs, value);
         }
 
-        // Log type filter presets
-        public ObservableCollection<LogTypeFilter> LogTypeFilters { get; } = new();
-
         // Commands
         public ICommand LoadDataCommand { get; }
         public ICommand ClearFiltersCommand { get; }
         public ICommand ExportLogsCommand { get; }
         public ICommand RefreshCommand { get; }
-        public ICommand ApplyLogTypeFilterCommand { get; }
 
         public AuditLogsViewModel(
             IAuditLogService auditLogService,
@@ -160,127 +156,9 @@ namespace MaritimeERP.Desktop.ViewModels
             ClearFiltersCommand = new RelayCommand(ClearFilters);
             ExportLogsCommand = new RelayCommand(async () => await ExportLogsAsync(), () => !IsLoading);
             RefreshCommand = new RelayCommand(async () => await LoadDataAsync(), () => !IsLoading);
-            ApplyLogTypeFilterCommand = new RelayCommand<LogTypeFilter>(ApplyLogTypeFilter);
-
-            // Initialize filter presets
-            InitializeLogTypeFilters();
 
             // Load initial data
             _ = LoadDataAsync();
-        }
-
-        private void InitializeLogTypeFilters()
-        {
-            LogTypeFilters.Clear();
-            
-            LogTypeFilters.Add(new LogTypeFilter 
-            { 
-                Name = "All Logs", 
-                Description = "Show all audit logs",
-                EntityType = null,
-                Action = null,
-                Icon = "📋"
-            });
-            
-            LogTypeFilters.Add(new LogTypeFilter 
-            { 
-                Name = "Hardware Changes", 
-                Description = "Hardware change requests and modifications",
-                EntityType = "HardwareChangeRequest",
-                Action = null,
-                Icon = "🔧"
-            });
-            
-            LogTypeFilters.Add(new LogTypeFilter 
-            { 
-                Name = "Software Changes", 
-                Description = "Software change requests and updates",
-                EntityType = "SoftwareChangeRequest",
-                Action = null,
-                Icon = "💾"
-            });
-            
-            LogTypeFilters.Add(new LogTypeFilter 
-            { 
-                Name = "System Plans", 
-                Description = "System change plans and planning",
-                EntityType = "SystemChangePlan",
-                Action = null,
-                Icon = "🏗️"
-            });
-            
-            LogTypeFilters.Add(new LogTypeFilter 
-            { 
-                Name = "Security Reviews", 
-                Description = "Security review statements",
-                EntityType = "SecurityReviewStatement",
-                Action = null,
-                Icon = "🛡️"
-            });
-            
-            LogTypeFilters.Add(new LogTypeFilter 
-            { 
-                Name = "Document Management", 
-                Description = "Document uploads, approvals, and management",
-                EntityType = "Document",
-                Action = null,
-                Icon = "📄"
-            });
-            
-            LogTypeFilters.Add(new LogTypeFilter 
-            { 
-                Name = "Login Activities", 
-                Description = "User login, logout, and authentication events",
-                EntityType = "LoginActivity",
-                Action = null,
-                Icon = "🔐"
-            });
-            
-            LogTypeFilters.Add(new LogTypeFilter 
-            { 
-                Name = "User Management", 
-                Description = "User account changes and activities",
-                EntityType = "User",
-                Action = null,
-                Icon = "👥"
-            });
-            
-            LogTypeFilters.Add(new LogTypeFilter 
-            { 
-                Name = "Approvals", 
-                Description = "Approval and rejection activities",
-                EntityType = null,
-                Action = "APPROVE",
-                Icon = "✅"
-            });
-            
-            LogTypeFilters.Add(new LogTypeFilter 
-            { 
-                Name = "Rejections", 
-                Description = "Rejection activities",
-                EntityType = null,
-                Action = "REJECT",
-                Icon = "❌"
-            });
-            
-            LogTypeFilters.Add(new LogTypeFilter 
-            { 
-                Name = "Submissions", 
-                Description = "Form submissions and changes",
-                EntityType = null,
-                Action = "SUBMIT",
-                Icon = "📤"
-            });
-            
-            LogTypeFilters.Add(new LogTypeFilter 
-            { 
-                Name = "Today's Activity", 
-                Description = "All activities from today",
-                EntityType = null,
-                Action = null,
-                Icon = "📅",
-                IsDateFilter = true
-            });
         }
 
         private async Task LoadDataAsync()
@@ -434,26 +312,6 @@ namespace MaritimeERP.Desktop.ViewModels
             EndDate = null;
         }
 
-        private void ApplyLogTypeFilter(LogTypeFilter? filter)
-        {
-            if (filter == null) return;
-
-            if (filter.IsDateFilter && filter.Name == "Today's Activity")
-            {
-                StartDate = DateTime.Today;
-                EndDate = DateTime.Today.AddDays(1).AddSeconds(-1);
-                SelectedEntityType = "All";
-                SelectedAction = "All";
-            }
-            else
-            {
-                SelectedEntityType = filter.EntityType ?? "All";
-                SelectedAction = filter.Action ?? "All";
-                StartDate = null;
-                EndDate = null;
-            }
-        }
-
         private async Task ExportLogsAsync()
         {
             try
@@ -513,15 +371,5 @@ namespace MaritimeERP.Desktop.ViewModels
             OnPropertyChanged(propertyName);
             return true;
         }
-    }
-
-    public class LogTypeFilter
-    {
-        public string Name { get; set; } = string.Empty;
-        public string Description { get; set; } = string.Empty;
-        public string? EntityType { get; set; }
-        public string? Action { get; set; }
-        public string Icon { get; set; } = "📋";
-        public bool IsDateFilter { get; set; } = false;
     }
 } 

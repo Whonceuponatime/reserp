@@ -14,6 +14,7 @@ namespace MaritimeERP.Desktop.ViewModels
     {
         private readonly ISystemService _systemService;
         private readonly IShipService _shipService;
+        private readonly IAuthenticationService _authenticationService;
         private readonly ILogger<SystemsViewModel> _logger;
         private readonly INavigationService _navigationService;
 
@@ -376,6 +377,10 @@ namespace MaritimeERP.Desktop.ViewModels
         
         public int ActiveShips => Ships.Count(s => s.IsActive);
 
+        // Permission properties
+        public bool CanEditData => _authenticationService.CurrentUser?.Role?.Name == "Administrator";
+        public bool IsReadOnlyUser => _authenticationService.CurrentUser?.Role?.Name == "Engineer";
+
         // Commands
         public ICommand LoadDataCommand { get; }
         public ICommand AddSystemCommand { get; }
@@ -392,17 +397,18 @@ namespace MaritimeERP.Desktop.ViewModels
             private set => _saveSystemCommand = value;
         }
 
-        public SystemsViewModel(ISystemService systemService, IShipService shipService, ILogger<SystemsViewModel> logger, INavigationService navigationService)
+        public SystemsViewModel(ISystemService systemService, IShipService shipService, IAuthenticationService authenticationService, ILogger<SystemsViewModel> logger, INavigationService navigationService)
         {
             _systemService = systemService ?? throw new ArgumentNullException(nameof(systemService));
             _shipService = shipService ?? throw new ArgumentNullException(nameof(shipService));
+            _authenticationService = authenticationService ?? throw new ArgumentNullException(nameof(authenticationService));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _navigationService = navigationService ?? throw new ArgumentNullException(nameof(navigationService));
 
             LoadDataCommand = new RelayCommand(async () => await LoadDataAsync());
-            AddSystemCommand = new RelayCommand(AddSystem);
-            EditSystemCommand = new RelayCommand(EditSystem, () => SelectedSystem != null && !IsEditing);
-            DeleteSystemCommand = new RelayCommand(async () => await DeleteSystemAsync(), () => SelectedSystem != null && !IsEditing);
+            AddSystemCommand = new RelayCommand(AddSystem, () => CanEditData);
+            EditSystemCommand = new RelayCommand(EditSystem, () => SelectedSystem != null && !IsEditing && CanEditData);
+            DeleteSystemCommand = new RelayCommand(async () => await DeleteSystemAsync(), () => SelectedSystem != null && !IsEditing && CanEditData);
             CancelEditCommand = new RelayCommand(CancelEdit);
             ClearFiltersCommand = new RelayCommand(ClearFilters);
             NavigateToComponentsCommand = new RelayCommand(NavigateToComponents, () => SelectedSystem != null);
@@ -906,30 +912,20 @@ namespace MaritimeERP.Desktop.ViewModels
 
         private bool CanSaveSystem()
         {
-            var canSave = IsEditing &&
-                   !string.IsNullOrWhiteSpace(SystemName?.Trim()) &&
-                   !string.IsNullOrWhiteSpace(Manufacturer?.Trim()) &&
-                   !string.IsNullOrWhiteSpace(Model?.Trim()) &&
-                   !string.IsNullOrWhiteSpace(SerialNumber?.Trim()) &&
-                   SelectedShip != null &&
-                   SelectedCategory != null;
+            // Check permissions first
+            if (!CanEditData)
+                return false;
 
-            // Debug logging
-            var reasons = new List<string>();
-            if (!IsEditing) reasons.Add("Not in edit mode");
-            if (string.IsNullOrWhiteSpace(SystemName?.Trim())) reasons.Add("System name is empty");
-            if (string.IsNullOrWhiteSpace(Manufacturer?.Trim())) reasons.Add("Manufacturer is empty");
-            if (string.IsNullOrWhiteSpace(Model?.Trim())) reasons.Add("Model is empty");
-            if (string.IsNullOrWhiteSpace(SerialNumber?.Trim())) reasons.Add("Serial number is empty");
-            if (SelectedShip == null) reasons.Add("No ship selected");
-            if (SelectedCategory == null) reasons.Add("No category selected");
+            // Check if we have required data
+            var hasRequiredData = !string.IsNullOrWhiteSpace(SystemName) &&
+                                 !string.IsNullOrWhiteSpace(Manufacturer) &&
+                                 !string.IsNullOrWhiteSpace(Model) &&
+                                 !string.IsNullOrWhiteSpace(SerialNumber) &&
+                                 SelectedShip != null &&
+                                 SelectedCategory != null &&
+                                 SelectedSecurityZone != null;
 
-            _logger.LogDebug("CanSaveSystem called. Result={CanSave}. {ReasonCount} reasons: {Reasons}", 
-                canSave, 
-                reasons.Count, 
-                reasons.Count > 0 ? string.Join(", ", reasons) : "All conditions met");
-
-            return canSave;
+            return hasRequiredData && IsEditing;
         }
 
         private void ApplyFilters()

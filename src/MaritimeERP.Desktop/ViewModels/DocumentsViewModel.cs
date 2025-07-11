@@ -209,8 +209,6 @@ namespace MaritimeERP.Desktop.ViewModels
         
         public bool CanDelete => _authService.CurrentUser?.Role?.Name == "Administrator";
 
-        public bool CanDownload => _authService.CurrentUser?.Role?.Name == "Administrator";
-
         #endregion
 
         #region Commands

@@ -3,6 +3,10 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              Background="#FAFAFA">
 
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+    </UserControl.Resources>
+
     <Grid Margin="8">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -43,7 +47,8 @@
                             Height="32"
                             Padding="16,0"
                             FontSize="12"
-                            Margin="0,0,8,0"/>
+                            Margin="0,0,8,0"
+                            Visibility="{Binding CanEditData, Converter={StaticResource BooleanToVisibilityConverter}}"/>
                     <Button Content="🗂️ Import" 
                             Background="#424242"
                             Foreground="White"
@@ -51,7 +56,8 @@
                             Height="32"
                             Padding="12,0"
                             FontSize="12"
-                            Margin="0,0,8,0"/>
+                            Margin="0,0,8,0"
+                            Visibility="{Binding CanEditData, Converter={StaticResource BooleanToVisibilityConverter}}"/>
                     <Button Content="📊 Export" 
                             Background="#424242"
                             Foreground="White"

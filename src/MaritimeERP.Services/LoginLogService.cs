@@ -10,13 +10,11 @@ namespace MaritimeERP.Services
     {
         private readonly MaritimeERPContext _context;
         private readonly ILogger<LoginLogService> _logger;
-        private readonly IAuditLogService _auditLogService;
 
-        public LoginLogService(MaritimeERPContext context, ILogger<LoginLogService> logger, IAuditLogService auditLogService)
+        public LoginLogService(MaritimeERPContext context, ILogger<LoginLogService> logger)
         {
             _context = context;
             _logger = logger;
-            _auditLogService = auditLogService;
         }
 
         #region Login Log CRUD Operations
@@ -109,10 +107,6 @@ namespace MaritimeERP.Services
                 _context.LoginLogs.Add(loginLog);
                 await _context.SaveChangesAsync();
 
-                // Also log to audit logs
-                await _auditLogService.LogActionAsync("LoginActivity", "LOGIN", userId.ToString(), username, 
-                    $"Successful login from {ipAddress ?? "unknown"}{(device != null ? $" using {device}" : "")}");
-
                 _logger.LogInformation("Successful login logged for user {Username} from {IpAddress}", username, ipAddress);
             }
             catch (Exception ex)
@@ -141,10 +135,6 @@ namespace MaritimeERP.Services
                 _context.LoginLogs.Add(loginLog);
                 await _context.SaveChangesAsync();
 
-                // Also log to audit logs
-                await _auditLogService.LogActionAsync("LoginActivity", "LOGIN_FAILED", username, username, 
-                    $"Failed login from {ipAddress ?? "unknown"}: {failureReason}");
-
                 _logger.LogWarning("Failed login attempt logged for username {Username} from {IpAddress}: {FailureReason}", 
                     username, ipAddress, failureReason);
             }
@@ -171,10 +161,6 @@ namespace MaritimeERP.Services
 
                 _context.LoginLogs.Add(loginLog);
                 await _context.SaveChangesAsync();
-
-                // Also log to audit logs
-                await _auditLogService.LogActionAsync("LoginActivity", "LOGOUT", userId.ToString(), username, 
-                    $"User logout after {sessionDurationMinutes} minutes session");
 
                 _logger.LogInformation("Logout logged for user {Username} after {SessionDuration} minutes", 
                     username, sessionDurationMinutes);
@@ -204,10 +190,6 @@ namespace MaritimeERP.Services
                 _context.LoginLogs.Add(loginLog);
                 await _context.SaveChangesAsync();
 
-                // Also log to audit logs
-                await _auditLogService.LogActionAsync("LoginActivity", "PASSWORD_RESET", userId.ToString(), username, 
-                    $"Password reset requested from {ipAddress ?? "unknown"}");
-
                 _logger.LogInformation("Password reset logged for user {Username} from {IpAddress}", username, ipAddress);
             }
             catch (Exception ex)
@@ -232,10 +214,6 @@ namespace MaritimeERP.Services
 
                 _context.LoginLogs.Add(loginLog);
                 await _context.SaveChangesAsync();
-
-                // Also log to audit logs
-                await _auditLogService.LogActionAsync("LoginActivity", "PASSWORD_CHANGED", userId.ToString(), username, 
-                    $"Password changed from {ipAddress ?? "unknown"}");
 
                 _logger.LogInformation("Password change logged for user {Username}", username);
             }
@@ -264,10 +242,6 @@ namespace MaritimeERP.Services
                 _context.LoginLogs.Add(loginLog);
                 await _context.SaveChangesAsync();
 
-                // Also log to audit logs
-                await _auditLogService.LogActionAsync("LoginActivity", "ACCOUNT_LOCKED", userId.ToString(), username, 
-                    $"Account locked: {reason}");
-
                 _logger.LogWarning("Account locked logged for user {Username}: {Reason}", username, reason);
             }
             catch (Exception ex)
@@ -292,10 +266,6 @@ namespace MaritimeERP.Services
 
                 _context.LoginLogs.Add(loginLog);
                 await _context.SaveChangesAsync();
-
-                // Also log to audit logs
-                await _auditLogService.LogActionAsync("LoginActivity", "ACCOUNT_UNLOCKED", userId.ToString(), username, 
-                    $"Account unlocked from {ipAddress ?? "unknown"}");
 
                 _logger.LogInformation("Account unlocked logged for user {Username}", username);
             }
@@ -323,10 +293,6 @@ namespace MaritimeERP.Services
 
                 _context.LoginLogs.Add(loginLog);
                 await _context.SaveChangesAsync();
-
-                // Also log to audit logs
-                await _auditLogService.LogActionAsync("LoginActivity", action, userId?.ToString() ?? "unknown", username, 
-                    $"Security event: {details}");
 
                 _logger.LogWarning("Security event logged for user {Username}: {Action} - {Details}", username, action, details);
             }

@@ -19,6 +19,7 @@ namespace MaritimeERP.Desktop.ViewModels
         private readonly IComponentService _componentService;
         private readonly ISystemService _systemService;
         private readonly IShipService _shipService;
+        private readonly IAuthenticationService _authenticationService;
         private readonly ILogger<ComponentsViewModel> _logger;
         private readonly INavigationService _navigationService;
         private readonly DashboardViewModel _dashboardViewModel;
@@ -226,6 +227,10 @@ namespace MaritimeERP.Desktop.ViewModels
             }
         }
 
+        // Permission properties
+        public bool CanEditData => _authenticationService.CurrentUser?.Role?.Name == "Administrator";
+        public bool IsReadOnlyUser => _authenticationService.CurrentUser?.Role?.Name == "Engineer";
+
         // Commands
         public ICommand LoadDataCommand { get; private set; }
         public ICommand AddComponentCommand { get; private set; }
@@ -381,6 +386,7 @@ namespace MaritimeERP.Desktop.ViewModels
             IComponentService componentService,
             ISystemService systemService,
             IShipService shipService,
+            IAuthenticationService authenticationService,
             ILogger<ComponentsViewModel> logger,
             INavigationService navigationService,
             DashboardViewModel dashboardViewModel)
@@ -388,15 +394,16 @@ namespace MaritimeERP.Desktop.ViewModels
             _componentService = componentService ?? throw new ArgumentNullException(nameof(componentService));
             _systemService = systemService ?? throw new ArgumentNullException(nameof(systemService));
             _shipService = shipService ?? throw new ArgumentNullException(nameof(shipService));
+            _authenticationService = authenticationService ?? throw new ArgumentNullException(nameof(authenticationService));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _navigationService = navigationService ?? throw new ArgumentNullException(nameof(navigationService));
             _dashboardViewModel = dashboardViewModel ?? throw new ArgumentNullException(nameof(dashboardViewModel));
 
             // Initialize commands with proper CanExecute conditions
             LoadDataCommand = new RelayCommand(async () => await LoadDataAsync(), () => !IsLoading);
-            AddComponentCommand = new RelayCommand(AddComponent, () => !IsLoading && !IsEditing);
-            EditCommand = new RelayCommand(StartEditing, () => SelectedComponent != null && !IsEditing);
-            DeleteCommand = new RelayCommand(async () => await DeleteComponentAsync(), () => SelectedComponent != null && !IsEditing);
+            AddComponentCommand = new RelayCommand(AddComponent, () => !IsLoading && !IsEditing && CanEditData);
+            EditCommand = new RelayCommand(StartEditing, () => SelectedComponent != null && !IsEditing && CanEditData);
+            DeleteCommand = new RelayCommand(async () => await DeleteComponentAsync(), () => SelectedComponent != null && !IsEditing && CanEditData);
             CancelCommand = new RelayCommand(CancelEdit);
             ClearFiltersCommand = new RelayCommand(ClearFilters, () => !IsLoading);
             NavigateToSoftwareCommand = new RelayCommand(() => NavigateToSoftware(SelectedComponent), () => SelectedComponent != null);
@@ -730,10 +737,14 @@ namespace MaritimeERP.Desktop.ViewModels
 
         private bool CanSaveComponent()
         {
-            return IsEditing && 
-                   !string.IsNullOrWhiteSpace(Name) && 
-                   !string.IsNullOrWhiteSpace(ComponentType) && 
-                   !string.IsNullOrWhiteSpace(InstalledLocation) && 
+            // Check permissions first
+            if (!CanEditData)
+                return false;
+
+            // Check if we have required data
+            return !string.IsNullOrWhiteSpace(Name) && 
+                   !string.IsNullOrWhiteSpace(ComponentType) &&
+                   !string.IsNullOrWhiteSpace(InstalledLocation) &&
                    SelectedSystem != null;
         }
 

@@ -161,17 +161,9 @@ namespace MaritimeERP.Desktop.ViewModels
 
             NavigationItems.Add(new NavigationItem
             {
-                Title = "Auditable Logs",
+                Title = "Audit & Security Logs",
                 Icon = "📋",
                 Page = "AuditLogs",
-                IsVisible = isAdmin
-            });
-
-            NavigationItems.Add(new NavigationItem
-            {
-                Title = "Login Logs",
-                Icon = "🔐",
-                Page = "LoginLogs",
                 IsVisible = isAdmin
             });
         }
@@ -202,7 +194,6 @@ namespace MaritimeERP.Desktop.ViewModels
                 "Documents" => CreateDocumentsViewModel(),
                 "UserManagement" => CreateUserManagementViewModel(),
                 "AuditLogs" => CreateAuditLogsViewModel(),
-                "LoginLogs" => CreateLoginLogsViewModel(),
                 "Reports" => CreateReportsViewModel(),
                 "Users" => CreateUsersViewModel(),
                 _ => CreateDashboardViewModel()
@@ -286,7 +277,6 @@ namespace MaritimeERP.Desktop.ViewModels
                 "Documents" => CreateDocumentsViewModel(),
                 "UserManagement" => CreateUserManagementViewModel(),
                 "AuditLogs" => CreateAuditLogsViewModel(),
-                "LoginLogs" => CreateLoginLogsViewModel(),
                 "Reports" => CreateReportsViewModel(),
                 "Users" => CreateUsersViewModel(),
                 _ => CreateDashboardViewModel()
@@ -323,7 +313,6 @@ namespace MaritimeERP.Desktop.ViewModels
                 "Documents" => CreateDocumentsViewModel(),
                 "UserManagement" => CreateUserManagementViewModel(),
                 "AuditLogs" => CreateAuditLogsViewModel(),
-                "LoginLogs" => CreateLoginLogsViewModel(),
                 "Reports" => CreateReportsViewModel(),
                 "Users" => CreateUsersViewModel(),
                 _ => CreateDashboardViewModel()
@@ -382,17 +371,6 @@ namespace MaritimeERP.Desktop.ViewModels
             }
             return viewModel;
         }
-
-        private object CreateLoginLogsViewModel()
-        {
-            if (!_viewModelCache.TryGetValue("LoginLogs", out var viewModel))
-            {
-                viewModel = _serviceProvider.GetRequiredService<LoginLogsViewModel>();
-                _viewModelCache["LoginLogs"] = viewModel;
-            }
-            return viewModel;
-        }
-
 
         private object CreateDocumentsViewModel()
         {

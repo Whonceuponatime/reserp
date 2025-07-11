@@ -21,6 +21,7 @@ namespace MaritimeERP.Desktop.ViewModels
         private readonly ISystemService _systemService;
         private readonly IShipService _shipService;
         private readonly INavigationService _navigationService;
+        private readonly IAuthenticationService _authenticationService;
         private readonly ILogger<SoftwareViewModel> _logger;
 
         // Collections
@@ -232,6 +233,7 @@ namespace MaritimeERP.Desktop.ViewModels
             ISystemService systemService,
             IShipService shipService,
             INavigationService navigationService,
+            IAuthenticationService authenticationService,
             ILogger<SoftwareViewModel> logger)
         {
             _softwareService = softwareService ?? throw new ArgumentNullException(nameof(softwareService));
@@ -239,14 +241,15 @@ namespace MaritimeERP.Desktop.ViewModels
             _systemService = systemService ?? throw new ArgumentNullException(nameof(systemService));
             _shipService = shipService ?? throw new ArgumentNullException(nameof(shipService));
             _navigationService = navigationService ?? throw new ArgumentNullException(nameof(navigationService));
+            _authenticationService = authenticationService ?? throw new ArgumentNullException(nameof(authenticationService));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
             SaveCommand = new RelayCommand(async () => await SaveSoftwareAsync(), () => CanSaveSoftware());
             CancelCommand = new RelayCommand(CancelEdit);
-            EditCommand = new RelayCommand(StartEditing, () => SelectedSoftware != null && !IsEditing);
-            DeleteCommand = new RelayCommand(async () => await DeleteSoftwareAsync(), () => SelectedSoftware != null && !IsEditing);
+            EditCommand = new RelayCommand(StartEditing, () => SelectedSoftware != null && !IsEditing && CanEditData);
+            DeleteCommand = new RelayCommand(async () => await DeleteSoftwareAsync(), () => SelectedSoftware != null && !IsEditing && CanEditData);
             NavigateToComponentCommand = new RelayCommand(NavigateToComponent);
-            AddSoftwareCommand = new RelayCommand(AddSoftware, () => !IsEditing);
+            AddSoftwareCommand = new RelayCommand(AddSoftware, () => !IsEditing && CanEditData);
             ClearFilterCommand = new RelayCommand(ClearComponentFilter);
 
             // Subscribe to property changes to refresh save command
@@ -431,11 +434,14 @@ namespace MaritimeERP.Desktop.ViewModels
 
         private bool CanSaveSoftware()
         {
+            // Check permissions first
+            if (!CanEditData)
+                return false;
+
+            // Check if we have required data
             return IsEditing && 
-                   !string.IsNullOrWhiteSpace(SoftwareName) && 
-                   !string.IsNullOrWhiteSpace(Version) && 
-                   !string.IsNullOrWhiteSpace(Manufacturer) && 
-                   !string.IsNullOrWhiteSpace(SoftwareType) &&
+                   !string.IsNullOrWhiteSpace(SoftwareName?.Trim()) &&
+                   !string.IsNullOrWhiteSpace(Version?.Trim()) &&
                    SelectedComponent != null;
         }
 
@@ -689,5 +695,13 @@ namespace MaritimeERP.Desktop.ViewModels
             ClearForm();
             IsEditing = true;
         }
+
+        public int FilteredSoftwareCount => SoftwareList?.Count ?? 0;
+        
+        public bool HasSelectedSoftware => SelectedSoftware != null;
+
+        // Permission properties
+        public bool CanEditData => _authenticationService.CurrentUser?.Role?.Name == "Administrator";
+        public bool IsReadOnlyUser => _authenticationService.CurrentUser?.Role?.Name == "Engineer";
     }
 } 

@@ -171,7 +171,9 @@
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="2*"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="1*"/>
                     </Grid.RowDefinitions>
 
                     <!-- Documents Header -->
@@ -191,64 +193,60 @@
                               AutoGenerateColumns="False" 
                               CanUserAddRows="False"
                               CanUserDeleteRows="False"
+                              IsReadOnly="True"
                               GridLinesVisibility="Horizontal"
                               HeadersVisibility="Column"
                               SelectionMode="Single"
                               AlternatingRowBackground="#F8F9FA"
-                              RowHeight="35">
+                              RowHeight="40"
+                              FontSize="12">
                         
                         <DataGrid.Columns>
                             <!-- Document Name -->
-                            <DataGridTextColumn Header="Document Name" Binding="{Binding Name}" Width="200">
+                            <DataGridTextColumn Header="Document Name" Binding="{Binding Name}" Width="*" MinWidth="200">
                                 <DataGridTextColumn.ElementStyle>
                                     <Style TargetType="TextBlock">
                                         <Setter Property="FontWeight" Value="SemiBold"/>
                                         <Setter Property="FontSize" Value="12"/>
+                                        <Setter Property="Padding" Value="8,0"/>
+                                        <Setter Property="VerticalAlignment" Value="Center"/>
+                                        <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+                                        <Setter Property="ToolTip" Value="{Binding Name}"/>
                                     </Style>
                                 </DataGridTextColumn.ElementStyle>
                             </DataGridTextColumn>
 
                             <!-- Category -->
-                            <DataGridTextColumn Header="Category" Binding="{Binding Category.Name}" Width="130">
+                            <DataGridTextColumn Header="Category" Binding="{Binding Category.Name}" Width="120" MinWidth="100">
                                 <DataGridTextColumn.ElementStyle>
                                     <Style TargetType="TextBlock">
                                         <Setter Property="FontSize" Value="12"/>
+                                        <Setter Property="Padding" Value="8,0"/>
+                                        <Setter Property="VerticalAlignment" Value="Center"/>
+                                        <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+                                        <Setter Property="ToolTip" Value="{Binding Category.Name}"/>
                                     </Style>
                                 </DataGridTextColumn.ElementStyle>
                             </DataGridTextColumn>
 
                             <!-- Ship -->
-                            <DataGridTextColumn Header="Ship" Binding="{Binding Ship.ShipName}" Width="100">
+                            <DataGridTextColumn Header="Ship" Binding="{Binding Ship.ShipName}" Width="100" MinWidth="80">
                                 <DataGridTextColumn.ElementStyle>
                                     <Style TargetType="TextBlock">
                                         <Setter Property="FontSize" Value="12"/>
-                                    </Style>
-                                </DataGridTextColumn.ElementStyle>
-                            </DataGridTextColumn>
-
-                            <!-- File Size -->
-                            <DataGridTextColumn Header="Size" Binding="{Binding FileSizeDisplay}" Width="70">
-                                <DataGridTextColumn.ElementStyle>
-                                    <Style TargetType="TextBlock">
-                                        <Setter Property="FontSize" Value="12"/>
-                                    </Style>
-                                </DataGridTextColumn.ElementStyle>
-                            </DataGridTextColumn>
-
-                            <!-- Uploaded Date -->
-                            <DataGridTextColumn Header="Uploaded" Binding="{Binding UploadedAtDisplay}" Width="100">
-                                <DataGridTextColumn.ElementStyle>
-                                    <Style TargetType="TextBlock">
-                                        <Setter Property="FontSize" Value="12"/>
+                                        <Setter Property="Padding" Value="8,0"/>
+                                        <Setter Property="VerticalAlignment" Value="Center"/>
+                                        <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+                                        <Setter Property="ToolTip" Value="{Binding Ship.ShipName}"/>
                                     </Style>
                                 </DataGridTextColumn.ElementStyle>
                             </DataGridTextColumn>
 
                             <!-- Status -->
-                            <DataGridTemplateColumn Header="Status" Width="80">
+                            <DataGridTemplateColumn Header="Status" Width="90" MinWidth="80">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
-                                        <Border CornerRadius="10" Padding="6,2">
+                                        <Border CornerRadius="12" Padding="8,4" Margin="4,2">
                                             <Border.Style>
                                                 <Style TargetType="Border">
                                                     <Style.Triggers>
@@ -264,41 +262,42 @@
                                             <TextBlock Text="{Binding StatusDisplay}" 
                                                       Foreground="White" 
                                                       FontWeight="SemiBold" 
-                                                      FontSize="10"
-                                                      HorizontalAlignment="Center"/>
+                                                      FontSize="11"
+                                                      HorizontalAlignment="Center"
+                                                      VerticalAlignment="Center"/>
                                         </Border>
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
 
                             <!-- Actions -->
-                            <DataGridTemplateColumn Header="Actions" Width="150">
+                            <DataGridTemplateColumn Header="Actions" Width="180" MinWidth="160">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
-                                        <StackPanel Orientation="Horizontal">
+                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                                             <!-- Preview Button -->
                                             <Button Content="View" 
                                                     Command="{Binding DataContext.PreviewDocumentCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                     CommandParameter="{Binding}"
                                                     ToolTip="Preview Document"
-                                                    Width="25" Height="20" Margin="1" FontSize="10"
+                                                    Width="35" Height="26" Margin="2" FontSize="10"
                                                     Background="#2196F3" Foreground="White" BorderThickness="0"/>
 
-                                            <!-- Download Button (Admin Only) -->
+                                            <!-- Download Button -->
                                             <Button Content="Save" 
                                                     Command="{Binding DataContext.DownloadDocumentCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                     CommandParameter="{Binding}"
                                                     ToolTip="Download Document"
-                                                    Width="25" Height="20" Margin="1" FontSize="10"
+                                                    Width="35" Height="26" Margin="2" FontSize="10"
                                                     Background="#4CAF50" Foreground="White" BorderThickness="0"
-                                                    Visibility="{Binding DataContext.CanDownload, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                                                    Visibility="{Binding DataContext.CanDelete, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BoolToVisibilityConverter}}"/>
 
                                             <!-- Approve Button (Admin Only) -->
                                             <Button Content="OK" 
                                                     Command="{Binding DataContext.ApproveDocumentCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                     CommandParameter="{Binding}"
                                                     ToolTip="Approve Document"
-                                                    Width="25" Height="20" Margin="1" FontSize="10"
+                                                    Width="30" Height="26" Margin="2" FontSize="10"
                                                     Background="#4CAF50" Foreground="White" BorderThickness="0"
                                                     Visibility="{Binding DataContext.CanApprove, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BoolToVisibilityConverter}}"/>
 
@@ -307,7 +306,7 @@
                                                     Command="{Binding DataContext.RejectDocumentCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                     CommandParameter="{Binding}"
                                                     ToolTip="Reject Document"
-                                                    Width="25" Height="20" Margin="1" FontSize="10"
+                                                    Width="30" Height="26" Margin="2" FontSize="10"
                                                     Background="#F44336" Foreground="White" BorderThickness="0"
                                                     Visibility="{Binding DataContext.CanReject, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BoolToVisibilityConverter}}"/>
                                         </StackPanel>
@@ -316,6 +315,79 @@
                             </DataGridTemplateColumn>
                         </DataGrid.Columns>
                     </DataGrid>
+                    
+                    <!-- Details Panel Separator -->
+                    <GridSplitter Grid.Row="2" Height="5" HorizontalAlignment="Stretch" 
+                                  Background="#E0E0E0" ResizeBehavior="PreviousAndNext" 
+                                  ResizeDirection="Rows" Margin="0,5"/>
+
+                    <!-- Document Details Panel -->
+                    <Border Grid.Row="3" Background="#F8F9FA" BorderBrush="#E0E0E0" BorderThickness="1" 
+                            CornerRadius="5" Padding="15" Margin="0,5,0,0"
+                            Visibility="{Binding SelectedDocument, Converter={StaticResource BoolToVisibilityConverter}}">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+                            
+                            <!-- Details Header -->
+                            <TextBlock Grid.Row="0" Text="Document Details" FontSize="14" FontWeight="SemiBold" 
+                                      Margin="0,0,0,10" Foreground="#333"/>
+                            
+                            <!-- Details Content -->
+                            <Grid Grid.Row="1" DataContext="{Binding SelectedDocument}">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+                                
+                                <!-- Document Name -->
+                                <TextBlock Grid.Row="0" Grid.Column="0" Text="Document Name:" FontWeight="SemiBold" 
+                                          Margin="0,0,0,5" FontSize="12"/>
+                                <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding Name}" 
+                                          Margin="0,0,0,5" FontSize="12" TextWrapping="Wrap"/>
+                                
+                                <!-- Category -->
+                                <TextBlock Grid.Row="1" Grid.Column="0" Text="Category:" FontWeight="SemiBold" 
+                                          Margin="0,0,0,5" FontSize="12"/>
+                                <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding Category.Name}" 
+                                          Margin="0,0,0,5" FontSize="12"/>
+                                
+                                <!-- Ship -->
+                                <TextBlock Grid.Row="2" Grid.Column="0" Text="Ship:" FontWeight="SemiBold" 
+                                          Margin="0,0,0,5" FontSize="12"/>
+                                <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding Ship.ShipName}" 
+                                          Margin="0,0,0,5" FontSize="12"/>
+                                
+                                <!-- File Size -->
+                                <TextBlock Grid.Row="3" Grid.Column="0" Text="File Size:" FontWeight="SemiBold" 
+                                          Margin="0,0,0,5" FontSize="12"/>
+                                <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding FileSizeDisplay}" 
+                                          Margin="0,0,0,5" FontSize="12"/>
+                                
+                                <!-- Upload Date -->
+                                <TextBlock Grid.Row="4" Grid.Column="0" Text="Uploaded:" FontWeight="SemiBold" 
+                                          Margin="0,0,0,5" FontSize="12"/>
+                                <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding UploadedAtDisplay}" 
+                                          Margin="0,0,0,5" FontSize="12"/>
+                                
+                                <!-- Uploader -->
+                                <TextBlock Grid.Row="5" Grid.Column="0" Text="Uploader:" FontWeight="SemiBold" 
+                                          Margin="0,0,0,5" FontSize="12"/>
+                                <TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding UploaderDisplay}" 
+                                          Margin="0,0,0,5" FontSize="12"/>
+                            </Grid>
+                        </Grid>
+                    </Border>
                 </Grid>
             </Border>
         </Grid>

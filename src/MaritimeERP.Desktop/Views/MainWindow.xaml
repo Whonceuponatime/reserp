@@ -32,11 +32,6 @@
             <views:DocumentsView />
         </DataTemplate>
         
-        <DataTemplate DataType="{x:Type viewModels:LoginLogsViewModel}">
-            <views:LoginLogsView />
-        </DataTemplate>
-
-        
         <DataTemplate DataType="{x:Type viewModels:PlaceholderViewModel}">
             <Border Background="White" Padding="40" CornerRadius="8" HorizontalAlignment="Center" VerticalAlignment="Center">
                 <Border.Effect>

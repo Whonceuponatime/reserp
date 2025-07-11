@@ -94,7 +94,7 @@ namespace MaritimeERP.Desktop
         {
             Console.WriteLine("Configuring services...");
             
-            // Database - Use SQLite for development simplicity
+            // Database - Use SQLite for development with improved connection handling
             services.AddDbContext<MaritimeERPContext>(options =>
             {
                 var connectionString = configuration.GetConnectionString("DefaultConnection");
@@ -104,9 +104,26 @@ namespace MaritimeERP.Desktop
                 }
                 else
                 {
-                    options.UseSqlite(connectionString ?? "Data Source=maritime_erp.db");
+                    var sqliteConnectionString = connectionString ?? "Data Source=maritime_erp.db";
+                    // Add SQLite-specific options to prevent locking
+                    if (!sqliteConnectionString.Contains("Cache="))
+                    {
+                        sqliteConnectionString += ";Cache=Shared;";
+                    }
+                    if (!sqliteConnectionString.Contains("Mode="))
+                    {
+                        sqliteConnectionString += "Mode=ReadWriteCreate;";
+                    }
+                    if (!sqliteConnectionString.Contains("Pooling="))
+                    {
+                        sqliteConnectionString += "Pooling=true;";
+                    }
+                    
+                    options.UseSqlite(sqliteConnectionString);
+                    options.EnableSensitiveDataLogging(false);
+                    options.EnableServiceProviderCaching(false);
                 }
-            });
+            }, ServiceLifetime.Scoped);
 
             // Register services
             services.AddScoped<IAuthenticationService, AuthenticationService>();
