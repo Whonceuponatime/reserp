@@ -40,6 +40,9 @@ namespace MaritimeERP.Data
         // Security Review Statement form
         public DbSet<SecurityReviewStatement> SecurityReviewStatements { get; set; }
 
+        // Audit Logs
+        public DbSet<AuditLog> AuditLogs { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -282,6 +285,32 @@ namespace MaritimeERP.Data
                       .WithMany()
                       .HasForeignKey(d => d.ShipId)
                       .OnDelete(DeleteBehavior.SetNull);
+            });
+
+            // Configure AuditLog relationships
+            modelBuilder.Entity<AuditLog>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.EntityType).HasMaxLength(50).IsRequired();
+                entity.Property(e => e.Action).HasMaxLength(50).IsRequired();
+                entity.Property(e => e.EntityId).IsRequired();
+                entity.Property(e => e.EntityName).HasMaxLength(200);
+                entity.Property(e => e.TableName).HasMaxLength(50);
+                entity.Property(e => e.UserName).HasMaxLength(200);
+                entity.Property(e => e.IpAddress).HasMaxLength(100);
+                entity.Property(e => e.UserAgent).HasMaxLength(500);
+                entity.Property(e => e.AdditionalInfo).HasMaxLength(500);
+                entity.Property(e => e.Timestamp).IsRequired();
+                
+                entity.HasOne(d => d.User)
+                      .WithMany()
+                      .HasForeignKey(d => d.UserId)
+                      .OnDelete(DeleteBehavior.SetNull);
+                      
+                entity.HasIndex(e => e.EntityType);
+                entity.HasIndex(e => e.Action);
+                entity.HasIndex(e => e.Timestamp);
+                entity.HasIndex(e => e.UserId);
             });
 
             // Seed data

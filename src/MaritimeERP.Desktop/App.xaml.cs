@@ -108,6 +108,8 @@ namespace MaritimeERP.Desktop
 
             // Register services
             services.AddScoped<IAuthenticationService, AuthenticationService>();
+            services.AddScoped<IUserService, UserService>();
+            services.AddScoped<IAuditLogService, AuditLogService>();
             services.AddScoped<IShipService, ShipService>();
             services.AddScoped<ISystemService, SystemService>();
             services.AddScoped<IComponentService, ComponentService>();
@@ -131,6 +133,8 @@ namespace MaritimeERP.Desktop
             services.AddTransient<SoftwareViewModel>();
             services.AddTransient<ChangeRequestsViewModel>();
             services.AddTransient<SecurityReviewStatementViewModel>();
+            services.AddTransient<UserManagementViewModel>();
+            services.AddTransient<AuditLogsViewModel>();
             services.AddTransient<HardwareChangeRequestDialogViewModel>();
             services.AddTransient<SoftwareChangeRequestDialogViewModel>();
             services.AddTransient<SystemChangePlanDialogViewModel>();

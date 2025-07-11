@@ -132,6 +132,22 @@ namespace MaritimeERP.Desktop.ViewModels
                 IsVisible = true
             });
 
+            NavigationItems.Add(new NavigationItem
+            {
+                Title = "User Management",
+                Icon = "👥",
+                Page = "UserManagement",
+                IsVisible = CurrentUser?.Role?.Name == "Administrator"
+            });
+
+            NavigationItems.Add(new NavigationItem
+            {
+                Title = "Auditable Logs",
+                Icon = "📋",
+                Page = "AuditLogs",
+                IsVisible = CurrentUser?.Role?.Name == "Administrator"
+            });
+
 
 
             NavigationItems.Add(new NavigationItem
@@ -182,6 +198,8 @@ namespace MaritimeERP.Desktop.ViewModels
                 "Components" => CreateComponentsViewModel(),
                 "Software" => CreateSoftwareViewModel(),
                 "ChangeRequests" => CreateChangeRequestsViewModel(),
+                "UserManagement" => CreateUserManagementViewModel(),
+                "AuditLogs" => CreateAuditLogsViewModel(),
                 "Documents" => CreateDocumentsViewModel(),
                 "Reports" => CreateReportsViewModel(),
                 "Users" => CreateUsersViewModel(),
@@ -263,6 +281,8 @@ namespace MaritimeERP.Desktop.ViewModels
                 "Systems" => CreateSystemsViewModel(),
                 "Software" => CreateSoftwareViewModel(),
                 "ChangeRequests" => CreateChangeRequestsViewModel(),
+                "UserManagement" => CreateUserManagementViewModel(),
+                "AuditLogs" => CreateAuditLogsViewModel(),
                 "Documents" => CreateDocumentsViewModel(),
                 "Reports" => CreateReportsViewModel(),
                 "Users" => CreateUsersViewModel(),
@@ -297,6 +317,8 @@ namespace MaritimeERP.Desktop.ViewModels
                 "Systems" => CreateSystemsViewModel(),
                 "Components" => CreateComponentsViewModel(),
                 "ChangeRequests" => CreateChangeRequestsViewModel(),
+                "UserManagement" => CreateUserManagementViewModel(),
+                "AuditLogs" => CreateAuditLogsViewModel(),
                 "Documents" => CreateDocumentsViewModel(),
                 "Reports" => CreateReportsViewModel(),
                 "Users" => CreateUsersViewModel(),
@@ -333,6 +355,26 @@ namespace MaritimeERP.Desktop.ViewModels
             {
                 viewModel = _serviceProvider.GetRequiredService<ChangeRequestsViewModel>();
                 _viewModelCache["ChangeRequests"] = viewModel;
+            }
+            return viewModel;
+        }
+
+        private object CreateUserManagementViewModel()
+        {
+            if (!_viewModelCache.TryGetValue("UserManagement", out var viewModel))
+            {
+                viewModel = _serviceProvider.GetRequiredService<UserManagementViewModel>();
+                _viewModelCache["UserManagement"] = viewModel;
+            }
+            return viewModel;
+        }
+
+        private object CreateAuditLogsViewModel()
+        {
+            if (!_viewModelCache.TryGetValue("AuditLogs", out var viewModel))
+            {
+                viewModel = _serviceProvider.GetRequiredService<AuditLogsViewModel>();
+                _viewModelCache["AuditLogs"] = viewModel;
             }
             return viewModel;
         }

@@ -20,6 +20,14 @@
             <views:SecurityReviewStatementView />
         </DataTemplate>
         
+        <DataTemplate DataType="{x:Type viewModels:UserManagementViewModel}">
+            <views:UserManagementView />
+        </DataTemplate>
+        
+        <DataTemplate DataType="{x:Type viewModels:AuditLogsViewModel}">
+            <views:AuditLogsView />
+        </DataTemplate>
+        
 
         
         <DataTemplate DataType="{x:Type viewModels:PlaceholderViewModel}">
