@@ -199,14 +199,15 @@ namespace MaritimeERP.Desktop.ViewModels
         }
 
         // Permissions
+        public bool CanUpload => _authService.CurrentUser?.Role?.Name == "Administrator";
+        
         public bool CanApprove => _authService.CurrentUser?.Role?.Name == "Administrator" && 
                                   SelectedDocument != null && !SelectedDocument.IsApproved;
         
         public bool CanReject => _authService.CurrentUser?.Role?.Name == "Administrator" && 
                                  SelectedDocument != null && !SelectedDocument.IsApproved;
         
-        public bool CanDelete => _authService.CurrentUser?.Role?.Name == "Administrator" || 
-                                 (SelectedDocument != null && SelectedDocument.UploadedByUserId == _authService.CurrentUser?.Id);
+        public bool CanDelete => _authService.CurrentUser?.Role?.Name == "Administrator";
 
         #endregion
 

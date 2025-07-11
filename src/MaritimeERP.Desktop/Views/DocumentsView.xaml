@@ -112,7 +112,8 @@
                     <Button Content="Upload Document" 
                             Command="{Binding UploadDocumentCommand}"
                             Background="#4CAF50" Foreground="White" 
-                            Padding="12,6" Margin="0,0,10,0" Height="30"/>
+                            Padding="12,6" Margin="0,0,10,0" Height="30"
+                            Visibility="{Binding CanUpload, Converter={StaticResource BoolToVisibilityConverter}}"/>
                     <Button Content="Refresh" 
                             Command="{Binding LoadDocumentsCommand}"
                             Background="#607D8B" Foreground="White" 
