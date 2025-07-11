@@ -72,9 +72,10 @@ namespace MaritimeERP.Desktop.ViewModels
             get => _selectedShip;
             set
             {
-                _selectedShip = value;
-                OnPropertyChanged();
-                _ = UpdateSystemsForShipAsync();
+                if (SetProperty(ref _selectedShip, value))
+                {
+                    _ = UpdateSystemsForShipAsync();
+                }
             }
         }
 
@@ -463,8 +464,11 @@ namespace MaritimeERP.Desktop.ViewModels
         {
             try
             {
-                IsLoading = true;
-                StatusMessage = "Loading components data...";
+                await Application.Current.Dispatcher.InvokeAsync(() =>
+                {
+                    IsLoading = true;
+                    StatusMessage = "Loading components data...";
+                });
 
                 // Load all data in parallel
                 var componentsTask = _componentService.GetAllComponentsAsync();
@@ -473,38 +477,52 @@ namespace MaritimeERP.Desktop.ViewModels
 
                 await Task.WhenAll(componentsTask, systemsTask, shipsTask);
 
-                // Update collections
-                Components.Clear();
-                foreach (var component in await componentsTask)
-                {
-                    Components.Add(component);
-                }
+                var components = await componentsTask;
+                var systems = await systemsTask;
+                var ships = await shipsTask;
 
-                Systems.Clear();
-                foreach (var system in await systemsTask)
+                await Application.Current.Dispatcher.InvokeAsync(() =>
                 {
-                    Systems.Add(system);
-                }
+                    // Update collections on UI thread
+                    Components.Clear();
+                    foreach (var component in components)
+                    {
+                        Components.Add(component);
+                    }
 
-                Ships.Clear();
-                foreach (var ship in await shipsTask)
-                {
-                    Ships.Add(ship);
-                }
+                    Systems.Clear();
+                    foreach (var system in systems)
+                    {
+                        Systems.Add(system);
+                    }
 
-                TotalComponents = Components.Count;
-                ApplyFilters();
-                StatusMessage = $"Loaded {Components.Count} components successfully";
+                    Ships.Clear();
+                    foreach (var ship in ships)
+                    {
+                        Ships.Add(ship);
+                    }
+
+                    TotalComponents = Components.Count;
+                    ApplyFilters();
+                    StatusMessage = $"Loaded {Components.Count} components successfully";
+                });
+
                 _logger.LogInformation("Components data loaded successfully");
             }
             catch (Exception ex)
             {
-                StatusMessage = "Error loading components data";
+                await Application.Current.Dispatcher.InvokeAsync(() =>
+                {
+                    StatusMessage = "Error loading components data";
+                });
                 _logger.LogError(ex, "Error loading components data");
             }
             finally
             {
-                IsLoading = false;
+                await Application.Current.Dispatcher.InvokeAsync(() =>
+                {
+                    IsLoading = false;
+                });
             }
         }
 
@@ -551,27 +569,46 @@ namespace MaritimeERP.Desktop.ViewModels
         {
             if (SelectedShip == null)
             {
-                // If no ship selected, show all systems
-                await LoadDataAsync();
+                // If no ship selected, show all systems but don't reload all data
+                try
+                {
+                    var allSystems = await _systemService.GetAllSystemsAsync();
+                    await Application.Current.Dispatcher.InvokeAsync(() =>
+                    {
+                        Systems.Clear();
+                        foreach (var system in allSystems)
+                        {
+                            Systems.Add(system);
+                        }
+                        ApplyFilters();
+                    });
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error loading all systems");
+                }
                 return;
             }
 
             try
             {
                 var systems = await _systemService.GetSystemsByShipIdAsync(SelectedShip.Id);
-                Systems.Clear();
-                foreach (var system in systems)
+                await Application.Current.Dispatcher.InvokeAsync(() =>
                 {
-                    Systems.Add(system);
-                }
-                
-                // Reset system selection if current system doesn't belong to selected ship
-                if (SelectedSystem != null && SelectedSystem.ShipId != SelectedShip.Id)
-                {
-                    SelectedSystem = null;
-                }
-                
-                ApplyFilters();
+                    Systems.Clear();
+                    foreach (var system in systems)
+                    {
+                        Systems.Add(system);
+                    }
+                    
+                    // Reset system selection if current system doesn't belong to selected ship
+                    if (SelectedSystem != null && SelectedSystem.ShipId != SelectedShip.Id)
+                    {
+                        SelectedSystem = null;
+                    }
+                    
+                    ApplyFilters();
+                });
             }
             catch (Exception ex)
             {
@@ -704,8 +741,11 @@ namespace MaritimeERP.Desktop.ViewModels
         {
             try
             {
-                IsLoading = true;
-                StatusMessage = "Saving component...";
+                await Application.Current.Dispatcher.InvokeAsync(() =>
+                {
+                    IsLoading = true;
+                    StatusMessage = "Saving component...";
+                });
 
                 var component = new Component
                 {
@@ -732,26 +772,42 @@ namespace MaritimeERP.Desktop.ViewModels
                 if (SelectedComponent == null)
                 {
                     await _componentService.AddComponentAsync(component);
-                    StatusMessage = "Component added successfully.";
+                    await Application.Current.Dispatcher.InvokeAsync(() =>
+                    {
+                        StatusMessage = "Component added successfully.";
+                    });
                 }
                 else
                 {
                     await _componentService.UpdateComponentAsync(component);
-                    StatusMessage = "Component updated successfully.";
+                    await Application.Current.Dispatcher.InvokeAsync(() =>
+                    {
+                        StatusMessage = "Component updated successfully.";
+                    });
                 }
 
                 await LoadDataAsync();
-                IsEditing = false;
-                ClearForm();
+                
+                await Application.Current.Dispatcher.InvokeAsync(() =>
+                {
+                    IsEditing = false;
+                    ClearForm();
+                });
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error saving component");
-                StatusMessage = "Error saving component. Please try again.";
+                await Application.Current.Dispatcher.InvokeAsync(() =>
+                {
+                    StatusMessage = "Error saving component. Please try again.";
+                });
             }
             finally
             {
-                IsLoading = false;
+                await Application.Current.Dispatcher.InvokeAsync(() =>
+                {
+                    IsLoading = false;
+                });
             }
         }
 
@@ -759,29 +815,43 @@ namespace MaritimeERP.Desktop.ViewModels
         {
             if (SelectedComponent == null) return;
 
+            var componentToDelete = SelectedComponent;
+
             try
             {
-                IsLoading = true;
-                StatusMessage = "Deleting component...";
+                await Application.Current.Dispatcher.InvokeAsync(() =>
+                {
+                    IsLoading = true;
+                    StatusMessage = "Deleting component...";
+                });
 
-                await _componentService.DeleteComponentAsync(SelectedComponent.Id);
+                await _componentService.DeleteComponentAsync(componentToDelete.Id);
                 
-                    Components.Remove(SelectedComponent);
-                FilteredComponents.Remove(SelectedComponent);
-                SelectedComponent = null;
+                await Application.Current.Dispatcher.InvokeAsync(() =>
+                {
+                    Components.Remove(componentToDelete);
+                    FilteredComponents.Remove(componentToDelete);
+                    SelectedComponent = null;
                     ClearForm();
+                    StatusMessage = "Component deleted successfully.";
+                });
 
-                StatusMessage = "Component deleted successfully.";
-                ComponentDeleted?.Invoke(this, SelectedComponent);
+                ComponentDeleted?.Invoke(this, componentToDelete);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error deleting component");
-                StatusMessage = "Error deleting component. Please try again.";
+                await Application.Current.Dispatcher.InvokeAsync(() =>
+                {
+                    StatusMessage = "Error deleting component. Please try again.";
+                });
             }
             finally
             {
-                IsLoading = false;
+                await Application.Current.Dispatcher.InvokeAsync(() =>
+                {
+                    IsLoading = false;
+                });
             }
         }
 

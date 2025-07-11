@@ -312,7 +312,8 @@ namespace MaritimeERP.Data
             modelBuilder.Entity<ChangeType>().HasData(
                 new ChangeType { Id = 1, Name = "Hardware Change", Description = "Hardware modification or replacement" },
                 new ChangeType { Id = 2, Name = "Software Change", Description = "Software update or configuration change" },
-                new ChangeType { Id = 3, Name = "System Plan", Description = "System planning and design change" }
+                new ChangeType { Id = 3, Name = "System Plan", Description = "System planning and design change" },
+                new ChangeType { Id = 4, Name = "Security Review Statement", Description = "Security review statement" }
             );
 
             // Seed Change Statuses
