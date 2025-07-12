@@ -292,8 +292,8 @@ namespace MaritimeERP.Desktop.ViewModels
                     ActiveShips = activeShipsCount;
                     NewestShip = newestShipName;
                     MostCommonShipType = mostCommonType;
-                    TotalSystems = allSystems.Count();
-                    TotalComponents = allComponents.Count();
+                TotalSystems = allSystems.Count();
+                TotalComponents = allComponents.Count();
                     RecentChanges = recentChangesCount;
                 });
             }
@@ -376,11 +376,11 @@ namespace MaritimeERP.Desktop.ViewModels
                 // Update UI collections on UI thread
                 await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
                 {
-                    RecentActivities.Clear();
-                    foreach (var activity in sortedActivities)
-                    {
-                        RecentActivities.Add(activity);
-                    }
+                RecentActivities.Clear();
+                foreach (var activity in sortedActivities)
+                {
+                    RecentActivities.Add(activity);
+                }
 
                     RecentShips.Clear();
                     foreach (var ship in recentShips)
@@ -413,7 +413,7 @@ namespace MaritimeERP.Desktop.ViewModels
             {
                 // Get data on background thread
                 var allShips = await _shipService.GetAllShipsAsync();
-                
+
                 // Ship type statistics
                 var shipTypeGroups = allShips
                     .Where(s => !string.IsNullOrEmpty(s.ShipType))

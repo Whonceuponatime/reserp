@@ -155,17 +155,14 @@ namespace MaritimeERP.Desktop.ViewModels
                 }
                 _viewModelCache.Clear();
                 
-                // Get the current main window
+                // Close current window and show login window
                 var currentWindow = System.Windows.Application.Current.MainWindow;
                 
-                // Create and configure login window
+                // Create and show login window
                 var loginWindow = _serviceProvider.GetRequiredService<LoginWindow>();
-                
-                // Set the login window as the new main window before showing it
-                System.Windows.Application.Current.MainWindow = loginWindow;
                 loginWindow.Show();
                 
-                // Close the current main window (this will not shut down the app since we set a new MainWindow)
+                // Close main window
                 currentWindow?.Close();
             }
             catch (Exception ex)

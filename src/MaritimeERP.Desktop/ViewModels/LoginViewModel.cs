@@ -57,7 +57,7 @@ namespace MaritimeERP.Desktop.ViewModels
                 if (SetProperty(ref _errorMessage, value))
                 {
                     OnPropertyChanged(nameof(HasError));
-                }
+        }
             }
         }
 

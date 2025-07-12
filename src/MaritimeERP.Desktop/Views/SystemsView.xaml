@@ -175,12 +175,15 @@
                                       BorderThickness="1"
                                       BorderBrush="#E0E0E0"
                                       Margin="8,0,0,0">
-                                <ComboBox.ItemContainerStyle>
-                                    <Style TargetType="ComboBoxItem">
-                                        <Setter Property="Padding" Value="6,2"/>
-                                        <Setter Property="FontSize" Value="12"/>
+                                <ComboBox.Style>
+                                    <Style TargetType="ComboBox">
+                                        <Style.Triggers>
+                                            <Trigger Property="SelectedItem" Value="{x:Null}">
+                                                <Setter Property="Text" Value="All Ships"/>
+                                            </Trigger>
+                                        </Style.Triggers>
                                     </Style>
-                                </ComboBox.ItemContainerStyle>
+                                </ComboBox.Style>
                             </ComboBox>
 
                             <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center">
@@ -189,22 +192,14 @@
                                            Foreground="#757575"
                                            VerticalAlignment="Center"/>
                                 <CheckBox IsChecked="{Binding ShowActiveOnly}"
-                                          Margin="6,0,12,0"/>
-                                <Button Content="Clear Filters"
-                                        Command="{Binding ClearFiltersCommand}"
-                                        Background="#757575"
-                                        Foreground="White"
-                                        BorderThickness="0"
-                                        Height="24"
-                                        Padding="8,0"
-                                        FontSize="11"/>
+                                          Margin="6,0,0,0"/>
                             </StackPanel>
                         </Grid>
                     </Border>
 
                     <!-- Systems DataGrid -->
                     <DataGrid Grid.Row="1"
-                              ItemsSource="{Binding Systems}"
+                              ItemsSource="{Binding FilteredSystems}"
                               SelectedItem="{Binding SelectedSystem}"
                               AutoGenerateColumns="False"
                               CanUserAddRows="False"
@@ -304,7 +299,14 @@
                                          Margin="0,0,8,0"/>
 
                             <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
-                                <TextBlock Text="Total: " 
+                                <TextBlock Text="Showing: " 
+                                           FontSize="11"
+                                           Foreground="#757575"/>
+                                <TextBlock Text="{Binding FilteredSystems.Count}" 
+                                           FontSize="11"
+                                           FontWeight="SemiBold"
+                                           Foreground="#1976D2"/>
+                                <TextBlock Text=" of " 
                                            FontSize="11"
                                            Foreground="#757575"/>
                                 <TextBlock Text="{Binding TotalSystems}" 
@@ -459,15 +461,16 @@
                             <!-- Security Zone -->
                             <StackPanel Grid.Row="8" Margin="0,0,0,12">
                                 <TextBlock Text="Security Zone" FontSize="11" FontWeight="SemiBold" Foreground="#424242" Margin="0,0,0,4"/>
-                                <TextBox Text="{Binding SecurityZone, UpdateSourceTrigger=PropertyChanged}"
-                                         IsEnabled="{Binding IsEditing}"
-                                         Height="24"
-                                         Padding="8,0"
-                                         FontSize="12"
-                                         Background="#F5F5F5"
-                                         BorderThickness="1"
-                                         BorderBrush="#E0E0E0"
-                                         ToolTip="Enter security zone (e.g., Bridge, Engine Room, etc.)"/>
+                                <ComboBox ItemsSource="{Binding SecurityZones}"
+                                          SelectedItem="{Binding SelectedSecurityZone, UpdateSourceTrigger=PropertyChanged}"
+                                          DisplayMemberPath="Name"
+                                          IsEnabled="{Binding IsEditing}"
+                                          Height="24"
+                                          Padding="8,0"
+                                          FontSize="12"
+                                          Background="#F5F5F5"
+                                          BorderThickness="1"
+                                          BorderBrush="#E0E0E0"/>
                             </StackPanel>
 
                             <!-- Action Buttons -->

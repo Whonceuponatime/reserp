@@ -223,14 +223,14 @@
                         <!-- Password (only for new users or when editing) -->
                         <Label Content="Password:" FontWeight="Medium" Margin="0,8,0,4"/>
                         <PasswordBox x:Name="PasswordField"
-                                     Height="32" Padding="8,6" BorderBrush="#BDBDBD"
-                                     ToolTip="Enter new password (minimum 8 characters) or leave empty to keep current password"/>
+                                 Height="32" Padding="8,6" BorderBrush="#BDBDBD"
+                                 ToolTip="Enter new password (minimum 8 characters) or leave empty to keep current password"/>
 
                         <!-- Confirm Password -->
                         <Label Content="Confirm Password:" FontWeight="Medium" Margin="0,8,0,4"/>
                         <PasswordBox x:Name="ConfirmPasswordField"
-                                     Height="32" Padding="8,6" BorderBrush="#BDBDBD"
-                                     ToolTip="Confirm the new password"/>
+                                 Height="32" Padding="8,6" BorderBrush="#BDBDBD"
+                                 ToolTip="Confirm the new password"/>
                         
                         <!-- Password Validation Message -->
                         <TextBlock x:Name="PasswordValidationMessage"

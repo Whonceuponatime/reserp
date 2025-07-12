@@ -183,54 +183,54 @@ namespace MaritimeERP.Desktop.ViewModels
                 // Update UI on main thread
                 await Application.Current.Dispatcher.InvokeAsync(() =>
                 {
-                    Ships.Clear();
-                    foreach (var ship in ships)
-                    {
-                        Ships.Add(ship);
-                    }
+                Ships.Clear();
+                foreach (var ship in ships)
+                {
+                    Ships.Add(ship);
+                }
 
-                    // Populate ShipTypes dropdown
-                    ShipTypes.Clear();
-                    ShipTypes.Add(new ShipType { Id = 0, Name = "All Types" }); // Add "All" option
-                    foreach (var shipType in shipTypes)
-                    {
-                        ShipTypes.Add(shipType);
-                    }
+                // Populate ShipTypes dropdown
+                ShipTypes.Clear();
+                ShipTypes.Add(new ShipType { Id = 0, Name = "All Types" }); // Add "All" option
+                foreach (var shipType in shipTypes)
+                {
+                    ShipTypes.Add(shipType);
+                }
 
-                    // Populate Flags dropdown with unique flags from ships
-                    Flags.Clear();
-                    Flags.Add("All Flags"); // Add "All" option
-                    var uniqueFlags = ships.Where(s => !string.IsNullOrEmpty(s.Flag))
-                                          .Select(s => s.Flag)
-                                          .Distinct()
-                                          .OrderBy(f => f);
-                    foreach (var flag in uniqueFlags)
-                    {
-                        Flags.Add(flag);
-                    }
+                // Populate Flags dropdown with unique flags from ships
+                Flags.Clear();
+                Flags.Add("All Flags"); // Add "All" option
+                var uniqueFlags = ships.Where(s => !string.IsNullOrEmpty(s.Flag))
+                                      .Select(s => s.Flag)
+                                      .Distinct()
+                                      .OrderBy(f => f);
+                foreach (var flag in uniqueFlags)
+                {
+                    Flags.Add(flag);
+                }
 
-                    ApplyFilters();
-                    
-                    // Notify property changes for computed properties
-                    OnPropertyChanged(nameof(TotalShips));
-                    OnPropertyChanged(nameof(ActiveShips));
-                    
-                    StatusMessage = $"Loaded {TotalShips} ships successfully";
+                ApplyFilters();
+                
+                // Notify property changes for computed properties
+                OnPropertyChanged(nameof(TotalShips));
+                OnPropertyChanged(nameof(ActiveShips));
+                
+                StatusMessage = $"Loaded {TotalShips} ships successfully";
                     IsDataLoaded = true;
                 });
             }
             catch (Exception ex)
             {
                 await Application.Current.Dispatcher.InvokeAsync(() =>
-                {
-                    StatusMessage = $"Error loading ships: {ex.Message}";
+            {
+                StatusMessage = $"Error loading ships: {ex.Message}";
                 });
             }
             finally
             {
                 await Application.Current.Dispatcher.InvokeAsync(() =>
-                {
-                    IsLoading = false;
+            {
+                IsLoading = false;
                     RefreshCommandStates();
                 });
             }
