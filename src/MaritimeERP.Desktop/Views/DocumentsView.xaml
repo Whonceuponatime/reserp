@@ -292,6 +292,15 @@
                                                     Background="#4CAF50" Foreground="White" BorderThickness="0"
                                                     Visibility="{Binding DataContext.CanDelete, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BoolToVisibilityConverter}}"/>
 
+                                            <!-- Edit Button (For Document Uploaders) -->
+                                            <Button Content="Edit" 
+                                                    Command="{Binding DataContext.EditDocumentCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                    CommandParameter="{Binding}"
+                                                    ToolTip="Edit/Replace Document"
+                                                    Width="35" Height="26" Margin="2" FontSize="10"
+                                                    Background="#FF9800" Foreground="White" BorderThickness="0"
+                                                    Visibility="{Binding DataContext.CanEdit, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BoolToVisibilityConverter}}"/>
+
                                             <!-- Approve Button (Admin Only) -->
                                             <Button Content="OK" 
                                                     Command="{Binding DataContext.ApproveDocumentCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"

@@ -95,6 +95,7 @@ namespace MaritimeERP.Desktop.ViewModels
             {
                 _selectedShip = value;
                 OnPropertyChanged();
+                OnPropertyChanged(nameof(CanUpload));
             }
         }
 
@@ -180,6 +181,8 @@ namespace MaritimeERP.Desktop.ViewModels
         public bool CanUpload => !IsUploading && 
                                  !string.IsNullOrWhiteSpace(DocumentName) && 
                                  SelectedCategory != null && 
+                                 SelectedShip != null && 
+                                 SelectedShip.Id > 0 && 
                                  IsValid;
 
         #endregion
@@ -236,13 +239,12 @@ namespace MaritimeERP.Desktop.ViewModels
                 Application.Current.Dispatcher.Invoke(() =>
                 {
                     Ships.Clear();
-                    Ships.Add(new Ship { Id = 0, ShipName = "Not assigned to specific ship" });
                     foreach (var ship in ships)
                     {
                         Ships.Add(ship);
                     }
                     
-                    // Select first ship by default
+                    // Select first actual ship by default (not a placeholder)
                     SelectedShip = Ships.FirstOrDefault();
                 });
             }
@@ -304,7 +306,7 @@ namespace MaritimeERP.Desktop.ViewModels
                     Name = DocumentName,
                     Description = Description,
                     CategoryId = SelectedCategory!.Id,
-                    ShipId = SelectedShip?.Id > 0 ? SelectedShip.Id : null,
+                    ShipId = SelectedShip!.Id,
                     UploadedByUserId = _authService.CurrentUser!.Id,
                     ContentType = GetContentType(Path.GetExtension(_filePath)),
                     IsActive = true,

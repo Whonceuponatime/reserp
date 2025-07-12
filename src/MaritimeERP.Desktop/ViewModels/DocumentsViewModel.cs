@@ -43,6 +43,7 @@ namespace MaritimeERP.Desktop.ViewModels
             DeleteDocumentCommand = new RelayCommand<Document>(async (doc) => await DeleteDocumentAsync(doc));
             PreviewDocumentCommand = new RelayCommand<Document>(async (doc) => await PreviewDocumentAsync(doc));
             DownloadDocumentCommand = new RelayCommand<Document>(async (doc) => await DownloadDocumentAsync(doc));
+            EditDocumentCommand = new RelayCommand<Document>(async (doc) => await EditDocumentAsync(doc));
             FilterDocumentsCommand = new RelayCommand(() => FilterDocuments());
             ClearFiltersCommand = new RelayCommand(() => ClearFilters());
 
@@ -68,6 +69,7 @@ namespace MaritimeERP.Desktop.ViewModels
                 OnPropertyChanged(nameof(CanApprove));
                 OnPropertyChanged(nameof(CanReject));
                 OnPropertyChanged(nameof(CanDelete));
+                OnPropertyChanged(nameof(CanEdit));
             }
         }
 
@@ -209,6 +211,9 @@ namespace MaritimeERP.Desktop.ViewModels
         
         public bool CanDelete => _authService.CurrentUser?.Role?.Name == "Administrator";
 
+        public bool CanEdit => _authService.CurrentUser != null && SelectedDocument != null && 
+                               SelectedDocument.UploadedByUserId == _authService.CurrentUser.Id;
+
         #endregion
 
         #region Commands
@@ -220,6 +225,7 @@ namespace MaritimeERP.Desktop.ViewModels
         public ICommand DeleteDocumentCommand { get; }
         public ICommand PreviewDocumentCommand { get; }
         public ICommand DownloadDocumentCommand { get; }
+        public ICommand EditDocumentCommand { get; }
         public ICommand FilterDocumentsCommand { get; }
         public ICommand ClearFiltersCommand { get; }
 
@@ -524,6 +530,61 @@ namespace MaritimeERP.Desktop.ViewModels
                 _logger.LogError(ex, "Error downloading document");
                 StatusMessage = "Error downloading document";
                 MessageBox.Show($"Error downloading document: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private async Task EditDocumentAsync(Document document)
+        {
+            try
+            {
+                if (document == null) return;
+
+                var dialog = new OpenFileDialog
+                {
+                    Title = "Select Document to Replace",
+                    Filter = "All Documents|*.pdf;*.doc;*.docx;*.xlsx;*.xls;*.ppt;*.pptx;*.txt;*.rtf;*.csv;*.png;*.jpg;*.jpeg;*.gif;*.bmp;*.tiff;*.dwg;*.dxf|" +
+                            "PDF Files|*.pdf|" +
+                            "Word Documents|*.doc;*.docx|" +
+                            "Excel Files|*.xlsx;*.xls|" +
+                            "PowerPoint Files|*.ppt;*.pptx|" +
+                            "Text Files|*.txt;*.rtf|" +
+                            "CSV Files|*.csv|" +
+                            "Image Files|*.png;*.jpg;*.jpeg;*.gif;*.bmp;*.tiff|" +
+                            "CAD Files|*.dwg;*.dxf|" +
+                            "All Files|*.*",
+                    Multiselect = false
+                };
+
+                if (dialog.ShowDialog() == true)
+                {
+                    var result = MessageBox.Show(
+                        $"Are you sure you want to replace the document '{document.Name}' with the new file?\n\nThis will create a new version of the document.",
+                        "Replace Document", 
+                        MessageBoxButton.YesNo, 
+                        MessageBoxImage.Question);
+
+                    if (result == MessageBoxResult.Yes)
+                    {
+                        var changeDescription = Microsoft.VisualBasic.Interaction.InputBox(
+                            "Please describe the changes (optional):",
+                            "Document Update",
+                            "Document updated");
+
+                        using var fileStream = new FileStream(dialog.FileName, FileMode.Open, FileAccess.Read);
+                        var fileName = Path.GetFileName(dialog.FileName);
+                        
+                        await _documentService.CreateDocumentVersionAsync(document.Id, fileStream, fileName, _authService.CurrentUser!.Id, changeDescription);
+                        await LoadDocumentsAsync();
+                        await LoadStatisticsAsync();
+                        StatusMessage = "Document replaced successfully";
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error editing document");
+                StatusMessage = "Error editing document";
+                MessageBox.Show($"Error editing document: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
