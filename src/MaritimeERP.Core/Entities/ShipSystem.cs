@@ -30,8 +30,8 @@ namespace MaritimeERP.Core.Entities
 
         public bool HasRemoteConnection { get; set; } = false;
 
-        public int SecurityZoneId { get; set; }
-        public SecurityZone SecurityZone { get; set; } = null!;
+        [MaxLength(100)]
+        public string? SecurityZone { get; set; }
 
         public int CategoryId { get; set; }
         public SystemCategory Category { get; set; } = null!;

@@ -14,7 +14,6 @@ namespace MaritimeERP.Data
         public DbSet<Role> Roles { get; set; }
         public DbSet<ShipSystem> Systems { get; set; }
         public DbSet<SystemCategory> SystemCategories { get; set; }
-        public DbSet<SecurityZone> SecurityZones { get; set; }
         public DbSet<Component> Components { get; set; }
         public DbSet<Software> Software { get; set; }
         
@@ -88,10 +87,10 @@ namespace MaritimeERP.Data
                 entity.Property(e => e.Model).HasMaxLength(100).IsRequired();
                 entity.Property(e => e.SerialNumber).HasMaxLength(100).IsRequired();
                 entity.Property(e => e.Description).HasMaxLength(500);
+                entity.Property(e => e.SecurityZone).HasMaxLength(100);
                 entity.Property(e => e.HasRemoteConnection).HasDefaultValue(false);
                 entity.HasOne(d => d.Ship).WithMany(p => p.Systems).HasForeignKey(d => d.ShipId);
                 entity.HasOne(d => d.Category).WithMany(p => p.Systems).HasForeignKey(d => d.CategoryId);
-                entity.HasOne(d => d.SecurityZone).WithMany(p => p.Systems).HasForeignKey(d => d.SecurityZoneId);
                 entity.HasIndex(e => e.SerialNumber).IsUnique();
             });
 
@@ -100,14 +99,6 @@ namespace MaritimeERP.Data
                 entity.HasKey(e => e.Id);
                 entity.Property(e => e.Name).HasMaxLength(100).IsRequired();
                 entity.Property(e => e.Description).HasMaxLength(500);
-            });
-
-            modelBuilder.Entity<SecurityZone>(entity =>
-            {
-                entity.HasKey(e => e.Id);
-                entity.Property(e => e.Name).HasMaxLength(100).IsRequired();
-                entity.Property(e => e.Description).HasMaxLength(500);
-                entity.HasMany(e => e.Systems).WithOne(e => e.SecurityZone).HasForeignKey(e => e.SecurityZoneId);
             });
 
             modelBuilder.Entity<Component>(entity =>
@@ -333,6 +324,7 @@ namespace MaritimeERP.Data
                 entity.Property(e => e.ContentType).HasMaxLength(200).IsRequired();
                 entity.Property(e => e.Description).HasMaxLength(500);
                 entity.Property(e => e.Comments).HasMaxLength(1000);
+                entity.Property(e => e.Status).HasConversion<string>();
 
                 entity.HasOne(d => d.Category)
                       .WithMany(p => p.Documents)
@@ -440,14 +432,6 @@ namespace MaritimeERP.Data
                 new SystemCategory { Id = 3, Name = "Safety", Description = "Safety and emergency systems" },
                 new SystemCategory { Id = 4, Name = "Communication", Description = "Communication systems" },
                 new SystemCategory { Id = 5, Name = "Cargo", Description = "Cargo handling systems" }
-            );
-
-            modelBuilder.Entity<SecurityZone>().HasData(
-                new SecurityZone { Id = 1, Name = "Bridge", Description = "Navigation bridge area" },
-                new SecurityZone { Id = 2, Name = "Engine Room", Description = "Engine room area" },
-                new SecurityZone { Id = 3, Name = "Cargo Hold", Description = "Cargo storage area" },
-                new SecurityZone { Id = 4, Name = "Accommodation", Description = "Living quarters" },
-                new SecurityZone { Id = 5, Name = "Deck", Description = "Main deck area" }
             );
             
             // Seed Change Types

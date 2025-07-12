@@ -203,7 +203,7 @@
                         
                         <DataGrid.Columns>
                             <!-- Document Name -->
-                            <DataGridTextColumn Header="Document Name" Binding="{Binding Name}" Width="*" MinWidth="200">
+                            <DataGridTextColumn Header="Document Name" Binding="{Binding Name}" Width="250" MinWidth="200">
                                 <DataGridTextColumn.ElementStyle>
                                     <Style TargetType="TextBlock">
                                         <Setter Property="FontWeight" Value="SemiBold"/>
@@ -243,7 +243,7 @@
                             </DataGridTextColumn>
 
                             <!-- Status -->
-                            <DataGridTemplateColumn Header="Status" Width="90" MinWidth="80">
+                            <DataGridTemplateColumn Header="Status" Width="120" MinWidth="100">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
                                         <Border CornerRadius="12" Padding="8,4" Margin="4,2">
@@ -271,7 +271,7 @@
                             </DataGridTemplateColumn>
 
                             <!-- Actions -->
-                            <DataGridTemplateColumn Header="Actions" Width="180" MinWidth="160">
+                            <DataGridTemplateColumn Header="Actions" Width="*" MinWidth="160">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
                                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
@@ -282,6 +282,15 @@
                                                     ToolTip="Preview Document"
                                                     Width="35" Height="26" Margin="2" FontSize="10"
                                                     Background="#2196F3" Foreground="White" BorderThickness="0"/>
+
+                                            <!-- Edit Button -->
+                                            <Button Content="Edit" 
+                                                    Command="{Binding DataContext.EditDocumentCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                    CommandParameter="{Binding}"
+                                                    ToolTip="Edit/Replace Document"
+                                                    Width="35" Height="26" Margin="2" FontSize="10"
+                                                    Background="#FF9800" Foreground="White" BorderThickness="0"
+                                                    Visibility="{Binding DataContext.CanEdit, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BoolToVisibilityConverter}}"/>
 
                                             <!-- Download Button -->
                                             <Button Content="Save" 

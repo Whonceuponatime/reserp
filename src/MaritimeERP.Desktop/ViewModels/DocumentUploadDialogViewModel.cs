@@ -95,6 +95,7 @@ namespace MaritimeERP.Desktop.ViewModels
             {
                 _selectedShip = value;
                 OnPropertyChanged();
+                OnPropertyChanged(nameof(CanUpload));
             }
         }
 
@@ -180,6 +181,8 @@ namespace MaritimeERP.Desktop.ViewModels
         public bool CanUpload => !IsUploading && 
                                  !string.IsNullOrWhiteSpace(DocumentName) && 
                                  SelectedCategory != null && 
+                                 SelectedShip != null && 
+                                 SelectedShip.Id > 0 && 
                                  IsValid;
 
         #endregion
@@ -236,14 +239,13 @@ namespace MaritimeERP.Desktop.ViewModels
                 Application.Current.Dispatcher.Invoke(() =>
                 {
                     Ships.Clear();
-                    Ships.Add(new Ship { Id = 0, ShipName = "Not assigned to specific ship" });
                     foreach (var ship in ships)
                     {
                         Ships.Add(ship);
                     }
                     
-                    // Select first ship by default
-                    SelectedShip = Ships.FirstOrDefault();
+                    // Don't select any ship by default - user must choose
+                    SelectedShip = null;
                 });
             }
             catch (Exception ex)
@@ -299,16 +301,26 @@ namespace MaritimeERP.Desktop.ViewModels
                 IsUploading = true;
                 ValidationMessage = "Uploading document...";
 
+                // Validate ship selection
+                if (SelectedShip == null || SelectedShip.Id <= 0)
+                {
+                    ValidationMessage = "Please select a ship for this document";
+                    MessageBox.Show("Ship assignment is mandatory. Please select a ship for this document.", 
+                        "Ship Required", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+
                 var document = new Document
                 {
                     Name = DocumentName,
                     Description = Description,
                     CategoryId = SelectedCategory!.Id,
-                    ShipId = SelectedShip?.Id > 0 ? SelectedShip.Id : null,
+                    ShipId = SelectedShip.Id,
                     UploadedByUserId = _authService.CurrentUser!.Id,
                     ContentType = GetContentType(Path.GetExtension(_filePath)),
                     IsActive = true,
-                    IsApproved = false
+                    IsApproved = false,
+                    Status = DocumentStatus.PendingApproval
                 };
 
                 using var fileStream = new FileStream(_filePath, FileMode.Open, FileAccess.Read);

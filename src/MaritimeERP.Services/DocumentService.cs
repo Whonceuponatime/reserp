@@ -158,11 +158,18 @@ namespace MaritimeERP.Services
                 _context.Documents.Add(document);
                 await _context.SaveChangesAsync();
 
+                // Reload document with related entities for audit logging
+                var documentWithRelations = await _context.Documents
+                    .Include(d => d.Category)
+                    .Include(d => d.Ship)
+                    .FirstOrDefaultAsync(d => d.Id == document.Id);
+
                 // Create initial version
                 await CreateDocumentVersionAsync(document.Id, fileStream, originalFileName, document.UploadedByUserId, "Initial version");
 
                 // Log the creation
-                await _auditLogService.LogCreateAsync(document, "Document uploaded");
+                await _auditLogService.LogActionAsync("Document", "UPLOAD", document.Id.ToString(), 
+                    document.Name, $"Document uploaded: {originalFileName} (Category: {documentWithRelations?.Category?.Name}, Ship: {documentWithRelations?.Ship?.ShipName ?? "Not assigned"})");
 
                 _logger.LogInformation("Document {DocumentName} created successfully", document.Name);
                 return document;
@@ -178,7 +185,11 @@ namespace MaritimeERP.Services
         {
             try
             {
-                var existingDocument = await _context.Documents.FindAsync(document.Id);
+                var existingDocument = await _context.Documents
+                    .Include(d => d.Category)
+                    .Include(d => d.Ship)
+                    .FirstOrDefaultAsync(d => d.Id == document.Id);
+                    
                 if (existingDocument == null)
                 {
                     throw new KeyNotFoundException($"Document with ID {document.Id} not found");
@@ -208,7 +219,8 @@ namespace MaritimeERP.Services
                 await _context.SaveChangesAsync();
 
                 // Log the update
-                await _auditLogService.LogUpdateAsync(oldDocument, existingDocument, "Document updated");
+                await _auditLogService.LogActionAsync("Document", "UPDATE", existingDocument.Id.ToString(), 
+                    existingDocument.Name, $"Document updated: {document.Name} (Category: {existingDocument.Category?.Name}, Ship: {existingDocument.Ship?.ShipName ?? "Not assigned"})");
 
                 _logger.LogInformation("Document {DocumentId} updated successfully", document.Id);
                 return existingDocument;
@@ -224,7 +236,11 @@ namespace MaritimeERP.Services
         {
             try
             {
-                var document = await _context.Documents.FindAsync(id);
+                var document = await _context.Documents
+                    .Include(d => d.Category)
+                    .Include(d => d.Ship)
+                    .FirstOrDefaultAsync(d => d.Id == id);
+                    
                 if (document == null)
                 {
                     return false;
@@ -237,7 +253,8 @@ namespace MaritimeERP.Services
                 await _context.SaveChangesAsync();
 
                 // Log the deletion
-                await _auditLogService.LogDeleteAsync(document, "Document deleted");
+                await _auditLogService.LogActionAsync("Document", "DELETE", document.Id.ToString(), 
+                    document.Name, $"Document deleted: {document.Name} (Category: {document.Category?.Name}, Ship: {document.Ship?.ShipName ?? "Not assigned"})");
 
                 _logger.LogInformation("Document {DocumentId} deleted successfully", id);
                 return true;
@@ -264,6 +281,7 @@ namespace MaritimeERP.Services
                 }
 
                 document.IsApproved = true;
+                document.Status = DocumentStatus.Approved;
                 document.ApprovedByUserId = approvedByUserId;
                 document.ApprovedAt = DateTime.UtcNow;
                 document.UpdatedAt = DateTime.UtcNow;
@@ -300,6 +318,7 @@ namespace MaritimeERP.Services
                 }
 
                 document.IsApproved = false;
+                document.Status = DocumentStatus.Rejected;
                 document.ApprovedByUserId = rejectedByUserId;
                 document.ApprovedAt = DateTime.UtcNow;
                 document.UpdatedAt = DateTime.UtcNow;
@@ -601,14 +620,20 @@ namespace MaritimeERP.Services
 
                 _context.DocumentVersions.Add(version);
                 
-                // Update document version
+                // Update document version and reset approval status
                 document.Version = nextVersionNumber;
                 document.UpdatedAt = DateTime.UtcNow;
+                document.Status = DocumentStatus.PendingApproval;
+                document.IsApproved = false;
+                document.ApprovedByUserId = null;
+                document.ApprovedAt = null;
+                document.Comments = null; // Clear previous comments
 
                 await _context.SaveChangesAsync();
 
                 // Log version creation
-                await _auditLogService.LogCreateAsync(version, $"New document version created: v{nextVersionNumber}");
+                await _auditLogService.LogActionAsync("Document", "VERSION_CREATED", document.Id.ToString(), 
+                    document.Name, $"New document version created: v{nextVersionNumber} - {changeDescription ?? "No description"}");
 
                 _logger.LogInformation("Version {VersionNumber} created for document {DocumentId}", nextVersionNumber, documentId);
                 return version;
@@ -723,7 +748,7 @@ namespace MaritimeERP.Services
             {
                 return await _context.Documents
                     .Where(d => d.IsActive)
-                    .GroupBy(d => d.IsApproved ? "Approved" : "Pending Approval")
+                    .GroupBy(d => d.Status.ToString())
                     .ToDictionaryAsync(g => g.Key, g => g.Count());
             }
             catch (Exception ex)

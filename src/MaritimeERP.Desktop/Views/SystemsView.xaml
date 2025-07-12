@@ -174,7 +174,14 @@
                                       Background="White"
                                       BorderThickness="1"
                                       BorderBrush="#E0E0E0"
-                                      Margin="8,0,0,0"/>
+                                      Margin="8,0,0,0">
+                                <ComboBox.ItemContainerStyle>
+                                    <Style TargetType="ComboBoxItem">
+                                        <Setter Property="Padding" Value="6,2"/>
+                                        <Setter Property="FontSize" Value="12"/>
+                                    </Style>
+                                </ComboBox.ItemContainerStyle>
+                            </ComboBox>
 
                             <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center">
                                 <TextBlock Text="Active Only" 
@@ -182,7 +189,15 @@
                                            Foreground="#757575"
                                            VerticalAlignment="Center"/>
                                 <CheckBox IsChecked="{Binding ShowActiveOnly}"
-                                          Margin="6,0,0,0"/>
+                                          Margin="6,0,12,0"/>
+                                <Button Content="Clear Filters"
+                                        Command="{Binding ClearFiltersCommand}"
+                                        Background="#757575"
+                                        Foreground="White"
+                                        BorderThickness="0"
+                                        Height="24"
+                                        Padding="8,0"
+                                        FontSize="11"/>
                             </StackPanel>
                         </Grid>
                     </Border>
@@ -444,16 +459,15 @@
                             <!-- Security Zone -->
                             <StackPanel Grid.Row="8" Margin="0,0,0,12">
                                 <TextBlock Text="Security Zone" FontSize="11" FontWeight="SemiBold" Foreground="#424242" Margin="0,0,0,4"/>
-                                <ComboBox ItemsSource="{Binding SecurityZones}"
-                                          SelectedItem="{Binding SelectedSecurityZone, UpdateSourceTrigger=PropertyChanged}"
-                                          DisplayMemberPath="Name"
-                                          IsEnabled="{Binding IsEditing}"
-                                          Height="24"
-                                          Padding="8,0"
-                                          FontSize="12"
-                                          Background="#F5F5F5"
-                                          BorderThickness="1"
-                                          BorderBrush="#E0E0E0"/>
+                                <TextBox Text="{Binding SecurityZone, UpdateSourceTrigger=PropertyChanged}"
+                                         IsEnabled="{Binding IsEditing}"
+                                         Height="24"
+                                         Padding="8,0"
+                                         FontSize="12"
+                                         Background="#F5F5F5"
+                                         BorderThickness="1"
+                                         BorderBrush="#E0E0E0"
+                                         ToolTip="Enter security zone (e.g., Bridge, Engine Room, etc.)"/>
                             </StackPanel>
 
                             <!-- Action Buttons -->

@@ -115,11 +115,11 @@
                                   DisplayMemberPath="DisplayName"
                                   ToolTip="Select the appropriate document category"/>
                         
-                        <Label Content="Ship Assignment"/>
+                        <Label Content="Ship Assignment *"/>
                         <ComboBox ItemsSource="{Binding Ships}" 
                                   SelectedItem="{Binding SelectedShip}"
                                   DisplayMemberPath="ShipName"
-                                  ToolTip="Assign this document to a specific ship (optional)"/>
+                                  ToolTip="Assign this document to a specific ship (required)"/>
                     </StackPanel>
                 </GroupBox>
                 

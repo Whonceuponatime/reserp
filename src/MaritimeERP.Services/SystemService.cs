@@ -314,21 +314,6 @@ namespace MaritimeERP.Services
             }
         }
 
-        public async Task<IEnumerable<SecurityZone>> GetSecurityZonesAsync()
-        {
-            try
-            {
-                return await _context.SecurityZones
-                    .OrderBy(z => z.Name)
-                    .ToListAsync();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error retrieving security zones");
-                throw;
-            }
-        }
-
         public async Task<bool> IsSerialNumberUniqueAsync(string serialNumber, int? excludeSystemId = null)
         {
             try

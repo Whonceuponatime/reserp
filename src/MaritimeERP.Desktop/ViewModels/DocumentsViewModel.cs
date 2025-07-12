@@ -41,6 +41,7 @@ namespace MaritimeERP.Desktop.ViewModels
             ApproveDocumentCommand = new RelayCommand<Document>(async (doc) => await ApproveDocumentAsync(doc));
             RejectDocumentCommand = new RelayCommand<Document>(async (doc) => await RejectDocumentAsync(doc));
             DeleteDocumentCommand = new RelayCommand<Document>(async (doc) => await DeleteDocumentAsync(doc));
+            EditDocumentCommand = new RelayCommand<Document>(async (doc) => await EditDocumentAsync(doc));
             PreviewDocumentCommand = new RelayCommand<Document>(async (doc) => await PreviewDocumentAsync(doc));
             DownloadDocumentCommand = new RelayCommand<Document>(async (doc) => await DownloadDocumentAsync(doc));
             FilterDocumentsCommand = new RelayCommand(() => FilterDocuments());
@@ -68,6 +69,7 @@ namespace MaritimeERP.Desktop.ViewModels
                 OnPropertyChanged(nameof(CanApprove));
                 OnPropertyChanged(nameof(CanReject));
                 OnPropertyChanged(nameof(CanDelete));
+                OnPropertyChanged(nameof(CanEdit));
             }
         }
 
@@ -202,12 +204,16 @@ namespace MaritimeERP.Desktop.ViewModels
         public bool CanUpload => _authService.CurrentUser?.Role?.Name == "Administrator";
         
         public bool CanApprove => _authService.CurrentUser?.Role?.Name == "Administrator" && 
-                                  SelectedDocument != null && !SelectedDocument.IsApproved;
+                                  SelectedDocument != null && SelectedDocument.Status != DocumentStatus.Approved;
         
         public bool CanReject => _authService.CurrentUser?.Role?.Name == "Administrator" && 
-                                 SelectedDocument != null && !SelectedDocument.IsApproved;
+                                 SelectedDocument != null && SelectedDocument.Status != DocumentStatus.Approved;
         
         public bool CanDelete => _authService.CurrentUser?.Role?.Name == "Administrator";
+
+        public bool CanEdit => SelectedDocument != null && 
+                               (SelectedDocument.UploadedByUserId == _authService.CurrentUser?.Id || 
+                                _authService.CurrentUser?.Role?.Name == "Administrator");
 
         #endregion
 
@@ -218,6 +224,7 @@ namespace MaritimeERP.Desktop.ViewModels
         public ICommand ApproveDocumentCommand { get; }
         public ICommand RejectDocumentCommand { get; }
         public ICommand DeleteDocumentCommand { get; }
+        public ICommand EditDocumentCommand { get; }
         public ICommand PreviewDocumentCommand { get; }
         public ICommand DownloadDocumentCommand { get; }
         public ICommand FilterDocumentsCommand { get; }
@@ -337,7 +344,7 @@ namespace MaritimeERP.Desktop.ViewModels
                 
                 var statusStats = await _documentService.GetDocumentStatsByStatus();
                 ApprovedDocuments = statusStats.ContainsKey("Approved") ? statusStats["Approved"] : 0;
-                PendingDocuments = statusStats.ContainsKey("Pending Approval") ? statusStats["Pending Approval"] : 0;
+                PendingDocuments = statusStats.ContainsKey("PendingApproval") ? statusStats["PendingApproval"] : 0;
 
                 var totalSize = await _documentService.GetTotalFileSize();
                 TotalFileSize = FormatFileSize(totalSize);
@@ -460,6 +467,69 @@ namespace MaritimeERP.Desktop.ViewModels
                 _logger.LogError(ex, "Error deleting document");
                 StatusMessage = "Error deleting document";
                 MessageBox.Show($"Error deleting document: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private async Task EditDocumentAsync(Document document)
+        {
+            try
+            {
+                if (document == null) return;
+
+                // Check if user has permission to edit this document
+                if (document.UploadedByUserId != _authService.CurrentUser?.Id && 
+                    _authService.CurrentUser?.Role?.Name != "Administrator")
+                {
+                    MessageBox.Show("You can only edit documents that you have uploaded.", "Access Denied", 
+                        MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+
+                var dialog = new OpenFileDialog
+                {
+                    Title = "Select New Document File",
+                    Filter = "All Documents|*.pdf;*.doc;*.docx;*.xlsx;*.xls;*.ppt;*.pptx;*.txt;*.rtf;*.csv;*.png;*.jpg;*.jpeg;*.gif;*.bmp;*.tiff;*.dwg;*.dxf|" +
+                            "PDF Files|*.pdf|" +
+                            "Word Documents|*.doc;*.docx|" +
+                            "Excel Files|*.xlsx;*.xls|" +
+                            "PowerPoint Files|*.ppt;*.pptx|" +
+                            "Text Files|*.txt;*.rtf|" +
+                            "CSV Files|*.csv|" +
+                            "Image Files|*.png;*.jpg;*.jpeg;*.gif;*.bmp;*.tiff|" +
+                            "CAD Files|*.dwg;*.dxf|" +
+                            "All Files|*.*",
+                    Multiselect = false
+                };
+
+                if (dialog.ShowDialog() == true)
+                {
+                    var result = MessageBox.Show(
+                        $"Are you sure you want to replace the document '{document.Name}' with the selected file?\n\n" +
+                        "This action will create a new version of the document and reset its approval status.",
+                        "Confirm Document Replacement", 
+                        MessageBoxButton.YesNo, 
+                        MessageBoxImage.Question);
+
+                    if (result == MessageBoxResult.Yes)
+                    {
+                        using var fileStream = new FileStream(dialog.FileName, FileMode.Open, FileAccess.Read);
+                        var fileName = Path.GetFileName(dialog.FileName);
+                        var changeDescription = $"Document replaced by {_authService.CurrentUser?.FullName}";
+                        
+                        await _documentService.CreateDocumentVersionAsync(document.Id, fileStream, fileName, 
+                            _authService.CurrentUser!.Id, changeDescription);
+                        
+                        await LoadDocumentsAsync();
+                        await LoadStatisticsAsync();
+                        StatusMessage = "Document replaced successfully";
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error editing document");
+                StatusMessage = "Error editing document";
+                MessageBox.Show($"Error editing document: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
