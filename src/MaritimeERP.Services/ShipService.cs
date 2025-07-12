@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using MaritimeERP.Core.Entities;
+using MaritimeERP.Core.Interfaces;
 using MaritimeERP.Data;
 using MaritimeERP.Services.Interfaces;
 
@@ -11,12 +12,14 @@ namespace MaritimeERP.Services
         private readonly MaritimeERPContext _context;
         private readonly ILogger<ShipService> _logger;
         private readonly IAuditLogService _auditLogService;
+        private readonly IDataChangeNotificationService _dataChangeNotificationService;
 
-        public ShipService(MaritimeERPContext context, ILogger<ShipService> logger, IAuditLogService auditLogService)
+        public ShipService(MaritimeERPContext context, ILogger<ShipService> logger, IAuditLogService auditLogService, IDataChangeNotificationService dataChangeNotificationService)
         {
             _context = context;
             _logger = logger;
             _auditLogService = auditLogService;
+            _dataChangeNotificationService = dataChangeNotificationService;
         }
 
         public async Task<IEnumerable<Ship>> GetAllShipsAsync()
@@ -159,6 +162,9 @@ namespace MaritimeERP.Services
                 // Log the create operation
                 await _auditLogService.LogCreateAsync(ship, "Ship created");
 
+                // Notify other ViewModels about the ship creation
+                _dataChangeNotificationService.NotifyDataChanged("Ship", "CREATE", ship);
+
                 _logger.LogInformation("Ship '{ShipName}' with IMO {ImoNumber} created successfully", 
                     ship.ShipName, ship.ImoNumber);
 
@@ -237,6 +243,9 @@ namespace MaritimeERP.Services
                 // Log the update operation
                 await _auditLogService.LogUpdateAsync(oldShip, existingShip, "Ship updated");
 
+                // Notify other ViewModels about the ship update
+                _dataChangeNotificationService.NotifyDataChanged("Ship", "UPDATE", existingShip);
+
                 _logger.LogInformation("Ship '{ShipName}' with ID {ShipId} updated successfully", 
                     existingShip.ShipName, existingShip.Id);
 
@@ -267,6 +276,9 @@ namespace MaritimeERP.Services
 
                 // Log the delete operation
                 await _auditLogService.LogDeleteAsync(ship, "Ship deleted");
+
+                // Notify other ViewModels about the ship deletion
+                _dataChangeNotificationService.NotifyDataChanged("Ship", "DELETE", ship);
 
                 _logger.LogInformation("Ship '{ShipName}' with ID {ShipId} deleted successfully", 
                     ship.ShipName, ship.Id);

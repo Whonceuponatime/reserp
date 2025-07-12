@@ -121,9 +121,54 @@ namespace MaritimeERP.Desktop.ViewModels
 
         public ObservableCollection<NavigationItem> NavigationItems { get; } = new();
 
+        // Commands
         public ICommand LogoutCommand { get; private set; } = null!;
         public ICommand RefreshCommand { get; private set; } = null!;
         public ICommand SettingsCommand { get; private set; } = null!;
+
+        private void InitializeCommands()
+        {
+            LogoutCommand = new RelayCommand(Logout);
+            RefreshCommand = new AsyncRelayCommand(RefreshAsync);
+            SettingsCommand = new RelayCommand(ShowSettings);
+        }
+
+        private void Logout()
+        {
+            try
+            {
+                // Clear current user
+                CurrentUser = null;
+                
+                // Clear authentication service asynchronously
+                _ = Task.Run(async () => await _authenticationService.LogoutAsync());
+                
+                // Clear cached ViewModels to prevent data leakage
+                foreach (var viewModel in _viewModelCache.Values)
+                {
+                    if (viewModel is IDisposable disposable)
+                    {
+                        disposable.Dispose();
+                    }
+                }
+                _viewModelCache.Clear();
+                
+                // Close current window and show login window
+                var currentWindow = System.Windows.Application.Current.MainWindow;
+                
+                // Create and show login window
+                var loginWindow = _serviceProvider.GetRequiredService<LoginWindow>();
+                loginWindow.Show();
+                
+                // Close main window
+                currentWindow?.Close();
+            }
+            catch (Exception ex)
+            {
+                System.Windows.MessageBox.Show($"Error during logout: {ex.Message}", "Logout Error", 
+                    System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+            }
+        }
 
         private void InitializeNavigation()
         {
@@ -218,14 +263,7 @@ namespace MaritimeERP.Desktop.ViewModels
             });
         }
 
-        private void InitializeCommands()
-        {
-            LogoutCommand = new AsyncRelayCommand(LogoutAsync);
-            RefreshCommand = new AsyncRelayCommand(RefreshAsync);
-            SettingsCommand = new RelayCommand(ShowSettings);
-        }
-
-        private async void NavigateToPage()
+        private void NavigateToPage()
         {
             if (SelectedNavigation == null)
                 return;
@@ -491,14 +529,6 @@ namespace MaritimeERP.Desktop.ViewModels
         private object CreateUsersViewModel()
         {
             return new PlaceholderViewModel("User Management", "Manage system users and roles", "👥");
-        }
-
-        private async Task LogoutAsync()
-        {
-            await _authenticationService.LogoutAsync();
-            // Clear cached view models on logout
-            _viewModelCache.Clear();
-            // The App.xaml.cs will handle showing the login window
         }
 
         private async Task RefreshAsync()

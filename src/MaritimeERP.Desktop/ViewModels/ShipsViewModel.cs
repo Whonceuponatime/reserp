@@ -4,6 +4,7 @@ using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Input;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using MaritimeERP.Core.Entities;
 using MaritimeERP.Desktop.Commands;
 using MaritimeERP.Desktop.Views;
@@ -369,10 +370,23 @@ namespace MaritimeERP.Desktop.ViewModels
 
             try
             {
-                // Open ship details dialog (read-only)
-                var dialog = new ShipDetailsDialog();
-                var detailsViewModel = new ShipDetailsViewModel(SelectedShip);
-                dialog.DataContext = detailsViewModel;
+                // Create ship details view model with all required services
+                var shipService = _serviceProvider.GetRequiredService<IShipService>();
+                var systemService = _serviceProvider.GetRequiredService<ISystemService>();
+                var componentService = _serviceProvider.GetRequiredService<IComponentService>();
+                var softwareService = _serviceProvider.GetRequiredService<ISoftwareService>();
+                var logger = _serviceProvider.GetRequiredService<ILogger<ShipDetailsViewModel>>();
+
+                var detailsViewModel = new ShipDetailsViewModel(
+                    SelectedShip,
+                    shipService,
+                    systemService,
+                    componentService,
+                    softwareService,
+                    logger);
+
+                // Open beautiful ship details dialog
+                var dialog = new ShipDetailsDialog(detailsViewModel);
                 dialog.ShowDialog();
             }
             catch (Exception ex)
