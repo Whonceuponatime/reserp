@@ -19,6 +19,9 @@ namespace MaritimeERP.Desktop.Views
             {
                 _viewModel.Password = PasswordField.Password;
             };
+            
+            // Set focus to username field when window loads
+            Loaded += (s, e) => UsernameField.Focus();
         }
 
         private void TitleBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)

@@ -77,6 +77,13 @@ namespace MaritimeERP.Desktop.ViewModels
             set => SetProperty(ref _confirmPassword, value);
         }
 
+        private bool _isPasswordValid = true;
+        public bool IsPasswordValid
+        {
+            get => _isPasswordValid;
+            set => SetProperty(ref _isPasswordValid, value);
+        }
+
         private Role? _selectedRole;
         public Role? SelectedRole
         {
@@ -618,7 +625,7 @@ namespace MaritimeERP.Desktop.ViewModels
 
         private bool CanSaveUser()
         {
-            if (!IsEditing || IsLoading) return false;
+            if (!IsEditing || IsLoading || !IsPasswordValid) return false;
 
             if (string.IsNullOrWhiteSpace(Username) ||
                 string.IsNullOrWhiteSpace(FullName) ||

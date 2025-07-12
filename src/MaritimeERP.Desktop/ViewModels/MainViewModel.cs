@@ -40,8 +40,53 @@ namespace MaritimeERP.Desktop.ViewModels
             InitializeNavigation();
             InitializeCommands();
             
+            // Preload all ViewModels to eliminate tab switching delays
+            _ = Task.Run(async () => await PreloadViewModelsAsync());
+            
             // Set default navigation
             SelectedNavigation = NavigationItems.FirstOrDefault();
+        }
+
+        /// <summary>
+        /// Preload all ViewModels to eliminate initial tab switching delays
+        /// </summary>
+        private async Task PreloadViewModelsAsync()
+        {
+            try
+            {
+                Console.WriteLine("Starting ViewModel preloading...");
+                
+                // Preload all ViewModels in parallel for better performance
+                var preloadTasks = new List<Task>();
+                
+                // Always preload Dashboard and core views
+                preloadTasks.Add(Task.Run(() => CreateDashboardViewModel()));
+                preloadTasks.Add(Task.Run(() => CreateShipsViewModel()));
+                preloadTasks.Add(Task.Run(() => CreateSystemsViewModel()));
+                preloadTasks.Add(Task.Run(() => CreateComponentsViewModel()));
+                preloadTasks.Add(Task.Run(() => CreateSoftwareViewModel()));
+                preloadTasks.Add(Task.Run(() => CreateChangeRequestsViewModel()));
+                preloadTasks.Add(Task.Run(() => CreateDocumentsViewModel()));
+                
+                // Only preload admin views if user is admin
+                var currentUser = CurrentUser;
+                var isAdmin = currentUser?.Role?.Name == "Administrator";
+                
+                if (isAdmin)
+                {
+                    preloadTasks.Add(Task.Run(() => CreateUserManagementViewModel()));
+                    preloadTasks.Add(Task.Run(() => CreateAuditLogsViewModel()));
+                }
+                
+                // Wait for all preloading to complete
+                await Task.WhenAll(preloadTasks);
+                
+                Console.WriteLine("ViewModel preloading completed successfully");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error during ViewModel preloading: {ex.Message}");
+            }
         }
 
         public User? CurrentUser
@@ -180,35 +225,82 @@ namespace MaritimeERP.Desktop.ViewModels
             SettingsCommand = new RelayCommand(ShowSettings);
         }
 
-        private void NavigateToPage()
+        private async void NavigateToPage()
         {
             if (SelectedNavigation == null)
                 return;
 
             PageTitle = SelectedNavigation.Title;
             
-            // Create appropriate view model based on selected page
-            CurrentViewModel = SelectedNavigation.Page switch
+            // Get cached view model - should be instantly available after preloading
+            var viewModel = SelectedNavigation.Page switch
             {
-                "Dashboard" => CreateDashboardViewModel(),
-                "Ships" => CreateShipsViewModel(),
-                "Systems" => CreateSystemsViewModel(),
-                "Components" => CreateComponentsViewModel(),
-                "Software" => CreateSoftwareViewModel(),
-                "ChangeRequests" => CreateChangeRequestsViewModel(),
-                "Documents" => CreateDocumentsViewModel(),
-                "UserManagement" => CreateUserManagementViewModel(),
-                "AuditLogs" => CreateAuditLogsViewModel(),
+                "Dashboard" => GetOrCreateDashboardViewModel(),
+                "Ships" => GetOrCreateShipsViewModel(),
+                "Systems" => GetOrCreateSystemsViewModel(),
+                "Components" => GetOrCreateComponentsViewModel(),
+                "Software" => GetOrCreateSoftwareViewModel(),
+                "ChangeRequests" => GetOrCreateChangeRequestsViewModel(),
+                "Documents" => GetOrCreateDocumentsViewModel(),
+                "UserManagement" => GetOrCreateUserManagementViewModel(),
+                "AuditLogs" => GetOrCreateAuditLogsViewModel(),
                 "Reports" => CreateReportsViewModel(),
                 "Users" => CreateUsersViewModel(),
-                _ => CreateDashboardViewModel()
+                _ => GetOrCreateDashboardViewModel()
             };
+
+            CurrentViewModel = viewModel;
+        }
+
+        // Updated methods to use cached ViewModels
+        private object GetOrCreateDashboardViewModel()
+        {
+            return _viewModelCache.TryGetValue("Dashboard", out var viewModel) ? viewModel : CreateDashboardViewModel();
+        }
+
+        private object GetOrCreateShipsViewModel()
+        {
+            return _viewModelCache.TryGetValue("Ships", out var viewModel) ? viewModel : CreateShipsViewModel();
+        }
+
+        private object GetOrCreateSystemsViewModel()
+        {
+            return _viewModelCache.TryGetValue("Systems", out var viewModel) ? viewModel : CreateSystemsViewModel();
+        }
+
+        private object GetOrCreateComponentsViewModel()
+        {
+            return _viewModelCache.TryGetValue("Components", out var viewModel) ? viewModel : CreateComponentsViewModel();
+        }
+
+        private object GetOrCreateSoftwareViewModel()
+        {
+            return _viewModelCache.TryGetValue("Software", out var viewModel) ? viewModel : CreateSoftwareViewModel();
+        }
+
+        private object GetOrCreateChangeRequestsViewModel()
+        {
+            return _viewModelCache.TryGetValue("ChangeRequests", out var viewModel) ? viewModel : CreateChangeRequestsViewModel();
+        }
+
+        private object GetOrCreateDocumentsViewModel()
+        {
+            return _viewModelCache.TryGetValue("Documents", out var viewModel) ? viewModel : CreateDocumentsViewModel();
+        }
+
+        private object GetOrCreateUserManagementViewModel()
+        {
+            return _viewModelCache.TryGetValue("UserManagement", out var viewModel) ? viewModel : CreateUserManagementViewModel();
+        }
+
+        private object GetOrCreateAuditLogsViewModel()
+        {
+            return _viewModelCache.TryGetValue("AuditLogs", out var viewModel) ? viewModel : CreateAuditLogsViewModel();
         }
 
         private object CreateDashboardViewModel()
         {
-            // Don't cache the dashboard so it refreshes each time
-            // Dispose the old one if it exists
+            // Always create fresh dashboard for real-time data
             if (_viewModelCache.TryGetValue("Dashboard", out var oldViewModel) && oldViewModel is IDisposable disposable)
             {
                 disposable.Dispose();
@@ -278,17 +370,17 @@ namespace MaritimeERP.Desktop.ViewModels
             CurrentViewModel = navigationItem.Page switch
             {
                 "Components" => CreateComponentsViewModel(systemFilter),
-                "Dashboard" => CreateDashboardViewModel(),
-                "Ships" => CreateShipsViewModel(),
-                "Systems" => CreateSystemsViewModel(),
-                "Software" => CreateSoftwareViewModel(),
-                "ChangeRequests" => CreateChangeRequestsViewModel(),
-                "Documents" => CreateDocumentsViewModel(),
-                "UserManagement" => CreateUserManagementViewModel(),
-                "AuditLogs" => CreateAuditLogsViewModel(),
+                "Dashboard" => GetOrCreateDashboardViewModel(),
+                "Ships" => GetOrCreateShipsViewModel(),
+                "Systems" => GetOrCreateSystemsViewModel(),
+                "Software" => GetOrCreateSoftwareViewModel(),
+                "ChangeRequests" => GetOrCreateChangeRequestsViewModel(),
+                "Documents" => GetOrCreateDocumentsViewModel(),
+                "UserManagement" => GetOrCreateUserManagementViewModel(),
+                "AuditLogs" => GetOrCreateAuditLogsViewModel(),
                 "Reports" => CreateReportsViewModel(),
                 "Users" => CreateUsersViewModel(),
-                _ => CreateDashboardViewModel()
+                _ => GetOrCreateDashboardViewModel()
             };
 
             // Update the selected navigation item
@@ -314,17 +406,17 @@ namespace MaritimeERP.Desktop.ViewModels
             CurrentViewModel = navigationItem.Page switch
             {
                 "Software" => CreateSoftwareViewModel(componentFilter),
-                "Dashboard" => CreateDashboardViewModel(),
-                "Ships" => CreateShipsViewModel(),
-                "Systems" => CreateSystemsViewModel(),
-                "Components" => CreateComponentsViewModel(),
-                "ChangeRequests" => CreateChangeRequestsViewModel(),
-                "Documents" => CreateDocumentsViewModel(),
-                "UserManagement" => CreateUserManagementViewModel(),
-                "AuditLogs" => CreateAuditLogsViewModel(),
+                "Dashboard" => GetOrCreateDashboardViewModel(),
+                "Ships" => GetOrCreateShipsViewModel(),
+                "Systems" => GetOrCreateSystemsViewModel(),
+                "Components" => GetOrCreateComponentsViewModel(),
+                "ChangeRequests" => GetOrCreateChangeRequestsViewModel(),
+                "Documents" => GetOrCreateDocumentsViewModel(),
+                "UserManagement" => GetOrCreateUserManagementViewModel(),
+                "AuditLogs" => GetOrCreateAuditLogsViewModel(),
                 "Reports" => CreateReportsViewModel(),
                 "Users" => CreateUsersViewModel(),
-                _ => CreateDashboardViewModel()
+                _ => GetOrCreateDashboardViewModel()
             };
 
             // Update the selected navigation item
@@ -470,6 +562,9 @@ namespace MaritimeERP.Desktop.ViewModels
             }
             
             InitializeNavigation();
+            
+            // Preload ViewModels after login to ensure fast tab switching
+            _ = Task.Run(async () => await PreloadViewModelsAsync());
             
             // Set default navigation if none selected
             if (SelectedNavigation == null)

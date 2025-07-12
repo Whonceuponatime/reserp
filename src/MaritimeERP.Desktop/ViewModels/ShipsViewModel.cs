@@ -11,7 +11,7 @@ using MaritimeERP.Services.Interfaces;
 
 namespace MaritimeERP.Desktop.ViewModels
 {
-    public class ShipsViewModel : INotifyPropertyChanged
+    public class ShipsViewModel : ViewModelBase
     {
         private readonly IShipService _shipService;
         private readonly IServiceProvider _serviceProvider;
@@ -26,8 +26,6 @@ namespace MaritimeERP.Desktop.ViewModels
         private string _searchText = string.Empty;
         private string _selectedStatus = "All";
         private bool _showActiveOnly = false;
-        private bool _isLoading = false;
-        private string _statusMessage = "Ready";
 
         public ShipsViewModel(IShipService shipService, IServiceProvider serviceProvider, IAuthenticationService authenticationService)
         {
@@ -36,7 +34,19 @@ namespace MaritimeERP.Desktop.ViewModels
             _authenticationService = authenticationService;
             
             InitializeCommands();
-            _ = LoadDataAsync();
+            
+            // Load data in background without blocking UI
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    await LoadDataAsync();
+                }
+                catch (Exception ex)
+                {
+                    StatusMessage = "Error loading ships data";
+                }
+            });
         }
 
         // Properties
@@ -71,6 +81,7 @@ namespace MaritimeERP.Desktop.ViewModels
             {
                 SetProperty(ref _selectedShip, value);
                 OnPropertyChanged(nameof(HasSelectedShip));
+                RefreshCommandStates();
             }
         }
 
@@ -124,17 +135,7 @@ namespace MaritimeERP.Desktop.ViewModels
             }
         }
 
-        public bool IsLoading
-        {
-            get => _isLoading;
-            set => SetProperty(ref _isLoading, value);
-        }
 
-        public string StatusMessage
-        {
-            get => _statusMessage;
-            set => SetProperty(ref _statusMessage, value);
-        }
 
         public bool HasSelectedShip => SelectedShip != null;
         
@@ -155,67 +156,82 @@ namespace MaritimeERP.Desktop.ViewModels
 
         private void InitializeCommands()
         {
-            AddShipCommand = new AsyncRelayCommand(AddShipAsync, () => CanEditData);
-            EditShipCommand = new AsyncRelayCommand(EditShipAsync, () => HasSelectedShip && CanEditData);
-            DeleteShipCommand = new AsyncRelayCommand(DeleteShipAsync, () => HasSelectedShip && CanEditData);
+            AddShipCommand = new AsyncRelayCommand(AddShipAsync, () => CanEditData && !IsLoading);
+            EditShipCommand = new AsyncRelayCommand(EditShipAsync, () => HasSelectedShip && CanEditData && !IsLoading);
+            DeleteShipCommand = new AsyncRelayCommand(DeleteShipAsync, () => HasSelectedShip && CanEditData && !IsLoading);
             ViewDetailsCommand = new RelayCommand(ViewDetails, () => HasSelectedShip);
-            RefreshCommand = new AsyncRelayCommand(LoadDataAsync);
+            RefreshCommand = new AsyncRelayCommand(RefreshDataAsync, () => !IsLoading);
         }
 
-        private async Task LoadDataAsync()
+        protected override async Task LoadDataAsync()
         {
             try
             {
                 IsLoading = true;
                 StatusMessage = "Loading ships...";
                 
-                // Load ships and ship types
-                var ships = await _shipService.GetAllShipsAsync();
-                var shipTypes = await _shipService.GetShipTypeEntitiesAsync();
+                // Load ships and ship types in parallel
+                var shipsTask = _shipService.GetAllShipsAsync();
+                var shipTypesTask = _shipService.GetShipTypeEntitiesAsync();
 
-                Ships.Clear();
-                foreach (var ship in ships)
+                await Task.WhenAll(shipsTask, shipTypesTask);
+
+                var ships = await shipsTask;
+                var shipTypes = await shipTypesTask;
+
+                // Update UI on main thread
+                await Application.Current.Dispatcher.InvokeAsync(() =>
                 {
-                    Ships.Add(ship);
-                }
+                    Ships.Clear();
+                    foreach (var ship in ships)
+                    {
+                        Ships.Add(ship);
+                    }
 
-                // Populate ShipTypes dropdown
-                ShipTypes.Clear();
-                ShipTypes.Add(new ShipType { Id = 0, Name = "All Types" }); // Add "All" option
-                foreach (var shipType in shipTypes)
-                {
-                    ShipTypes.Add(shipType);
-                }
+                    // Populate ShipTypes dropdown
+                    ShipTypes.Clear();
+                    ShipTypes.Add(new ShipType { Id = 0, Name = "All Types" }); // Add "All" option
+                    foreach (var shipType in shipTypes)
+                    {
+                        ShipTypes.Add(shipType);
+                    }
 
-                // Populate Flags dropdown with unique flags from ships
-                Flags.Clear();
-                Flags.Add("All Flags"); // Add "All" option
-                var uniqueFlags = ships.Where(s => !string.IsNullOrEmpty(s.Flag))
-                                      .Select(s => s.Flag)
-                                      .Distinct()
-                                      .OrderBy(f => f);
-                foreach (var flag in uniqueFlags)
-                {
-                    Flags.Add(flag);
-                }
+                    // Populate Flags dropdown with unique flags from ships
+                    Flags.Clear();
+                    Flags.Add("All Flags"); // Add "All" option
+                    var uniqueFlags = ships.Where(s => !string.IsNullOrEmpty(s.Flag))
+                                          .Select(s => s.Flag)
+                                          .Distinct()
+                                          .OrderBy(f => f);
+                    foreach (var flag in uniqueFlags)
+                    {
+                        Flags.Add(flag);
+                    }
 
-                ApplyFilters();
-                
-                // Notify property changes for computed properties
-                OnPropertyChanged(nameof(TotalShips));
-                OnPropertyChanged(nameof(ActiveShips));
-                
-                StatusMessage = $"Loaded {TotalShips} ships successfully";
+                    ApplyFilters();
+                    
+                    // Notify property changes for computed properties
+                    OnPropertyChanged(nameof(TotalShips));
+                    OnPropertyChanged(nameof(ActiveShips));
+                    
+                    StatusMessage = $"Loaded {TotalShips} ships successfully";
+                    IsDataLoaded = true;
+                });
             }
             catch (Exception ex)
             {
-                StatusMessage = $"Error loading ships: {ex.Message}";
-                MessageBox.Show($"Error loading ships: {ex.Message}", "Error", 
-                    MessageBoxButton.OK, MessageBoxImage.Error);
+                await Application.Current.Dispatcher.InvokeAsync(() =>
+                {
+                    StatusMessage = $"Error loading ships: {ex.Message}";
+                });
             }
             finally
             {
-                IsLoading = false;
+                await Application.Current.Dispatcher.InvokeAsync(() =>
+                {
+                    IsLoading = false;
+                    RefreshCommandStates();
+                });
             }
         }
 
@@ -364,6 +380,20 @@ namespace MaritimeERP.Desktop.ViewModels
                 MessageBox.Show($"Error viewing ship details: {ex.Message}", "Error", 
                     MessageBoxButton.OK, MessageBoxImage.Error);
             }
+        }
+
+        private async Task RefreshDataAsync()
+        {
+            await base.RefreshDataAsync();
+        }
+
+        private void RefreshCommandStates()
+        {
+            ((AsyncRelayCommand)AddShipCommand).RaiseCanExecuteChanged();
+            ((AsyncRelayCommand)EditShipCommand).RaiseCanExecuteChanged();
+            ((AsyncRelayCommand)DeleteShipCommand).RaiseCanExecuteChanged();
+            ((RelayCommand)ViewDetailsCommand).RaiseCanExecuteChanged();
+            ((AsyncRelayCommand)RefreshCommand).RaiseCanExecuteChanged();
         }
 
         public event PropertyChangedEventHandler? PropertyChanged;

@@ -58,7 +58,19 @@ namespace MaritimeERP.Desktop.ViewModels
             InitializeCommands();
             SubscribeToDataChanges();
             InitializeRefreshTimer();
-            _ = LoadDashboardDataAsync();
+            
+            // Load dashboard data asynchronously without blocking
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    await LoadDashboardDataAsync();
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error during initial dashboard data load");
+                }
+            });
         }
 
         // Properties

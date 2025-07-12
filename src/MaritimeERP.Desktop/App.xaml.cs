@@ -143,6 +143,7 @@ namespace MaritimeERP.Desktop
             services.AddTransient<ILoginLogService, LoginLogService>();
             services.AddSingleton<INavigationService, NavigationService>();
             services.AddSingleton<ViewLocator>();
+            services.AddSingleton<IDataCacheService, DataCacheService>();
             // Add other services here as they are implemented
 
             // ViewModels
@@ -171,44 +172,69 @@ namespace MaritimeERP.Desktop
             Console.WriteLine("Services configured successfully");
         }
 
-        protected override void OnStartup(StartupEventArgs e)
+        protected override async void OnStartup(StartupEventArgs e)
         {
             try
             {
-                Task.Run(async () =>
-                {
-                    await _host.StartAsync();
-                    
-                    // Initialize database
-                    await InitializeDatabaseAsync();
-                    
-                    await Task.Delay(100); // Add a small delay to ensure proper initialization
-                }).Wait();
-
-                var authService = _host.Services.GetRequiredService<IAuthenticationService>();
-                var loginViewModel = new LoginViewModel(authService);
-                var loginWindow = new LoginWindow(loginViewModel);
-                loginViewModel.LoginSuccess += (s, _) => 
-                {
-                    var mainWindow = _host.Services.GetRequiredService<MainWindow>();
-                    
-                    // Refresh navigation after successful login to ensure admin menus appear
-                    if (mainWindow.DataContext is MainViewModel mainViewModel)
-                    {
-                        mainViewModel.RefreshNavigationAfterLogin();
-                    }
-                    
-                    mainWindow.Show();
-                    loginWindow.Close();
-                };
-                loginWindow.ShowDialog();
+                // Start the host asynchronously
+                await _host.StartAsync();
+                
+                // Initialize database asynchronously
+                await InitializeDatabaseAsync();
+                
+                // Show login window
+                ShowLoginWindow();
 
                 base.OnStartup(e);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error during application startup");
-                MessageBox.Show("Error during application startup", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show($"Error during application startup: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                Current.Shutdown();
+            }
+        }
+
+        private void ShowLoginWindow()
+        {
+            try
+            {
+                var authService = _host.Services.GetRequiredService<IAuthenticationService>();
+                var loginViewModel = new LoginViewModel(authService);
+                var loginWindow = new LoginWindow(loginViewModel);
+                
+                loginViewModel.LoginSuccess += async (s, _) => 
+                {
+                    try
+                    {
+                        // Create main window on UI thread
+                        await Dispatcher.InvokeAsync(() =>
+                        {
+                            var mainWindow = _host.Services.GetRequiredService<MainWindow>();
+                            
+                            // Refresh navigation after successful login to ensure admin menus appear
+                            if (mainWindow.DataContext is MainViewModel mainViewModel)
+                            {
+                                mainViewModel.RefreshNavigationAfterLogin();
+                            }
+                            
+                            mainWindow.Show();
+                            loginWindow.Close();
+                        });
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Error showing main window after login");
+                        MessageBox.Show($"Error opening main window: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    }
+                };
+                
+                loginWindow.ShowDialog();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error showing login window");
+                MessageBox.Show($"Error showing login window: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 Current.Shutdown();
             }
         }
@@ -221,6 +247,9 @@ namespace MaritimeERP.Desktop
                 
                 using var scope = _host.Services.CreateScope();
                 var context = scope.ServiceProvider.GetRequiredService<MaritimeERPContext>();
+                
+                // Set command timeout to prevent hanging
+                context.Database.SetCommandTimeout(30);
                 
                 // Ensure database is created
                 await context.Database.EnsureCreatedAsync();

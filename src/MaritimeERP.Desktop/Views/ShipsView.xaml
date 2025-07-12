@@ -139,6 +139,22 @@
                   RowHeight="26"
                   FontSize="12">
             
+            <!-- Context Menu for Right-Click Actions -->
+            <DataGrid.ContextMenu>
+                <ContextMenu>
+                    <MenuItem Header="👁️ View Details" 
+                              Command="{Binding ViewDetailsCommand}"
+                              IsEnabled="{Binding HasSelectedShip}"/>
+                    <Separator Visibility="{Binding CanEditData, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                    <MenuItem Header="✏️ Edit Ship" 
+                              Command="{Binding EditShipCommand}"
+                              Visibility="{Binding CanEditData, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                    <MenuItem Header="🗑️ Delete Ship" 
+                              Command="{Binding DeleteShipCommand}"
+                              Visibility="{Binding CanEditData, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                </ContextMenu>
+            </DataGrid.ContextMenu>
+            
             <DataGrid.ColumnHeaderStyle>
                 <Style TargetType="DataGridColumnHeader">
                     <Setter Property="Background" Value="#F5F5F5"/>
@@ -206,25 +222,77 @@
             </DataGrid.Columns>
         </DataGrid>
 
-        <!-- Compact Status Bar -->
+        <!-- Action Buttons and Status Bar -->
         <Border Grid.Row="3" 
                 Background="White" 
-                Padding="16,6"
+                Padding="16,8"
                 BorderThickness="0,1,0,0"
                 BorderBrush="#E0E0E0">
             <Grid>
                 <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
-                <TextBlock Grid.Column="0"
+                <!-- Action Buttons for Selected Ship (Admin Only) -->
+                <StackPanel Grid.Column="0" 
+                            Orientation="Horizontal" 
+                            VerticalAlignment="Center"
+                            Visibility="{Binding CanEditData, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <Button Content="✏️ Edit Ship" 
+                            Command="{Binding EditShipCommand}"
+                            Background="#FFA726"
+                            Foreground="White"
+                            BorderThickness="0"
+                            Height="28"
+                            Padding="12,0"
+                            FontSize="11"
+                            Margin="0,0,8,0"/>
+                    <Button Content="🗑️ Delete Ship" 
+                            Command="{Binding DeleteShipCommand}"
+                            Background="#E53935"
+                            Foreground="White"
+                            BorderThickness="0"
+                            Height="28"
+                            Padding="12,0"
+                            FontSize="11"
+                            Margin="0,0,8,0"/>
+                    <Button Content="👁️ View Details" 
+                            Command="{Binding ViewDetailsCommand}"
+                            Background="#42A5F5"
+                            Foreground="White"
+                            BorderThickness="0"
+                            Height="28"
+                            Padding="12,0"
+                            FontSize="11"/>
+                </StackPanel>
+
+                <!-- View Details Button (For Engineers) -->
+                <StackPanel Grid.Column="0" 
+                            Orientation="Horizontal" 
+                            VerticalAlignment="Center"
+                            Visibility="{Binding IsReadOnlyUser, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <Button Content="👁️ View Details" 
+                            Command="{Binding ViewDetailsCommand}"
+                            Background="#42A5F5"
+                            Foreground="White"
+                            BorderThickness="0"
+                            Height="28"
+                            Padding="12,0"
+                            FontSize="11"/>
+                </StackPanel>
+
+                <!-- Status Message -->
+                <TextBlock Grid.Column="1"
                            Text="{Binding StatusMessage}"
                            FontSize="11"
                            Foreground="#757575"
-                           VerticalAlignment="Center"/>
+                           VerticalAlignment="Center"
+                           HorizontalAlignment="Center"/>
 
-                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                <!-- Statistics -->
+                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
                     <TextBlock Text="Total Ships: " 
                                FontSize="11"
                                Foreground="#757575"/>
