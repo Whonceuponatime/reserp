@@ -14,7 +14,6 @@ namespace MaritimeERP.Data
         public DbSet<Role> Roles { get; set; }
         public DbSet<ShipSystem> Systems { get; set; }
         public DbSet<SystemCategory> SystemCategories { get; set; }
-        public DbSet<SecurityZone> SecurityZones { get; set; }
         public DbSet<Component> Components { get; set; }
         public DbSet<Software> Software { get; set; }
         
@@ -89,7 +88,7 @@ namespace MaritimeERP.Data
                 entity.Property(e => e.SerialNumber).HasMaxLength(100).IsRequired();
                 entity.Property(e => e.Description).HasMaxLength(500);
                 entity.Property(e => e.HasRemoteConnection).HasDefaultValue(false);
-                entity.Property(e => e.SecurityZoneText).HasMaxLength(100);
+                entity.Property(e => e.SecurityZone).HasMaxLength(200);
                 entity.HasOne(d => d.Ship).WithMany(p => p.Systems).HasForeignKey(d => d.ShipId);
                 entity.HasOne(d => d.Category).WithMany(p => p.Systems).HasForeignKey(d => d.CategoryId);
                 entity.HasIndex(e => e.SerialNumber).IsUnique();
@@ -102,12 +101,7 @@ namespace MaritimeERP.Data
                 entity.Property(e => e.Description).HasMaxLength(500);
             });
 
-            modelBuilder.Entity<SecurityZone>(entity =>
-            {
-                entity.HasKey(e => e.Id);
-                entity.Property(e => e.Name).HasMaxLength(100).IsRequired();
-                entity.Property(e => e.Description).HasMaxLength(500);
-            });
+
 
             modelBuilder.Entity<Component>(entity =>
             {
@@ -434,26 +428,20 @@ namespace MaritimeERP.Data
             );
 
             modelBuilder.Entity<SystemCategory>().HasData(
-                new SystemCategory { Id = 1, Name = "Propulsion", Description = "Propulsion systems including main engines and propulsion control" },
-                new SystemCategory { Id = 2, Name = "Steering", Description = "Steering systems and rudder control" },
-                new SystemCategory { Id = 3, Name = "Anchoring and mooring", Description = "Anchoring, mooring, and positioning systems" },
-                new SystemCategory { Id = 4, Name = "Electrical power generation and distribution", Description = "Electrical power generation, distribution, and power management systems" },
-                new SystemCategory { Id = 5, Name = "Fire detection and extinguishing systems", Description = "Fire detection, alarm, and suppression systems" },
-                new SystemCategory { Id = 6, Name = "Bilge and ballast systems, loading computer", Description = "Bilge pumps, ballast systems, and cargo loading computers" },
-                new SystemCategory { Id = 7, Name = "Watertight integrity and flooding detection", Description = "Watertight doors, flooding detection, and hull integrity monitoring" },
-                new SystemCategory { Id = 8, Name = "Lighting (e.g. emergency lighting, low locations, navigation lights, etc.)", Description = "All lighting systems including emergency, navigation, and general illumination" },
-                new SystemCategory { Id = 9, Name = "Safety Systems", Description = "General safety systems and emergency equipment" },
-                new SystemCategory { Id = 10, Name = "Navigational systems required by statutory regulations", Description = "Navigation equipment required by SOLAS and other maritime regulations" },
-                new SystemCategory { Id = 11, Name = "Internal and external communication systems required by class rules and statutory regulations", Description = "Communication systems required by classification societies and maritime regulations" }
+                new SystemCategory { Id = 1, Name = "Propulsion", Description = "Propulsion systems" },
+                new SystemCategory { Id = 2, Name = "Steering", Description = "Steering systems" },
+                new SystemCategory { Id = 3, Name = "Anchoring and mooring", Description = "Anchoring and mooring systems" },
+                new SystemCategory { Id = 4, Name = "Electrical power generation and distribution", Description = "Electrical power generation and distribution systems" },
+                new SystemCategory { Id = 5, Name = "Fire detection and extinguishing systems", Description = "Fire detection and extinguishing systems" },
+                new SystemCategory { Id = 6, Name = "Bilge and ballast systems, loading computer", Description = "Bilge and ballast systems, loading computer" },
+                new SystemCategory { Id = 7, Name = "Watertight integrity and flooding detection", Description = "Watertight integrity and flooding detection systems" },
+                new SystemCategory { Id = 8, Name = "Lighting (e.g. emergency lighting, low locations, navigation lights, etc.)", Description = "Lighting systems including emergency lighting, low locations, navigation lights, etc." },
+                new SystemCategory { Id = 9, Name = "Safety Systems", Description = "Safety systems" },
+                new SystemCategory { Id = 10, Name = "Navigational systems required by statutory regulations", Description = "Navigational systems required by statutory regulations" },
+                new SystemCategory { Id = 11, Name = "Internal and external communication systems required by class rules and statutory regulations", Description = "Internal and external communication systems required by class rules and statutory regulations" }
             );
 
-            modelBuilder.Entity<SecurityZone>().HasData(
-                new SecurityZone { Id = 1, Name = "Bridge", Description = "Navigation bridge area" },
-                new SecurityZone { Id = 2, Name = "Engine Room", Description = "Engine room area" },
-                new SecurityZone { Id = 3, Name = "Cargo Hold", Description = "Cargo storage area" },
-                new SecurityZone { Id = 4, Name = "Accommodation", Description = "Living quarters" },
-                new SecurityZone { Id = 5, Name = "Deck", Description = "Main deck area" }
-            );
+
             
             // Seed Change Types
             modelBuilder.Entity<ChangeType>().HasData(
