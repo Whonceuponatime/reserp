@@ -462,6 +462,7 @@ namespace MaritimeERP.Data
             );
 
             // Seed Document Categories
+            var baseDate = new DateTime(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc);
             modelBuilder.Entity<DocumentCategory>().HasData(
                 // Approved Supplier Documentation
                 new DocumentCategory 
@@ -474,7 +475,8 @@ namespace MaritimeERP.Data
                     AllowedFileTypes = "pdf,dwg,dxf,png,jpg,jpeg",
                     MaxFileSizeBytes = 100 * 1024 * 1024, // 100MB
                     DisplayOrder = 1,
-                    IsActive = true
+                    IsActive = true,
+                    CreatedAt = baseDate
                 },
                 new DocumentCategory 
                 { 
@@ -486,7 +488,8 @@ namespace MaritimeERP.Data
                     AllowedFileTypes = "pdf,doc,docx",
                     MaxFileSizeBytes = 50 * 1024 * 1024, // 50MB
                     DisplayOrder = 2,
-                    IsActive = true
+                    IsActive = true,
+                    CreatedAt = baseDate
                 },
                 new DocumentCategory 
                 { 
@@ -498,7 +501,8 @@ namespace MaritimeERP.Data
                     AllowedFileTypes = "pdf,doc,docx,xlsx,csv",
                     MaxFileSizeBytes = 25 * 1024 * 1024, // 25MB
                     DisplayOrder = 3,
-                    IsActive = true
+                    IsActive = true,
+                    CreatedAt = baseDate
                 },
                 new DocumentCategory 
                 { 
@@ -510,7 +514,8 @@ namespace MaritimeERP.Data
                     AllowedFileTypes = "pdf,doc,docx",
                     MaxFileSizeBytes = 50 * 1024 * 1024, // 50MB
                     DisplayOrder = 4,
-                    IsActive = true
+                    IsActive = true,
+                    CreatedAt = baseDate
                 },
                 new DocumentCategory 
                 { 
@@ -522,7 +527,8 @@ namespace MaritimeERP.Data
                     AllowedFileTypes = "pdf,doc,docx",
                     MaxFileSizeBytes = 50 * 1024 * 1024, // 50MB
                     DisplayOrder = 5,
-                    IsActive = true
+                    IsActive = true,
+                    CreatedAt = baseDate
                 },
                 new DocumentCategory 
                 { 
@@ -534,7 +540,8 @@ namespace MaritimeERP.Data
                     AllowedFileTypes = "pdf,doc,docx",
                     MaxFileSizeBytes = 50 * 1024 * 1024, // 50MB
                     DisplayOrder = 6,
-                    IsActive = true
+                    IsActive = true,
+                    CreatedAt = baseDate
                 }
             );
         }

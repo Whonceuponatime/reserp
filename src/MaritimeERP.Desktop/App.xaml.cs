@@ -255,18 +255,6 @@ namespace MaritimeERP.Desktop
                 // Ensure database is created
                 await context.Database.EnsureCreatedAsync();
                 
-                // Apply database migration for security zones and categories
-                try
-                {
-                    MigrationRunner.ApplyMigration();
-                    Console.WriteLine("Database migration applied successfully");
-                }
-                catch (Exception migrationEx)
-                {
-                    Console.WriteLine($"Migration error (continuing anyway): {migrationEx.Message}");
-                    // Continue even if migration fails - it might already be applied
-                }
-                
                 // Check if HardwareChangeRequests table exists, if not create it
                 var connection = context.Database.GetDbConnection();
                 await connection.OpenAsync();

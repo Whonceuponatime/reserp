@@ -460,8 +460,8 @@
 
                             <!-- Security Zone -->
                             <StackPanel Grid.Row="8" Margin="0,0,0,12">
-                                <TextBlock Text="Security Zone (Optional)" FontSize="11" FontWeight="SemiBold" Foreground="#424242" Margin="0,0,0,4"/>
-                                <TextBox Text="{Binding SecurityZoneText, UpdateSourceTrigger=PropertyChanged}"
+                                <TextBlock Text="Security Zone" FontSize="11" FontWeight="SemiBold" Foreground="#424242" Margin="0,0,0,4"/>
+                                <TextBox Text="{Binding SecurityZone, UpdateSourceTrigger=PropertyChanged}"
                                          IsEnabled="{Binding IsEditing}"
                                          Height="24"
                                          Padding="8,0"

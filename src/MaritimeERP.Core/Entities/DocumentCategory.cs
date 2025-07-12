@@ -28,7 +28,7 @@ namespace MaritimeERP.Core.Entities
 
         public int DisplayOrder { get; set; } = 0; // For sorting in UI
 
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public DateTime CreatedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }
 
         // Navigation properties

@@ -95,13 +95,13 @@ namespace MaritimeERP.Desktop.ViewModels
             }
         }
 
-        private string? _securityZoneText;
-        public string? SecurityZoneText
+        private string? _securityZone;
+        public string? SecurityZone
         {
-            get => _securityZoneText;
+            get => _securityZone;
             set
             {
-                _securityZoneText = value;
+                _securityZone = value;
                 OnPropertyChanged();
             }
         }
@@ -545,8 +545,6 @@ namespace MaritimeERP.Desktop.ViewModels
                     }
                     _logger.LogInformation("Loaded {CategoryCount} categories", Categories.Count);
 
-
-
                     Manufacturers.Clear();
                     foreach (var manufacturer in manufacturers)
                     {
@@ -691,7 +689,7 @@ namespace MaritimeERP.Desktop.ViewModels
             Description = SelectedSystem.Description;
             HasRemoteConnection = SelectedSystem.HasRemoteConnection;
             CategoryId = SelectedSystem.CategoryId;
-            SecurityZoneText = SelectedSystem.SecurityZoneText;
+            SecurityZone = SelectedSystem.SecurityZone;
             ShipId = SelectedSystem.ShipId;
 
             // Set selected items
@@ -769,8 +767,8 @@ namespace MaritimeERP.Desktop.ViewModels
             
             StatusMessage = "Adding new system - fill in all required fields";
             
-            _logger.LogInformation("AddSystem: After setting IsEditing=true, Ships count = {ShipCount}, Categories count = {CategoryCount}, SecurityZones count = {ZoneCount}", 
-                Ships.Count, Categories.Count, SecurityZones.Count);
+            _logger.LogInformation("AddSystem: After setting IsEditing=true, Ships count = {ShipCount}, Categories count = {CategoryCount}", 
+                Ships.Count, Categories.Count);
             
             RefreshSaveCommand();
         }
@@ -803,7 +801,7 @@ namespace MaritimeERP.Desktop.ViewModels
                     Id = SystemId,
                     ShipId = SelectedShip?.Id ?? throw new InvalidOperationException("Ship must be selected"),
                     CategoryId = SelectedCategory?.Id ?? throw new InvalidOperationException("Category must be selected"),
-                    SecurityZoneText = SecurityZoneText?.Trim(),
+                    SecurityZone = SecurityZone?.Trim(),
                     Name = SystemName?.Trim() ?? throw new InvalidOperationException("System name is required"),
                     Manufacturer = Manufacturer?.Trim() ?? throw new InvalidOperationException("Manufacturer is required"),
                     Model = Model?.Trim() ?? throw new InvalidOperationException("Model is required"),
@@ -931,7 +929,7 @@ namespace MaritimeERP.Desktop.ViewModels
             SerialNumber = string.Empty;
             Description = null;
             CategoryId = 0;
-            SecurityZoneText = null;
+            SecurityZone = null;
             HasRemoteConnection = false;
             SelectedShip = null;
             SelectedCategory = null;
@@ -969,7 +967,7 @@ namespace MaritimeERP.Desktop.ViewModels
                                  !string.IsNullOrWhiteSpace(SerialNumber) &&
                                  SelectedShip != null &&
                                  SelectedCategory != null;
-                                 // SecurityZoneText is optional
+                                 // SecurityZone is optional - will default to zone 1 if not selected
 
             return hasRequiredData && IsEditing;
         }
