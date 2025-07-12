@@ -149,7 +149,7 @@ namespace MaritimeERP.Desktop
             // ViewModels
             services.AddTransient<LoginViewModel>();
             services.AddTransient<MainViewModel>();
-            services.AddSingleton<DashboardViewModel>();
+            services.AddTransient<DashboardViewModel>();
             services.AddTransient<ShipsViewModel>();
             services.AddTransient<ShipDetailsViewModel>();
             services.AddTransient<SystemsViewModel>();

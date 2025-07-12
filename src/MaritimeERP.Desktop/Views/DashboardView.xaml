@@ -14,21 +14,41 @@
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
 
             <!-- Compact Header -->
             <Border Grid.Row="0" Background="White" Padding="16,10" BorderThickness="0,0,0,1" BorderBrush="#E0E0E0">
-                <StackPanel>
-                    <TextBlock Text="Dashboard" 
-                               FontSize="20" 
-                               FontWeight="SemiBold"
-                               Foreground="#1976D2"/>
-                    <TextBlock Text="Maritime ERP System Overview"
-                               FontSize="12"
-                               Foreground="#757575"
-                               Margin="0,2,0,0"/>
-                </StackPanel>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    
+                    <StackPanel Grid.Column="0">
+                        <TextBlock Text="Dashboard" 
+                                   FontSize="20" 
+                                   FontWeight="SemiBold"
+                                   Foreground="#1976D2"/>
+                        <TextBlock Text="Maritime ERP System Overview - Real-time updates every 15 seconds"
+                                   FontSize="12"
+                                   Foreground="#757575"
+                                   Margin="0,2,0,0"/>
+                    </StackPanel>
+                    
+                    <Button Grid.Column="1"
+                            Content="🔄 Refresh"
+                            Command="{Binding RefreshCommand}"
+                            Background="#1976D2"
+                            Foreground="White"
+                            BorderThickness="0"
+                            Padding="12,6"
+                            FontSize="12"
+                            FontWeight="SemiBold"
+                            Height="32"
+                            ToolTip="Refresh dashboard data manually"/>
+                </Grid>
             </Border>
 
             <!-- Compact Statistics Cards -->
@@ -40,13 +60,16 @@
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
 
-                <!-- Ships Card -->
-                <Border Grid.Column="0" 
+                <!-- Ships Card (Clickable) -->
+                <Button Grid.Column="0" 
                         Background="White" 
                         Padding="16,12"
                         Margin="0,0,8,0"
                         BorderThickness="0,0,0,3"
-                        BorderBrush="#1976D2">
+                        BorderBrush="#1976D2"
+                        Command="{Binding ViewShipsCommand}"
+                        ToolTip="Click to view Ships"
+                        Cursor="Hand">
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
@@ -73,15 +96,18 @@
                                    Foreground="#757575"
                                    Margin="0,2,0,0"/>
                     </Grid>
-                </Border>
+                </Button>
 
-                <!-- Systems Card -->
-                <Border Grid.Column="1" 
+                <!-- Systems Card (Clickable) -->
+                <Button Grid.Column="1" 
                         Background="White" 
                         Padding="16,12"
                         Margin="0,0,8,0"
                         BorderThickness="0,0,0,3"
-                        BorderBrush="#4CAF50">
+                        BorderBrush="#4CAF50"
+                        Command="{Binding ViewSystemsCommand}"
+                        ToolTip="Click to view Systems"
+                        Cursor="Hand">
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
@@ -108,15 +134,18 @@
                                    Foreground="#757575"
                                    Margin="0,2,0,0"/>
                     </Grid>
-                </Border>
+                </Button>
 
-                <!-- Components Card -->
-                <Border Grid.Column="2" 
+                <!-- Components Card (Clickable) -->
+                <Button Grid.Column="2" 
                         Background="White" 
                         Padding="16,12"
                         Margin="0,0,8,0"
                         BorderThickness="0,0,0,3"
-                        BorderBrush="#FF9800">
+                        BorderBrush="#FF9800"
+                        Command="{Binding ViewComponentsCommand}"
+                        ToolTip="Click to view Components"
+                        Cursor="Hand">
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
@@ -143,14 +172,18 @@
                                    Foreground="#757575"
                                    Margin="0,2,0,0"/>
                     </Grid>
-                </Border>
+                </Button>
 
-                <!-- Alerts Card -->
-                <Border Grid.Column="3" 
+                <!-- Alerts Card (Clickable for admins) -->
+                <Button Grid.Column="3" 
                         Background="White" 
                         Padding="16,12"
                         BorderThickness="0,0,0,3"
-                        BorderBrush="#F44336">
+                        BorderBrush="#F44336"
+                        Command="{Binding ViewPendingDocumentsCommand}"
+                        ToolTip="Click to view pending items (Admin only)"
+                        Cursor="Hand"
+                        IsEnabled="{Binding IsAdmin}">
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
@@ -177,11 +210,149 @@
                                    Foreground="#757575"
                                    Margin="0,2,0,0"/>
                     </Grid>
+                </Button>
+            </Grid>
+
+            <!-- Admin-specific Pending Items (Visible only to admins) -->
+            <Grid Grid.Row="2" Margin="16,8" Visibility="{Binding IsAdmin, Converter={StaticResource BooleanToVisibilityConverter}}">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Pending Documents Card -->
+                <Button Grid.Column="0" 
+                        Background="#FFF3E0" 
+                        Padding="12,8"
+                        Margin="0,0,8,0"
+                        BorderThickness="1"
+                        BorderBrush="#FF9800"
+                        Command="{Binding ViewPendingDocumentsCommand}"
+                        ToolTip="Click to view pending documents"
+                        Cursor="Hand">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <TextBlock Grid.Column="0" 
+                                   Text="📄" 
+                                   FontSize="20" 
+                                   VerticalAlignment="Center" 
+                                   Margin="0,0,8,0"
+                                   Foreground="#FF9800"/>
+                        <StackPanel Grid.Column="1">
+                            <TextBlock Text="{Binding PendingDocuments}" 
+                                       FontSize="18" 
+                                       FontWeight="Bold" 
+                                       Foreground="#FF9800"/>
+                            <TextBlock Text="Pending Documents" 
+                                       FontSize="10" 
+                                       Foreground="#757575"/>
+                        </StackPanel>
+                    </Grid>
+                </Button>
+
+                <!-- Pending Change Requests Card -->
+                <Button Grid.Column="1" 
+                        Background="#E8F5E8" 
+                        Padding="12,8"
+                        Margin="0,0,8,0"
+                        BorderThickness="1"
+                        BorderBrush="#4CAF50"
+                        Command="{Binding ViewPendingChangeRequestsCommand}"
+                        ToolTip="Click to view pending change requests"
+                        Cursor="Hand">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <TextBlock Grid.Column="0" 
+                                   Text="📝" 
+                                   FontSize="20" 
+                                   VerticalAlignment="Center" 
+                                   Margin="0,0,8,0"
+                                   Foreground="#4CAF50"/>
+                        <StackPanel Grid.Column="1">
+                            <TextBlock Text="{Binding PendingChangeRequests}" 
+                                       FontSize="18" 
+                                       FontWeight="Bold" 
+                                       Foreground="#4CAF50"/>
+                            <TextBlock Text="Pending Change Requests" 
+                                       FontSize="10" 
+                                       Foreground="#757575"/>
+                        </StackPanel>
+                    </Grid>
+                </Button>
+
+                <!-- System Health Card -->
+                <Border Grid.Column="2" 
+                        Background="#E3F2FD" 
+                        Padding="12,8"
+                        Margin="0,0,8,0"
+                        BorderThickness="1"
+                        BorderBrush="#2196F3">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <TextBlock Grid.Column="0" 
+                                   Text="💚" 
+                                   FontSize="20" 
+                                   VerticalAlignment="Center" 
+                                   Margin="0,0,8,0"/>
+                        <StackPanel Grid.Column="1">
+                            <TextBlock Text="{Binding SystemHealth, StringFormat='{}{0}%'}" 
+                                       FontSize="18" 
+                                       FontWeight="Bold" 
+                                       Foreground="#2196F3"/>
+                            <TextBlock Text="System Health" 
+                                       FontSize="10" 
+                                       Foreground="#757575"/>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <!-- Active Systems Card -->
+                <Border Grid.Column="3" 
+                        Background="#F3E5F5" 
+                        Padding="12,8"
+                        BorderThickness="1"
+                        BorderBrush="#9C27B0">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <TextBlock Grid.Column="0" 
+                                   Text="🔄" 
+                                   FontSize="20" 
+                                   VerticalAlignment="Center" 
+                                   Margin="0,0,8,0"
+                                   Foreground="#9C27B0"/>
+                        <StackPanel Grid.Column="1">
+                            <TextBlock Text="{Binding ActiveSystems}" 
+                                       FontSize="18" 
+                                       FontWeight="Bold" 
+                                       Foreground="#9C27B0"/>
+                            <TextBlock Text="Active Systems" 
+                                       FontSize="10" 
+                                       Foreground="#757575"/>
+                        </StackPanel>
+                    </Grid>
                 </Border>
             </Grid>
 
             <!-- Compact Content Panels -->
-            <Grid Grid.Row="2" Margin="16,8">
+            <Grid Grid.Row="3" Margin="16,8">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="*"/>
@@ -337,59 +508,107 @@
                 </Border>
             </Grid>
 
-            <!-- Compact Quick Actions -->
-            <Border Grid.Row="3" 
+            <!-- Enhanced Quick Actions -->
+            <Border Grid.Row="4" 
                     Background="White" 
                     Padding="16,12"
                     Margin="16,8,16,16"
                     BorderThickness="0,1,0,0"
                     BorderBrush="#E0E0E0">
                 <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
 
-                    <TextBlock Grid.Column="0" 
+                    <TextBlock Grid.Row="0" 
                                Text="Quick Actions" 
                                FontSize="16" 
                                FontWeight="SemiBold"
                                Foreground="#1976D2"
-                               VerticalAlignment="Center"/>
+                               Margin="0,0,0,12"/>
 
-                    <StackPanel Grid.Column="1" Orientation="Horizontal">
-                        <Button Content="Add Ship" 
-                                Command="{Binding AddShipCommand}"
-                                Background="#1976D2"
-                                Foreground="White"
-                                BorderThickness="0"
-                                Height="32"
-                                Padding="12,0"
-                                FontSize="12"
-                                Margin="0,0,8,0"/>
-                        <Button Content="Add System" 
-                                Command="{Binding AddSystemCommand}"
-                                Background="#4CAF50"
-                                Foreground="White"
-                                BorderThickness="0"
-                                Height="32"
-                                Padding="12,0"
-                                FontSize="12"
-                                Margin="0,0,8,0"/>
-                        <Button Content="Add Component" 
-                                Command="{Binding AddComponentCommand}"
-                                Background="#FF9800"
-                                Foreground="White"
-                                BorderThickness="0"
-                                Height="32"
-                                Padding="12,0"
-                                FontSize="12"/>
-                    </StackPanel>
+                    <Grid Grid.Row="1">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Navigation Actions -->
+                        <StackPanel Grid.Column="0">
+                            <TextBlock Text="Navigate to:" 
+                                       FontSize="12" 
+                                       FontWeight="SemiBold" 
+                                       Foreground="#666" 
+                                       Margin="0,0,0,8"/>
+                            <StackPanel Orientation="Horizontal">
+                                <Button Content="🚢 Ships" 
+                                        Command="{Binding ViewShipsCommand}"
+                                        Background="#1976D2"
+                                        Foreground="White"
+                                        BorderThickness="0"
+                                        Height="32"
+                                        Padding="12,0"
+                                        FontSize="12"
+                                        Margin="0,0,8,0"
+                                        ToolTip="View and manage ships"/>
+                                <Button Content="⚙️ Systems" 
+                                        Command="{Binding ViewSystemsCommand}"
+                                        Background="#4CAF50"
+                                        Foreground="White"
+                                        BorderThickness="0"
+                                        Height="32"
+                                        Padding="12,0"
+                                        FontSize="12"
+                                        Margin="0,0,8,0"
+                                        ToolTip="View and manage systems"/>
+                                <Button Content="🔧 Components" 
+                                        Command="{Binding ViewComponentsCommand}"
+                                        Background="#FF9800"
+                                        Foreground="White"
+                                        BorderThickness="0"
+                                        Height="32"
+                                        Padding="12,0"
+                                        FontSize="12"
+                                        ToolTip="View and manage components"/>
+                            </StackPanel>
+                        </StackPanel>
+
+                        <!-- Admin Actions -->
+                        <StackPanel Grid.Column="1" Visibility="{Binding IsAdmin, Converter={StaticResource BooleanToVisibilityConverter}}">
+                            <TextBlock Text="Admin Actions:" 
+                                       FontSize="12" 
+                                       FontWeight="SemiBold" 
+                                       Foreground="#666" 
+                                       Margin="0,0,0,8"/>
+                            <StackPanel Orientation="Horizontal">
+                                <Button Content="📄 Documents" 
+                                        Command="{Binding ViewPendingDocumentsCommand}"
+                                        Background="#9C27B0"
+                                        Foreground="White"
+                                        BorderThickness="0"
+                                        Height="32"
+                                        Padding="12,0"
+                                        FontSize="12"
+                                        Margin="0,0,8,0"
+                                        ToolTip="Review pending documents"/>
+                                <Button Content="📝 Change Requests" 
+                                        Command="{Binding ViewPendingChangeRequestsCommand}"
+                                        Background="#607D8B"
+                                        Foreground="White"
+                                        BorderThickness="0"
+                                        Height="32"
+                                        Padding="12,0"
+                                        FontSize="12"
+                                        ToolTip="Review pending change requests"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Grid>
                 </Grid>
             </Border>
 
             <!-- Loading Overlay -->
-            <Border Grid.RowSpan="4" 
+            <Border Grid.RowSpan="5" 
                     Background="#80000000" 
                     Visibility="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}}"
                     CornerRadius="4">

@@ -16,6 +16,10 @@ namespace MaritimeERP.Desktop.ViewModels
         private readonly IShipService _shipService;
         private readonly ISystemService _systemService;
         private readonly IComponentService _componentService;
+        private readonly IDocumentService _documentService;
+        private readonly IChangeRequestService _changeRequestService;
+        private readonly IAuthenticationService _authenticationService;
+        private readonly INavigationService _navigationService;
         private readonly IDataChangeNotificationService _dataChangeNotificationService;
         private readonly ILogger<DashboardViewModel> _logger;
         private readonly System.Timers.Timer _refreshTimer;
@@ -31,6 +35,16 @@ namespace MaritimeERP.Desktop.ViewModels
         private string _newestShip = "N/A";
         private bool _isLoading = false;
 
+        // Admin-specific properties
+        private int _pendingDocuments = 0;
+        private int _pendingChangeRequests = 0;
+        private int _activeAlerts = 0;
+        private bool _isAdmin = false;
+
+        // System Status properties
+        private int _activeSystems = 0;
+        private int _systemHealth = 95; // Placeholder value
+
         // Recent Activity
         private ObservableCollection<DashboardActivity> _recentActivities = new();
         private ObservableCollection<Ship> _recentShips = new();
@@ -45,15 +59,26 @@ namespace MaritimeERP.Desktop.ViewModels
             IShipService shipService, 
             ISystemService systemService, 
             IComponentService componentService,
+            IDocumentService documentService,
+            IChangeRequestService changeRequestService,
+            IAuthenticationService authenticationService,
+            INavigationService navigationService,
             IDataChangeNotificationService dataChangeNotificationService,
             ILogger<DashboardViewModel> logger)
         {
             _shipService = shipService;
             _systemService = systemService;
             _componentService = componentService;
+            _documentService = documentService;
+            _changeRequestService = changeRequestService;
+            _authenticationService = authenticationService;
+            _navigationService = navigationService;
             _dataChangeNotificationService = dataChangeNotificationService;
             _logger = logger;
             _refreshTimer = new System.Timers.Timer();
+
+            // Check if current user is admin
+            _isAdmin = _authenticationService.CurrentUser?.Role?.Name == "Administrator";
 
             InitializeCommands();
             SubscribeToDataChanges();
@@ -128,6 +153,42 @@ namespace MaritimeERP.Desktop.ViewModels
             set => SetProperty(ref _isLoading, value);
         }
 
+        public int PendingDocuments
+        {
+            get => _pendingDocuments;
+            set => SetProperty(ref _pendingDocuments, value);
+        }
+
+        public int PendingChangeRequests
+        {
+            get => _pendingChangeRequests;
+            set => SetProperty(ref _pendingChangeRequests, value);
+        }
+
+        public int ActiveAlerts
+        {
+            get => _activeAlerts;
+            set => SetProperty(ref _activeAlerts, value);
+        }
+
+        public bool IsAdmin
+        {
+            get => _isAdmin;
+            set => SetProperty(ref _isAdmin, value);
+        }
+
+        public int ActiveSystems
+        {
+            get => _activeSystems;
+            set => SetProperty(ref _activeSystems, value);
+        }
+
+        public int SystemHealth
+        {
+            get => _systemHealth;
+            set => SetProperty(ref _systemHealth, value);
+        }
+
         public ObservableCollection<DashboardActivity> RecentActivities
         {
             get => _recentActivities;
@@ -169,13 +230,23 @@ namespace MaritimeERP.Desktop.ViewModels
         public ICommand ViewShipsCommand { get; private set; } = null!;
         public ICommand ViewSystemsCommand { get; private set; } = null!;
         public ICommand ViewComponentsCommand { get; private set; } = null!;
+        public ICommand AddShipCommand { get; private set; } = null!;
+        public ICommand AddSystemCommand { get; private set; } = null!;
+        public ICommand AddComponentCommand { get; private set; } = null!;
+        public ICommand ViewPendingDocumentsCommand { get; private set; } = null!;
+        public ICommand ViewPendingChangeRequestsCommand { get; private set; } = null!;
 
         private void InitializeCommands()
         {
             RefreshCommand = new AsyncRelayCommand(LoadDashboardDataAsync);
-            ViewShipsCommand = new RelayCommand(() => { /* Navigate to ships */ });
-            ViewSystemsCommand = new RelayCommand(() => { /* Navigate to systems */ });
-            ViewComponentsCommand = new RelayCommand(() => { /* Navigate to components */ });
+            ViewShipsCommand = new RelayCommand(() => _navigationService.NavigateToPage("Ships"));
+            ViewSystemsCommand = new RelayCommand(() => _navigationService.NavigateToPage("Systems"));
+            ViewComponentsCommand = new RelayCommand(() => _navigationService.NavigateToPage("Components"));
+            AddShipCommand = new RelayCommand(() => _navigationService.NavigateToPage("Ships"));
+            AddSystemCommand = new RelayCommand(() => _navigationService.NavigateToPage("Systems"));
+            AddComponentCommand = new RelayCommand(() => _navigationService.NavigateToPage("Components"));
+            ViewPendingDocumentsCommand = new RelayCommand(() => _navigationService.NavigateToPage("Documents"));
+            ViewPendingChangeRequestsCommand = new RelayCommand(() => _navigationService.NavigateToPage("ChangeRequests"));
         }
 
         private void SubscribeToDataChanges()
@@ -185,8 +256,8 @@ namespace MaritimeERP.Desktop.ViewModels
 
         private void InitializeRefreshTimer()
         {
-            // Refresh dashboard every 30 seconds
-            _refreshTimer.Interval = 30000; // 30 seconds
+            // Refresh dashboard every 15 seconds for real-time updates
+            _refreshTimer.Interval = 15000; // 15 seconds
             _refreshTimer.Elapsed += async (sender, e) =>
             {
                 try
@@ -208,7 +279,8 @@ namespace MaritimeERP.Desktop.ViewModels
                 _logger.LogInformation("Dashboard received data change notification: {DataType} - {Operation}", e.DataType, e.Operation);
                 
                 // Refresh dashboard data when any relevant data changes
-                if (e.DataType == "Ship" || e.DataType == "System" || e.DataType == "Component")
+                if (e.DataType == "Ship" || e.DataType == "System" || e.DataType == "Component" || 
+                    e.DataType == "Document" || e.DataType == "ChangeRequest")
                 {
                     await LoadDashboardDataAsync();
                 }
@@ -259,11 +331,16 @@ namespace MaritimeERP.Desktop.ViewModels
                 var allComponents = await _componentService.GetAllComponentsAsync();
 
                 var shipsList = allShips.ToList();
+                var systemsList = allSystems.ToList();
                 
                 // Process data on background thread
                 string newestShipName = "N/A";
                 string mostCommonType = "N/A";
                 int recentChangesCount = 0;
+                int activeSystemsCount = systemsList.Count(); // All systems are considered active for now
+                int pendingDocsCount = 0;
+                int pendingChangeReqCount = 0;
+                int alertsCount = 0;
 
                 if (shipsList.Any())
                 {
@@ -284,6 +361,33 @@ namespace MaritimeERP.Desktop.ViewModels
                     recentChangesCount = shipsList.Count(s => s.UpdatedAt >= recentDate || s.CreatedAt >= recentDate);
                 }
 
+                // Load admin-specific data if user is admin
+                if (_isAdmin)
+                {
+                    try
+                    {
+                        // Get pending documents
+                        var pendingDocuments = await _documentService.GetDocumentsForApprovalAsync();
+                        pendingDocsCount = pendingDocuments.Count;
+
+                        // Get pending change requests
+                        var currentUser = _authenticationService.CurrentUser;
+                        if (currentUser != null)
+                        {
+                            var changeRequestStats = await _changeRequestService.GetChangeRequestStatisticsAsync();
+                            pendingChangeReqCount = changeRequestStats.PendingApproval + changeRequestStats.UnderReview;
+                        }
+
+                        // Calculate alerts (pending items that need attention)
+                        alertsCount = pendingDocsCount + pendingChangeReqCount;
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Error loading admin-specific statistics");
+                        // Continue with basic stats even if admin stats fail
+                    }
+                }
+
                 // Update properties on UI thread
                 await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
                 {
@@ -292,9 +396,13 @@ namespace MaritimeERP.Desktop.ViewModels
                     ActiveShips = activeShipsCount;
                     NewestShip = newestShipName;
                     MostCommonShipType = mostCommonType;
-                TotalSystems = allSystems.Count();
-                TotalComponents = allComponents.Count();
+                    TotalSystems = systemsList.Count;
+                    TotalComponents = allComponents.Count();
                     RecentChanges = recentChangesCount;
+                    ActiveSystems = activeSystemsCount;
+                    PendingDocuments = pendingDocsCount;
+                    PendingChangeRequests = pendingChangeReqCount;
+                    ActiveAlerts = alertsCount;
                 });
             }
             catch (Exception ex)
