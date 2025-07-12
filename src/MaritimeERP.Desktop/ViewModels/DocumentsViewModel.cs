@@ -178,6 +178,17 @@ namespace MaritimeERP.Desktop.ViewModels
             }
         }
 
+        private int _rejectedDocuments;
+        public int RejectedDocuments
+        {
+            get => _rejectedDocuments;
+            set
+            {
+                _rejectedDocuments = value;
+                OnPropertyChanged();
+            }
+        }
+
         private int _pendingDocuments;
         public int PendingDocuments
         {
@@ -344,6 +355,7 @@ namespace MaritimeERP.Desktop.ViewModels
                 var statusStats = await _documentService.GetDocumentStatsByStatus();
                 ApprovedDocuments = statusStats.ContainsKey("Approved") ? statusStats["Approved"] : 0;
                 PendingDocuments = statusStats.ContainsKey("Pending Approval") ? statusStats["Pending Approval"] : 0;
+                RejectedDocuments = statusStats.ContainsKey("Rejected") ? statusStats["Rejected"] : 0;
 
                 var totalSize = await _documentService.GetTotalFileSize();
                 TotalFileSize = FormatFileSize(totalSize);

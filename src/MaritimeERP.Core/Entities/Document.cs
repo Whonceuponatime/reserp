@@ -70,7 +70,10 @@ namespace MaritimeERP.Core.Entities
 
         // Display properties
         public string DisplayName => $"{Name} v{Version}";
-        public string StatusDisplay => IsActive ? (IsApproved ? "Approved" : "Pending Approval") : "Inactive";
+        public string StatusDisplay => IsActive ? 
+            (IsApproved ? "Approved" : 
+                (ApprovedByUserId.HasValue && ApprovedAt.HasValue ? "Rejected" : "Pending Approval")) : 
+            "Inactive";
         public string FileSizeDisplay => FormatFileSize(FileSizeBytes);
         public string UploadedAtDisplay => UploadedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm");
         public string ApprovedAtDisplay => ApprovedAt?.ToLocalTime().ToString("yyyy-MM-dd HH:mm") ?? "Not Approved";
