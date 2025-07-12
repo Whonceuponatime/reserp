@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows.Input;
 using MaritimeERP.Core.Entities;
+using MaritimeERP.Core.Interfaces;
 using MaritimeERP.Desktop.Commands;
 using MaritimeERP.Services.Interfaces;
 using Microsoft.Extensions.Logging;
@@ -22,6 +23,7 @@ namespace MaritimeERP.Desktop.ViewModels
         private readonly IShipService _shipService;
         private readonly INavigationService _navigationService;
         private readonly IAuthenticationService _authenticationService;
+        private readonly IDataChangeNotificationService _dataChangeNotificationService;
         private readonly ILogger<SoftwareViewModel> _logger;
 
         // Collections
@@ -234,6 +236,7 @@ namespace MaritimeERP.Desktop.ViewModels
             IShipService shipService,
             INavigationService navigationService,
             IAuthenticationService authenticationService,
+            IDataChangeNotificationService dataChangeNotificationService,
             ILogger<SoftwareViewModel> logger)
         {
             _softwareService = softwareService ?? throw new ArgumentNullException(nameof(softwareService));
@@ -242,6 +245,7 @@ namespace MaritimeERP.Desktop.ViewModels
             _shipService = shipService ?? throw new ArgumentNullException(nameof(shipService));
             _navigationService = navigationService ?? throw new ArgumentNullException(nameof(navigationService));
             _authenticationService = authenticationService ?? throw new ArgumentNullException(nameof(authenticationService));
+            _dataChangeNotificationService = dataChangeNotificationService ?? throw new ArgumentNullException(nameof(dataChangeNotificationService));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
             SaveCommand = new RelayCommand(async () => await SaveSoftwareAsync(), () => CanSaveSoftware());
@@ -271,7 +275,63 @@ namespace MaritimeERP.Desktop.ViewModels
                 }
             };
 
+            // Subscribe to ship data changes
+            SubscribeToShipDataChanges();
+
             _ = LoadDataAsync();
+        }
+
+        private void SubscribeToShipDataChanges()
+        {
+            _dataChangeNotificationService.DataChanged += OnDataChanged;
+        }
+
+        private async void OnDataChanged(object? sender, MaritimeERP.Core.Interfaces.DataChangeEventArgs e)
+        {
+            try
+            {
+                // Refresh ship data when ships are created, updated, or deleted
+                if (e.DataType == "Ship" && (e.Operation == "CREATE" || e.Operation == "UPDATE" || e.Operation == "DELETE"))
+                {
+                    _logger.LogInformation("SoftwareViewModel received ship data change notification: {DataType} - {Operation}", e.DataType, e.Operation);
+                    await RefreshShipDataAsync();
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error handling ship data change notification in SoftwareViewModel");
+            }
+        }
+
+        private async Task RefreshShipDataAsync()
+        {
+            try
+            {
+                var ships = await _shipService.GetAllShipsAsync();
+                
+                await Application.Current.Dispatcher.InvokeAsync(() =>
+                {
+                    var selectedShipId = SelectedShip?.Id;
+                    
+                    Ships.Clear();
+                    foreach (var ship in ships)
+                    {
+                        Ships.Add(ship);
+                    }
+                    
+                    // Restore selected ship if it still exists
+                    if (selectedShipId.HasValue)
+                    {
+                        SelectedShip = Ships.FirstOrDefault(s => s.Id == selectedShipId.Value);
+                    }
+                    
+                    _logger.LogInformation("SoftwareViewModel refreshed ship data - {ShipCount} ships loaded", Ships.Count);
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error refreshing ship data in SoftwareViewModel");
+            }
         }
 
         private async Task LoadDataAsync()

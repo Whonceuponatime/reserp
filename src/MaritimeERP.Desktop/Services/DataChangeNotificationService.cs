@@ -1,20 +1,15 @@
 using System;
+using MaritimeERP.Core.Interfaces;
 
 namespace MaritimeERP.Desktop.Services
 {
-    public interface IDataChangeNotificationService
-    {
-        event EventHandler<DataChangeEventArgs>? DataChanged;
-        void NotifyDataChanged(string dataType, string operation, object? data = null);
-    }
-
     public class DataChangeNotificationService : IDataChangeNotificationService
     {
-        public event EventHandler<DataChangeEventArgs>? DataChanged;
+        public event EventHandler<MaritimeERP.Core.Interfaces.DataChangeEventArgs>? DataChanged;
 
         public void NotifyDataChanged(string dataType, string operation, object? data = null)
         {
-            DataChanged?.Invoke(this, new DataChangeEventArgs
+            DataChanged?.Invoke(this, new MaritimeERP.Core.Interfaces.DataChangeEventArgs
             {
                 DataType = dataType,
                 Operation = operation,
@@ -22,13 +17,5 @@ namespace MaritimeERP.Desktop.Services
                 Timestamp = DateTime.UtcNow
             });
         }
-    }
-
-    public class DataChangeEventArgs : EventArgs
-    {
-        public string DataType { get; set; } = string.Empty;
-        public string Operation { get; set; } = string.Empty;
-        public object? Data { get; set; }
-        public DateTime Timestamp { get; set; }
     }
 } 

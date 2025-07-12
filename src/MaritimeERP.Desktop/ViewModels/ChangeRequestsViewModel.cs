@@ -3,6 +3,7 @@ using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows.Input;
 using MaritimeERP.Core.Entities;
+using MaritimeERP.Core.Interfaces;
 using MaritimeERP.Desktop.Commands;
 using MaritimeERP.Desktop.Views;
 using MaritimeERP.Services.Interfaces;
@@ -21,6 +22,7 @@ namespace MaritimeERP.Desktop.ViewModels
         private readonly IHardwareChangeRequestService _hardwareChangeRequestService;
         private readonly ISoftwareChangeRequestService _softwareChangeRequestService;
         private readonly ISecurityReviewStatementService _securityReviewStatementService;
+        private readonly IDataChangeNotificationService _dataChangeNotificationService;
         private readonly ILogger<ChangeRequestsViewModel> _logger;
 
         // Collections
@@ -265,6 +267,7 @@ namespace MaritimeERP.Desktop.ViewModels
             IHardwareChangeRequestService hardwareChangeRequestService,
             ISoftwareChangeRequestService softwareChangeRequestService,
             ISecurityReviewStatementService securityReviewStatementService,
+            IDataChangeNotificationService dataChangeNotificationService,
             ILogger<ChangeRequestsViewModel> logger)
         {
             _changeRequestService = changeRequestService ?? throw new ArgumentNullException(nameof(changeRequestService));
@@ -275,6 +278,7 @@ namespace MaritimeERP.Desktop.ViewModels
             _hardwareChangeRequestService = hardwareChangeRequestService ?? throw new ArgumentNullException(nameof(hardwareChangeRequestService));
             _softwareChangeRequestService = softwareChangeRequestService ?? throw new ArgumentNullException(nameof(softwareChangeRequestService));
             _securityReviewStatementService = securityReviewStatementService ?? throw new ArgumentNullException(nameof(securityReviewStatementService));
+            _dataChangeNotificationService = dataChangeNotificationService ?? throw new ArgumentNullException(nameof(dataChangeNotificationService));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
             // Initialize commands
@@ -292,8 +296,56 @@ namespace MaritimeERP.Desktop.ViewModels
             ViewDetailsCommand = new RelayCommand(ViewDetails, () => SelectedChangeRequest != null);
             OpenHardwareChangeRequestCommand = new RelayCommand(OpenHardwareChangeRequest, () => SelectedChangeRequest != null && SelectedChangeRequest.RequestTypeId == 1); // Only for Hardware Change
 
+            // Subscribe to ship data changes
+            SubscribeToShipDataChanges();
+
             // Load initial data
             _ = LoadDataAsync();
+        }
+
+        private void SubscribeToShipDataChanges()
+        {
+            _dataChangeNotificationService.DataChanged += OnDataChanged;
+        }
+
+        private async void OnDataChanged(object? sender, MaritimeERP.Core.Interfaces.DataChangeEventArgs e)
+        {
+            try
+            {
+                // Refresh ship data when ships are created, updated, or deleted
+                if (e.DataType == "Ship" && (e.Operation == "CREATE" || e.Operation == "UPDATE" || e.Operation == "DELETE"))
+                {
+                    _logger.LogInformation("ChangeRequestsViewModel received ship data change notification: {DataType} - {Operation}", e.DataType, e.Operation);
+                    await RefreshShipDataAsync();
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error handling ship data change notification in ChangeRequestsViewModel");
+            }
+        }
+
+        private async Task RefreshShipDataAsync()
+        {
+            try
+            {
+                var ships = await _shipService.GetAllShipsAsync();
+                
+                await Application.Current.Dispatcher.InvokeAsync(() =>
+                {
+                    Ships.Clear();
+                    foreach (var ship in ships)
+                    {
+                        Ships.Add(ship);
+                    }
+                    
+                    _logger.LogInformation("ChangeRequestsViewModel refreshed ship data - {ShipCount} ships loaded", Ships.Count);
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error refreshing ship data in ChangeRequestsViewModel");
+            }
         }
 
         private async Task LoadDataAsync()

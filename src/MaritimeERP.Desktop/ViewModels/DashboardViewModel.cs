@@ -3,8 +3,8 @@ using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows.Input;
 using MaritimeERP.Core.Entities;
+using MaritimeERP.Core.Interfaces;
 using MaritimeERP.Desktop.Commands;
-using MaritimeERP.Desktop.Services;
 using MaritimeERP.Services.Interfaces;
 using Microsoft.Extensions.Logging;
 using Component = MaritimeERP.Core.Entities.Component;
@@ -201,7 +201,7 @@ namespace MaritimeERP.Desktop.ViewModels
             _refreshTimer.Start();
         }
 
-        private async void OnDataChanged(object? sender, DataChangeEventArgs e)
+        private async void OnDataChanged(object? sender, MaritimeERP.Core.Interfaces.DataChangeEventArgs e)
         {
             try
             {

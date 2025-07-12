@@ -127,7 +127,7 @@ namespace MaritimeERP.Desktop
 
             // Register services - AuthenticationService as Singleton to maintain user state
             services.AddSingleton<IAuthenticationService, AuthenticationService>();
-            services.AddSingleton<IDataChangeNotificationService, DataChangeNotificationService>();
+            services.AddSingleton<MaritimeERP.Core.Interfaces.IDataChangeNotificationService, DataChangeNotificationService>();
             services.AddTransient<IUserService, UserService>();
             services.AddTransient<IAuditLogService, AuditLogService>();
             services.AddTransient<IShipService, ShipService>();

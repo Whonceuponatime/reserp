@@ -3,14 +3,15 @@ using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows.Input;
 using MaritimeERP.Core.Entities;
+using MaritimeERP.Core.Interfaces;
 using MaritimeERP.Desktop.Commands;
 using MaritimeERP.Services.Interfaces;
 using Microsoft.Extensions.Logging;
+using System.Windows;
 using Component = MaritimeERP.Core.Entities.Component;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using System.Windows;
 
 namespace MaritimeERP.Desktop.ViewModels
 {
@@ -23,6 +24,7 @@ namespace MaritimeERP.Desktop.ViewModels
         private readonly ILogger<ComponentsViewModel> _logger;
         private readonly INavigationService _navigationService;
         private readonly DashboardViewModel _dashboardViewModel;
+        private readonly IDataChangeNotificationService _dataChangeNotificationService;
 
         // Collections
         public ObservableCollection<Component> Components { get; set; } = new();
@@ -389,7 +391,8 @@ namespace MaritimeERP.Desktop.ViewModels
             IAuthenticationService authenticationService,
             ILogger<ComponentsViewModel> logger,
             INavigationService navigationService,
-            DashboardViewModel dashboardViewModel)
+            DashboardViewModel dashboardViewModel,
+            IDataChangeNotificationService dataChangeNotificationService)
         {
             _componentService = componentService ?? throw new ArgumentNullException(nameof(componentService));
             _systemService = systemService ?? throw new ArgumentNullException(nameof(systemService));
@@ -398,6 +401,7 @@ namespace MaritimeERP.Desktop.ViewModels
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _navigationService = navigationService ?? throw new ArgumentNullException(nameof(navigationService));
             _dashboardViewModel = dashboardViewModel ?? throw new ArgumentNullException(nameof(dashboardViewModel));
+            _dataChangeNotificationService = dataChangeNotificationService ?? throw new ArgumentNullException(nameof(dataChangeNotificationService));
 
             // Initialize commands with proper CanExecute conditions
             LoadDataCommand = new RelayCommand(async () => await LoadDataAsync(), () => !IsLoading);
@@ -426,7 +430,63 @@ namespace MaritimeERP.Desktop.ViewModels
                 }
             };
 
+            // Subscribe to ship data changes
+            SubscribeToShipDataChanges();
+
             _ = LoadDataAsync();
+        }
+
+        private void SubscribeToShipDataChanges()
+        {
+            _dataChangeNotificationService.DataChanged += OnDataChanged;
+        }
+
+        private async void OnDataChanged(object? sender, MaritimeERP.Core.Interfaces.DataChangeEventArgs e)
+        {
+            try
+            {
+                // Refresh ship data when ships are created, updated, or deleted
+                if (e.DataType == "Ship" && (e.Operation == "CREATE" || e.Operation == "UPDATE" || e.Operation == "DELETE"))
+                {
+                    _logger.LogInformation("ComponentsViewModel received ship data change notification: {DataType} - {Operation}", e.DataType, e.Operation);
+                    await RefreshShipDataAsync();
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error handling ship data change notification in ComponentsViewModel");
+            }
+        }
+
+        private async Task RefreshShipDataAsync()
+        {
+            try
+            {
+                var ships = await _shipService.GetAllShipsAsync();
+                
+                await Application.Current.Dispatcher.InvokeAsync(() =>
+                {
+                    var selectedShipId = SelectedShip?.Id;
+                    
+                    Ships.Clear();
+                    foreach (var ship in ships)
+                    {
+                        Ships.Add(ship);
+                    }
+                    
+                    // Restore selected ship if it still exists
+                    if (selectedShipId.HasValue)
+                    {
+                        SelectedShip = Ships.FirstOrDefault(s => s.Id == selectedShipId.Value);
+                    }
+                    
+                    _logger.LogInformation("ComponentsViewModel refreshed ship data - {ShipCount} ships loaded", Ships.Count);
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error refreshing ship data in ComponentsViewModel");
+            }
         }
 
         /// <summary>

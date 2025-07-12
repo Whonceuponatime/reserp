@@ -3,8 +3,8 @@ using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows.Input;
 using MaritimeERP.Core.Entities;
+using MaritimeERP.Core.Interfaces;
 using MaritimeERP.Desktop.Commands;
-using MaritimeERP.Desktop.Services;
 using MaritimeERP.Services.Interfaces;
 using Microsoft.Extensions.Logging;
 using System.Windows;
@@ -399,45 +399,33 @@ namespace MaritimeERP.Desktop.ViewModels
             private set => _saveSystemCommand = value;
         }
 
-        public SystemsViewModel(ISystemService systemService, IShipService shipService, IAuthenticationService authenticationService, IDataChangeNotificationService dataChangeNotificationService, ILogger<SystemsViewModel> logger, INavigationService navigationService)
+        public SystemsViewModel(
+            ISystemService systemService,
+            IShipService shipService,
+            IAuthenticationService authenticationService,
+            IDataChangeNotificationService dataChangeNotificationService,
+            ILogger<SystemsViewModel> logger,
+            INavigationService navigationService)
         {
-            _systemService = systemService ?? throw new ArgumentNullException(nameof(systemService));
-            _shipService = shipService ?? throw new ArgumentNullException(nameof(shipService));
-            _authenticationService = authenticationService ?? throw new ArgumentNullException(nameof(authenticationService));
-            _dataChangeNotificationService = dataChangeNotificationService ?? throw new ArgumentNullException(nameof(dataChangeNotificationService));
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            _navigationService = navigationService ?? throw new ArgumentNullException(nameof(navigationService));
+            _systemService = systemService;
+            _shipService = shipService;
+            _authenticationService = authenticationService;
+            _dataChangeNotificationService = dataChangeNotificationService;
+            _logger = logger;
+            _navigationService = navigationService;
 
-            LoadDataCommand = new RelayCommand(async () => await LoadDataAsync());
-            AddSystemCommand = new RelayCommand(AddSystem, () => CanEditData);
-            EditSystemCommand = new RelayCommand(EditSystem, () => SelectedSystem != null && !IsEditing && CanEditData);
-            DeleteSystemCommand = new RelayCommand(async () => await DeleteSystemAsync(), () => SelectedSystem != null && !IsEditing && CanEditData);
-            CancelEditCommand = new RelayCommand(CancelEdit);
-            ClearFiltersCommand = new RelayCommand(ClearFilters);
+            // Initialize commands
+            LoadDataCommand = new RelayCommand(async () => await LoadDataAsync(), () => !IsLoading);
+            AddSystemCommand = new RelayCommand(AddSystem, () => !IsLoading && !IsEditing && CanEditData);
+            EditSystemCommand = new RelayCommand(EditSystem, () => SelectedSystem != null && !IsLoading && !IsEditing && CanEditData);
+            DeleteSystemCommand = new RelayCommand(async () => await DeleteSystemAsync(), () => SelectedSystem != null && !IsLoading && !IsEditing && CanEditData);
             NavigateToComponentsCommand = new RelayCommand(NavigateToComponents, () => SelectedSystem != null);
+            CancelEditCommand = new RelayCommand(CancelEdit);
+            SaveSystemCommand = new RelayCommand(async () => await SaveSystemAsync(), () => CanSaveSystem());
+            ClearFiltersCommand = new RelayCommand(ClearFilters);
 
-            // Subscribe to property changes to refresh commands
-            PropertyChanged += (s, e) =>
-            {
-                if (e.PropertyName == nameof(IsEditing) ||
-                    e.PropertyName == nameof(SelectedSystem))
-                {
-                    ((RelayCommand)EditSystemCommand).RaiseCanExecuteChanged();
-                    ((RelayCommand)DeleteSystemCommand).RaiseCanExecuteChanged();
-                    ((RelayCommand)NavigateToComponentsCommand).RaiseCanExecuteChanged();
-                }
-
-                if (e.PropertyName == nameof(IsEditing) ||
-                    e.PropertyName == nameof(SystemName) ||
-                    e.PropertyName == nameof(Manufacturer) ||
-                    e.PropertyName == nameof(Model) ||
-                    e.PropertyName == nameof(SerialNumber) ||
-                    e.PropertyName == nameof(SelectedShip) ||
-                    e.PropertyName == nameof(SelectedCategory))
-                {
-                    ((RelayCommand)SaveSystemCommand).RaiseCanExecuteChanged();
-                }
-            };
+            // Subscribe to ship data changes
+            SubscribeToShipDataChanges();
 
             // Load data with proper error handling
             Task.Run(async () => 
@@ -452,6 +440,59 @@ namespace MaritimeERP.Desktop.ViewModels
                     StatusMessage = "Failed to load initial data. Please try refreshing.";
                 }
             });
+        }
+
+        private void SubscribeToShipDataChanges()
+        {
+            _dataChangeNotificationService.DataChanged += OnDataChanged;
+        }
+
+        private async void OnDataChanged(object? sender, MaritimeERP.Core.Interfaces.DataChangeEventArgs e)
+        {
+            try
+            {
+                // Refresh ship data when ships are created, updated, or deleted
+                if (e.DataType == "Ship" && (e.Operation == "CREATE" || e.Operation == "UPDATE" || e.Operation == "DELETE"))
+                {
+                    _logger.LogInformation("SystemsViewModel received ship data change notification: {DataType} - {Operation}", e.DataType, e.Operation);
+                    await RefreshShipDataAsync();
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error handling ship data change notification in SystemsViewModel");
+            }
+        }
+
+        private async Task RefreshShipDataAsync()
+        {
+            try
+            {
+                var ships = await _shipService.GetAllShipsAsync();
+                
+                await Application.Current.Dispatcher.InvokeAsync(() =>
+                {
+                    var selectedShipId = SelectedShip?.Id;
+                    
+                    Ships.Clear();
+                    foreach (var ship in ships)
+                    {
+                        Ships.Add(ship);
+                    }
+                    
+                    // Restore selected ship if it still exists
+                    if (selectedShipId.HasValue)
+                    {
+                        SelectedShip = Ships.FirstOrDefault(s => s.Id == selectedShipId.Value);
+                    }
+                    
+                    _logger.LogInformation("SystemsViewModel refreshed ship data - {ShipCount} ships loaded", Ships.Count);
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error refreshing ship data in SystemsViewModel");
+            }
         }
 
         private async Task LoadDataAsync()
