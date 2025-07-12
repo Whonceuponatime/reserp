@@ -26,7 +26,6 @@ namespace MaritimeERP.Services
                 return await _context.Systems
                     .Include(s => s.Ship)
                     .Include(s => s.Category)
-                    .Include(s => s.SecurityZone)
                     .OrderBy(s => s.Ship.ShipName)
                     .ThenBy(s => s.Name)
                     .ToListAsync();
@@ -45,7 +44,6 @@ namespace MaritimeERP.Services
                 return await _context.Systems
                     .Include(s => s.Ship)
                     .Include(s => s.Category)
-                    .Include(s => s.SecurityZone)
                     .Include(s => s.Components)
                     .FirstOrDefaultAsync(s => s.Id == id);
             }
@@ -107,7 +105,7 @@ namespace MaritimeERP.Services
                     Name = existingSystem.Name,
                     ShipId = existingSystem.ShipId,
                     CategoryId = existingSystem.CategoryId,
-                    SecurityZoneId = existingSystem.SecurityZoneId,
+                    SecurityZone = existingSystem.SecurityZone,
                     Manufacturer = existingSystem.Manufacturer,
                     Model = existingSystem.Model,
                     SerialNumber = existingSystem.SerialNumber,
@@ -121,7 +119,7 @@ namespace MaritimeERP.Services
                 existingSystem.Name = system.Name;
                 existingSystem.ShipId = system.ShipId;
                 existingSystem.CategoryId = system.CategoryId;
-                existingSystem.SecurityZoneId = system.SecurityZoneId;
+                existingSystem.SecurityZone = system.SecurityZone;
                 existingSystem.Manufacturer = system.Manufacturer;
                 existingSystem.Model = system.Model;
                 existingSystem.SerialNumber = system.SerialNumber;
@@ -185,7 +183,6 @@ namespace MaritimeERP.Services
             {
                 return await _context.Systems
                     .Include(s => s.Category)
-                    .Include(s => s.SecurityZone)
                     .Where(s => s.ShipId == shipId)
                     .OrderBy(s => s.Category.Name)
                     .ThenBy(s => s.Name)
@@ -224,7 +221,6 @@ namespace MaritimeERP.Services
                 return await _context.Systems
                     .Include(s => s.Ship)
                     .Include(s => s.Category)
-                    .Include(s => s.SecurityZone)
                     .Where(s => s.Name.ToLower().Contains(lowerSearchTerm) ||
                                s.Manufacturer.ToLower().Contains(lowerSearchTerm) ||
                                s.Model.ToLower().Contains(lowerSearchTerm) ||
@@ -249,7 +245,6 @@ namespace MaritimeERP.Services
                 return await _context.Systems
                     .Include(s => s.Ship)
                     .Include(s => s.Category)
-                    .Include(s => s.SecurityZone)
                     .Where(s => s.CategoryId == categoryId)
                     .OrderBy(s => s.Ship.ShipName)
                     .ThenBy(s => s.Name)
@@ -269,7 +264,6 @@ namespace MaritimeERP.Services
                 return await _context.Systems
                     .Include(s => s.Ship)
                     .Include(s => s.Category)
-                    .Include(s => s.SecurityZone)
                     .Where(s => s.Manufacturer.ToLower() == manufacturer.ToLower())
                     .OrderBy(s => s.Ship.ShipName)
                     .ThenBy(s => s.Name)
