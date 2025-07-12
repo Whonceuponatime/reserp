@@ -46,6 +46,7 @@ namespace MaritimeERP.Desktop.ViewModels
             EditDocumentCommand = new RelayCommand<Document>(async (doc) => await EditDocumentAsync(doc));
             FilterDocumentsCommand = new RelayCommand(() => FilterDocuments());
             ClearFiltersCommand = new RelayCommand(() => ClearFilters());
+            TestAuditLoggingCommand = new RelayCommand(async () => await TestAuditLoggingAsync());
 
             // Initialize
             Task.Run(async () => await InitializeAsync());
@@ -239,6 +240,7 @@ namespace MaritimeERP.Desktop.ViewModels
         public ICommand EditDocumentCommand { get; }
         public ICommand FilterDocumentsCommand { get; }
         public ICommand ClearFiltersCommand { get; }
+        public ICommand TestAuditLoggingCommand { get; }
 
         #endregion
 
@@ -655,6 +657,36 @@ namespace MaritimeERP.Desktop.ViewModels
             ShowApprovedOnly = false;
             ShowPendingOnly = false;
             FilterDocuments();
+        }
+
+        private async Task TestAuditLoggingAsync()
+        {
+            try
+            {
+                StatusMessage = "Testing audit logging...";
+                _logger.LogInformation("User initiated audit logging test");
+                
+                var result = await _documentService.TestAuditLoggingAsync();
+                
+                if (result)
+                {
+                    StatusMessage = "Audit logging test successful - check logs for details";
+                    MessageBox.Show("Audit logging test completed successfully. Check the application logs for detailed information.", 
+                        "Test Successful", MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+                else
+                {
+                    StatusMessage = "Audit logging test failed - check logs for errors";
+                    MessageBox.Show("Audit logging test failed. Check the application logs for error details.", 
+                        "Test Failed", MessageBoxButton.OK, MessageBoxImage.Warning);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error during audit logging test");
+                StatusMessage = "Error during audit logging test";
+                MessageBox.Show($"Error during audit logging test: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
         private static string FormatFileSize(long bytes)

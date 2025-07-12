@@ -158,11 +158,27 @@ namespace MaritimeERP.Services
                 _context.Documents.Add(document);
                 await _context.SaveChangesAsync();
 
+                _logger.LogInformation("Document {DocumentName} saved to database with ID {DocumentId}, now calling audit logging", 
+                    document.Name, document.Id);
+
                 // Create initial version
                 await CreateDocumentVersionAsync(document.Id, fileStream, originalFileName, document.UploadedByUserId, "Initial version");
 
                 // Log the creation
-                await _auditLogService.LogCreateAsync(document, "Document uploaded");
+                _logger.LogInformation("About to call audit log for document creation: Document ID {DocumentId}, Name: {DocumentName}", 
+                    document.Id, document.Name);
+                
+                try
+                {
+                    await _auditLogService.LogCreateAsync(document, "Document uploaded");
+                    _logger.LogInformation("Successfully called audit log for document {DocumentId}", document.Id);
+                }
+                catch (Exception auditEx)
+                {
+                    _logger.LogError(auditEx, "Failed to log document creation audit for {DocumentId}: {AuditError}", 
+                        document.Id, auditEx.Message);
+                    // Continue execution - don't fail document creation because audit failed
+                }
 
                 _logger.LogInformation("Document {DocumentName} created successfully", document.Name);
                 return document;
@@ -275,9 +291,20 @@ namespace MaritimeERP.Services
 
                 await _context.SaveChangesAsync();
 
+                _logger.LogInformation("Document {DocumentId} approved in database, now calling audit logging", documentId);
+
                 // Log the approval
-                await _auditLogService.LogActionAsync("Document", "APPROVE", documentId.ToString(), 
-                    document.Name, $"Document approved. Comments: {comments}");
+                try
+                {
+                    await _auditLogService.LogActionAsync("Document", "APPROVE", documentId.ToString(), 
+                        document.Name, $"Document approved. Comments: {comments}");
+                    _logger.LogInformation("Successfully logged approval audit for document {DocumentId}", documentId);
+                }
+                catch (Exception auditEx)
+                {
+                    _logger.LogError(auditEx, "Failed to log document approval audit for {DocumentId}: {AuditError}", 
+                        documentId, auditEx.Message);
+                }
 
                 _logger.LogInformation("Document {DocumentId} approved by user {UserId}", documentId, approvedByUserId);
                 return true;
@@ -307,9 +334,20 @@ namespace MaritimeERP.Services
 
                 await _context.SaveChangesAsync();
 
+                _logger.LogInformation("Document {DocumentId} rejected in database, now calling audit logging", documentId);
+
                 // Log the rejection
-                await _auditLogService.LogActionAsync("Document", "REJECT", documentId.ToString(), 
-                    document.Name, $"Document rejected. Reason: {comments}");
+                try
+                {
+                    await _auditLogService.LogActionAsync("Document", "REJECT", documentId.ToString(), 
+                        document.Name, $"Document rejected. Reason: {comments}");
+                    _logger.LogInformation("Successfully logged rejection audit for document {DocumentId}", documentId);
+                }
+                catch (Exception auditEx)
+                {
+                    _logger.LogError(auditEx, "Failed to log document rejection audit for {DocumentId}: {AuditError}", 
+                        documentId, auditEx.Message);
+                }
 
                 _logger.LogInformation("Document {DocumentId} rejected by user {UserId}", documentId, rejectedByUserId);
                 return true;
@@ -607,8 +645,21 @@ namespace MaritimeERP.Services
 
                 await _context.SaveChangesAsync();
 
+                _logger.LogInformation("Document version {VersionNumber} saved to database for document {DocumentId}, now calling audit logging", 
+                    nextVersionNumber, documentId);
+
                 // Log version creation
-                await _auditLogService.LogCreateAsync(version, $"New document version created: v{nextVersionNumber}");
+                try
+                {
+                    await _auditLogService.LogCreateAsync(version, $"New document version created: v{nextVersionNumber}");
+                    _logger.LogInformation("Successfully logged audit for document version {VersionNumber} of document {DocumentId}", 
+                        nextVersionNumber, documentId);
+                }
+                catch (Exception auditEx)
+                {
+                    _logger.LogError(auditEx, "Failed to log document version creation audit for version {VersionNumber} of document {DocumentId}: {AuditError}", 
+                        nextVersionNumber, documentId, auditEx.Message);
+                }
 
                 _logger.LogInformation("Version {VersionNumber} created for document {DocumentId}", nextVersionNumber, documentId);
                 return version;
@@ -813,6 +864,32 @@ namespace MaritimeERP.Services
         public string GetDocumentDownloadUrl(int documentId)
         {
             return $"/api/documents/{documentId}/download";
+        }
+
+        #endregion
+
+        #region Audit Logging Test
+
+        /// <summary>
+        /// Test method to verify audit logging is working for documents
+        /// </summary>
+        public async Task<bool> TestAuditLoggingAsync()
+        {
+            try
+            {
+                _logger.LogInformation("Starting audit logging test for DocumentService");
+                
+                // Test simple action logging
+                await _auditLogService.LogActionAsync("Document", "TEST", "test-id", "Test Document", "Audit logging test");
+                
+                _logger.LogInformation("Audit logging test completed successfully");
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Audit logging test failed: {ErrorMessage}", ex.Message);
+                return false;
+            }
         }
 
         #endregion

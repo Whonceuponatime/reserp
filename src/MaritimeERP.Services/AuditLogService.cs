@@ -207,6 +207,11 @@ namespace MaritimeERP.Services
             try
             {
                 var currentUser = await _authenticationService.GetCurrentUserAsync();
+                var userName = currentUser?.FullName ?? "System";
+                var userId = currentUser?.Id;
+
+                _logger.LogInformation("Attempting to log audit entry: {EntityType} {Action} {EntityId} by user {UserName}", 
+                    entityType, action, entityId, userName);
                 
                 var auditLog = new AuditLog
                 {
@@ -218,17 +223,48 @@ namespace MaritimeERP.Services
                     NewValues = newValues,
                     AdditionalInfo = additionalInfo,
                     Timestamp = DateTime.UtcNow,
-                    UserId = currentUser?.Id,
-                    UserName = currentUser?.FullName ?? "System"
+                    UserId = userId,
+                    UserName = userName
                 };
 
                 _context.AuditLogs.Add(auditLog);
                 await _context.SaveChangesAsync();
+
+                _logger.LogInformation("Successfully logged audit entry: {EntityType} {Action} {EntityId}", 
+                    entityType, action, entityId);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error logging audit entry for {EntityType} {Action} {EntityId}", entityType, action, entityId);
-                // Don't throw here to avoid breaking the main operation
+                _logger.LogError(ex, "CRITICAL: Failed to log audit entry for {EntityType} {Action} {EntityId}. " +
+                    "This means the audit trail is incomplete! Error: {ErrorMessage}", 
+                    entityType, action, entityId, ex.Message);
+                
+                // Try to log with minimal information as fallback
+                try
+                {
+                    var fallbackLog = new AuditLog
+                    {
+                        EntityType = entityType,
+                        Action = action,
+                        EntityId = entityId,
+                        EntityName = entityName,
+                        AdditionalInfo = $"Fallback log - Original error: {ex.Message}",
+                        Timestamp = DateTime.UtcNow,
+                        UserId = null,
+                        UserName = "System (Error Recovery)"
+                    };
+
+                    _context.AuditLogs.Add(fallbackLog);
+                    await _context.SaveChangesAsync();
+
+                    _logger.LogWarning("Created fallback audit log for {EntityType} {Action} {EntityId}", 
+                        entityType, action, entityId);
+                }
+                catch (Exception fallbackEx)
+                {
+                    _logger.LogError(fallbackEx, "CRITICAL: Even fallback audit logging failed for {EntityType} {Action} {EntityId}", 
+                        entityType, action, entityId);
+                }
             }
         }
 
@@ -241,11 +277,27 @@ namespace MaritimeERP.Services
                 var entityName = GetEntityName(entity);
                 var newValues = SerializeEntity(entity);
 
+                _logger.LogDebug("LogCreateAsync called for {EntityType} with ID {EntityId} and name '{EntityName}'", 
+                    entityType, entityId, entityName);
+
                 await LogAsync(entityType, "CREATE", entityId, entityName, null, newValues, additionalInfo);
+                
+                _logger.LogDebug("LogCreateAsync completed successfully for {EntityType} {EntityId}", entityType, entityId);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error logging create audit entry for {EntityType}", typeof(T).Name);
+                _logger.LogError(ex, "Error in LogCreateAsync for {EntityType}", typeof(T).Name);
+                // Still try to log with minimal data
+                try
+                {
+                    await LogAsync(typeof(T).Name, "CREATE", "unknown", null, null, null, 
+                        $"Error in detailed logging: {ex.Message}. Additional: {additionalInfo}");
+                }
+                catch
+                {
+                    // Last resort logging
+                    _logger.LogError("Complete failure to log CREATE action for {EntityType}", typeof(T).Name);
+                }
             }
         }
 
@@ -259,11 +311,27 @@ namespace MaritimeERP.Services
                 var oldValues = SerializeEntity(oldEntity);
                 var newValues = SerializeEntity(newEntity);
 
+                _logger.LogDebug("LogUpdateAsync called for {EntityType} with ID {EntityId} and name '{EntityName}'", 
+                    entityType, entityId, entityName);
+
                 await LogAsync(entityType, "UPDATE", entityId, entityName, oldValues, newValues, additionalInfo);
+                
+                _logger.LogDebug("LogUpdateAsync completed successfully for {EntityType} {EntityId}", entityType, entityId);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error logging update audit entry for {EntityType}", typeof(T).Name);
+                _logger.LogError(ex, "Error in LogUpdateAsync for {EntityType}", typeof(T).Name);
+                // Still try to log with minimal data
+                try
+                {
+                    await LogAsync(typeof(T).Name, "UPDATE", "unknown", null, null, null, 
+                        $"Error in detailed logging: {ex.Message}. Additional: {additionalInfo}");
+                }
+                catch
+                {
+                    // Last resort logging
+                    _logger.LogError("Complete failure to log UPDATE action for {EntityType}", typeof(T).Name);
+                }
             }
         }
 
@@ -276,11 +344,27 @@ namespace MaritimeERP.Services
                 var entityName = GetEntityName(entity);
                 var oldValues = SerializeEntity(entity);
 
+                _logger.LogDebug("LogDeleteAsync called for {EntityType} with ID {EntityId} and name '{EntityName}'", 
+                    entityType, entityId, entityName);
+
                 await LogAsync(entityType, "DELETE", entityId, entityName, oldValues, null, additionalInfo);
+                
+                _logger.LogDebug("LogDeleteAsync completed successfully for {EntityType} {EntityId}", entityType, entityId);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error logging delete audit entry for {EntityType}", typeof(T).Name);
+                _logger.LogError(ex, "Error in LogDeleteAsync for {EntityType}", typeof(T).Name);
+                // Still try to log with minimal data
+                try
+                {
+                    await LogAsync(typeof(T).Name, "DELETE", "unknown", null, null, null, 
+                        $"Error in detailed logging: {ex.Message}. Additional: {additionalInfo}");
+                }
+                catch
+                {
+                    // Last resort logging
+                    _logger.LogError("Complete failure to log DELETE action for {EntityType}", typeof(T).Name);
+                }
             }
         }
 
@@ -288,11 +372,28 @@ namespace MaritimeERP.Services
         {
             try
             {
+                _logger.LogDebug("LogActionAsync called for {EntityType} {Action} with ID {EntityId} and name '{EntityName}'", 
+                    entityType, action, entityId, entityName);
+
                 await LogAsync(entityType, action, entityId, entityName, null, null, additionalInfo);
+                
+                _logger.LogDebug("LogActionAsync completed successfully for {EntityType} {Action} {EntityId}", 
+                    entityType, action, entityId);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error logging action audit entry for {EntityType} {Action}", entityType, action);
+                _logger.LogError(ex, "Error in LogActionAsync for {EntityType} {Action}", entityType, action);
+                // Still try to log with minimal data
+                try
+                {
+                    await LogAsync(entityType, action, entityId ?? "unknown", entityName, null, null, 
+                        $"Error in detailed logging: {ex.Message}. Additional: {additionalInfo}");
+                }
+                catch
+                {
+                    // Last resort logging
+                    _logger.LogError("Complete failure to log {Action} action for {EntityType}", action, entityType);
+                }
             }
         }
 

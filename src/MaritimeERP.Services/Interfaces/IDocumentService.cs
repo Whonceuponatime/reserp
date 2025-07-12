@@ -37,6 +37,9 @@ namespace MaritimeERP.Services.Interfaces
         Task<List<DocumentVersion>> GetDocumentVersionsAsync(int documentId);
         Task<DocumentVersion> CreateDocumentVersionAsync(int documentId, Stream fileStream, string fileName, int uploadedByUserId, string? changeDescription = null);
 
+        // Audit logging test
+        Task<bool> TestAuditLoggingAsync();
+
         // Search and filtering
         Task<List<Document>> SearchDocumentsAsync(string searchTerm);
         Task<List<Document>> GetDocumentsForApprovalAsync();
