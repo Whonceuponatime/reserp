@@ -376,6 +376,16 @@ namespace MaritimeERP.Desktop.ViewModels
                         AvailableComponents.Add(component);
                     }
 
+                    _logger.LogInformation("SoftwareViewModel loaded {ComponentCount} components into AvailableComponents dropdown", 
+                        AvailableComponents.Count);
+
+                    // Log each component for debugging
+                    foreach (var component in AvailableComponents)
+                    {
+                        _logger.LogInformation("Component loaded: ID={ComponentId}, Name='{ComponentName}', System='{SystemName}'", 
+                            component.Id, component.Name, component.System?.Name ?? "No System");
+                    }
+
                     Ships.Clear();
                     foreach (var ship in ships)
                     {
@@ -593,6 +603,8 @@ namespace MaritimeERP.Desktop.ViewModels
 
         public void ClearComponentFilter()
         {
+            _logger.LogInformation("ClearComponentFilter called - resetting all filters");
+            
             SelectedComponent = null;
             SelectedSystem = null;
             SelectedShip = null;
@@ -605,6 +617,9 @@ namespace MaritimeERP.Desktop.ViewModels
                 {
                     var allComponents = await _componentService.GetAllComponentsAsync();
                     
+                    _logger.LogInformation("ClearComponentFilter: Reloaded {ComponentCount} components from service", 
+                        allComponents.Count());
+                    
                     await Application.Current.Dispatcher.InvokeAsync(() =>
                     {
                         AvailableComponents.Clear();
@@ -612,6 +627,9 @@ namespace MaritimeERP.Desktop.ViewModels
                         {
                             AvailableComponents.Add(component);
                         }
+                        
+                        _logger.LogInformation("ClearComponentFilter: AvailableComponents updated to {Count} components", 
+                            AvailableComponents.Count);
                     });
                 }
                 catch (Exception ex)
@@ -656,6 +674,9 @@ namespace MaritimeERP.Desktop.ViewModels
                     // When no system is selected, show all available components
                     var allComponents = await _componentService.GetAllComponentsAsync();
                     
+                    _logger.LogInformation("UpdateComponentsForSystemAsync: No system selected, loading all {ComponentCount} components", 
+                        allComponents.Count());
+                    
                     await Application.Current.Dispatcher.InvokeAsync(() =>
                     {
                         AvailableComponents.Clear();
@@ -663,11 +684,17 @@ namespace MaritimeERP.Desktop.ViewModels
                         {
                             AvailableComponents.Add(component);
                         }
+                        
+                        _logger.LogInformation("AvailableComponents after clearing and reloading: {Count} components", 
+                            AvailableComponents.Count);
                     });
                     return;
                 }
 
                 // When a system is selected, show only components for that system
+                _logger.LogInformation("UpdateComponentsForSystemAsync: System {SystemId} selected, filtering components", 
+                    _selectedSystem.Id);
+                
                 var components = await _componentService.GetComponentsBySystemIdAsync(_selectedSystem.Id);
                 
                 await Application.Current.Dispatcher.InvokeAsync(() =>
@@ -677,6 +704,9 @@ namespace MaritimeERP.Desktop.ViewModels
                     {
                         AvailableComponents.Add(component);
                     }
+                    
+                    _logger.LogInformation("AvailableComponents after system filtering: {Count} components for system {SystemName}", 
+                        AvailableComponents.Count, _selectedSystem.Name);
                 });
             }
             catch (Exception ex)
