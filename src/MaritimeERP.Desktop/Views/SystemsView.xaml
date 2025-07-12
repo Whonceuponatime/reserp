@@ -468,7 +468,8 @@
                                          FontSize="12"
                                          Background="#F5F5F5"
                                          BorderThickness="1"
-                                         BorderBrush="#E0E0E0"/>
+                                         BorderBrush="#E0E0E0"
+                                         Watermark="Enter security zone (e.g., Bridge, Engine Room)"/>
                             </StackPanel>
 
                             <!-- Action Buttons -->

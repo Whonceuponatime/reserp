@@ -545,6 +545,8 @@ namespace MaritimeERP.Desktop.ViewModels
                     }
                     _logger.LogInformation("Loaded {CategoryCount} categories", Categories.Count);
 
+
+
                     Manufacturers.Clear();
                     foreach (var manufacturer in manufacturers)
                     {
@@ -767,8 +769,8 @@ namespace MaritimeERP.Desktop.ViewModels
             
             StatusMessage = "Adding new system - fill in all required fields";
             
-            _logger.LogInformation("AddSystem: After setting IsEditing=true, Ships count = {ShipCount}, Categories count = {CategoryCount}", 
-                Ships.Count, Categories.Count);
+            _logger.LogInformation("AddSystem: After setting IsEditing=true, Ships count = {ShipCount}, Categories count = {CategoryCount}, SecurityZones count = {ZoneCount}", 
+                Ships.Count, Categories.Count, SecurityZones.Count);
             
             RefreshSaveCommand();
         }
@@ -967,6 +969,7 @@ namespace MaritimeERP.Desktop.ViewModels
                                  !string.IsNullOrWhiteSpace(SerialNumber) &&
                                  SelectedShip != null &&
                                  SelectedCategory != null;
+                                 // SecurityZoneText is optional
 
             return hasRequiredData && IsEditing;
         }

@@ -178,11 +178,11 @@ namespace MaritimeERP.Desktop
             try
             {
                 // Start the host asynchronously
-                await _host.StartAsync();
-                
+                    await _host.StartAsync();
+                    
                 // Initialize database asynchronously
-                await InitializeDatabaseAsync();
-                
+                    await InitializeDatabaseAsync();
+                    
                 // Show login window
                 ShowLoginWindow();
 
@@ -210,8 +210,8 @@ namespace MaritimeERP.Desktop
                     {
                         // Create main window on UI thread
                         await Dispatcher.InvokeAsync(() =>
-                        {
-                            var mainWindow = _host.Services.GetRequiredService<MainWindow>();
+                {
+                    var mainWindow = _host.Services.GetRequiredService<MainWindow>();
                             
                             // Refresh navigation after successful login to ensure admin menus appear
                             if (mainWindow.DataContext is MainViewModel mainViewModel)
@@ -219,8 +219,8 @@ namespace MaritimeERP.Desktop
                                 mainViewModel.RefreshNavigationAfterLogin();
                             }
                             
-                            mainWindow.Show();
-                            loginWindow.Close();
+                    mainWindow.Show();
+                    loginWindow.Close();
                         });
                     }
                     catch (Exception ex)
@@ -254,6 +254,18 @@ namespace MaritimeERP.Desktop
                 
                 // Ensure database is created
                 await context.Database.EnsureCreatedAsync();
+                
+                // Apply database migration for security zones and categories
+                try
+                {
+                    MigrationRunner.ApplyMigration();
+                    Console.WriteLine("Database migration applied successfully");
+                }
+                catch (Exception migrationEx)
+                {
+                    Console.WriteLine($"Migration error (continuing anyway): {migrationEx.Message}");
+                    // Continue even if migration fails - it might already be applied
+                }
                 
                 // Check if HardwareChangeRequests table exists, if not create it
                 var connection = context.Database.GetDbConnection();
