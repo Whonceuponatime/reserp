@@ -12,8 +12,5 @@ namespace MaritimeERP.Core.Entities
 
         [MaxLength(500)]
         public string? Description { get; set; }
-
-        // Navigation properties
-        public ICollection<ShipSystem> Systems { get; set; } = new List<ShipSystem>();
     }
 } 

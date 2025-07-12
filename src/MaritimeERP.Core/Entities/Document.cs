@@ -51,9 +51,6 @@ namespace MaritimeERP.Core.Entities
         public bool IsActive { get; set; } = true;
         public bool IsApproved { get; set; } = false;
 
-        public int? StatusId { get; set; }
-        public DocumentStatus? Status { get; set; }
-
         public int? ApprovedByUserId { get; set; }
         public User? ApprovedBy { get; set; }
 
@@ -73,7 +70,7 @@ namespace MaritimeERP.Core.Entities
 
         // Display properties
         public string DisplayName => $"{Name} v{Version}";
-        public string StatusDisplay => IsActive ? (Status?.Name ?? "Unknown") : "Inactive";
+        public string StatusDisplay => IsActive ? (IsApproved ? "Approved" : "Pending Approval") : "Inactive";
         public string FileSizeDisplay => FormatFileSize(FileSizeBytes);
         public string UploadedAtDisplay => UploadedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm");
         public string ApprovedAtDisplay => ApprovedAt?.ToLocalTime().ToString("yyyy-MM-dd HH:mm") ?? "Not Approved";

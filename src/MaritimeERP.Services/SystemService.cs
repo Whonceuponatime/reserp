@@ -105,7 +105,7 @@ namespace MaritimeERP.Services
                     Name = existingSystem.Name,
                     ShipId = existingSystem.ShipId,
                     CategoryId = existingSystem.CategoryId,
-                    SecurityZone = existingSystem.SecurityZone,
+                    SecurityZoneText = existingSystem.SecurityZoneText,
                     Manufacturer = existingSystem.Manufacturer,
                     Model = existingSystem.Model,
                     SerialNumber = existingSystem.SerialNumber,
@@ -119,7 +119,7 @@ namespace MaritimeERP.Services
                 existingSystem.Name = system.Name;
                 existingSystem.ShipId = system.ShipId;
                 existingSystem.CategoryId = system.CategoryId;
-                existingSystem.SecurityZone = system.SecurityZone;
+                existingSystem.SecurityZoneText = system.SecurityZoneText;
                 existingSystem.Manufacturer = system.Manufacturer;
                 existingSystem.Model = system.Model;
                 existingSystem.SerialNumber = system.SerialNumber;
@@ -304,6 +304,21 @@ namespace MaritimeERP.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error retrieving manufacturers");
+                throw;
+            }
+        }
+
+        public async Task<IEnumerable<SecurityZone>> GetSecurityZonesAsync()
+        {
+            try
+            {
+                return await _context.SecurityZones
+                    .OrderBy(z => z.Name)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving security zones");
                 throw;
             }
         }

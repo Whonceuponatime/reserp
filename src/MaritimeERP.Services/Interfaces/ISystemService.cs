@@ -23,6 +23,7 @@ namespace MaritimeERP.Services.Interfaces
         // Lookup data
         Task<IEnumerable<SystemCategory>> GetSystemCategoriesAsync();
         Task<IEnumerable<string>> GetManufacturersAsync();
+        Task<IEnumerable<SecurityZone>> GetSecurityZonesAsync();
 
         // Validation
         Task<bool> IsSerialNumberUniqueAsync(string serialNumber, int? excludeSystemId = null);
