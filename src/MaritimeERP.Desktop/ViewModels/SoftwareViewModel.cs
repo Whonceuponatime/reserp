@@ -394,6 +394,10 @@ namespace MaritimeERP.Desktop.ViewModels
                         SoftwareTypes.Add(type);
                     }
 
+                    // Ensure no system is selected initially so all components remain available
+                    SelectedSystem = null;
+                    SelectedShip = null;
+
                     ApplyFilters();
                     TotalSoftware = SoftwareList.Count;
                     StatusMessage = "Data loaded successfully";
@@ -590,7 +594,32 @@ namespace MaritimeERP.Desktop.ViewModels
         public void ClearComponentFilter()
         {
             SelectedComponent = null;
+            SelectedSystem = null;
+            SelectedShip = null;
             SearchTerm = string.Empty;
+            
+            // Explicitly reload all components to ensure dropdown is populated
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    var allComponents = await _componentService.GetAllComponentsAsync();
+                    
+                    await Application.Current.Dispatcher.InvokeAsync(() =>
+                    {
+                        AvailableComponents.Clear();
+                        foreach (var component in allComponents)
+                        {
+                            AvailableComponents.Add(component);
+                        }
+                    });
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error reloading components in ClearComponentFilter");
+                }
+            });
+            
             _ = LoadDataAsync(); // Reload all software
         }
 
@@ -620,17 +649,25 @@ namespace MaritimeERP.Desktop.ViewModels
 
         private async Task UpdateComponentsForSystemAsync()
         {
-            if (_selectedSystem == null)
-            {
-                await Application.Current.Dispatcher.InvokeAsync(() =>
-                {
-                    AvailableComponents.Clear();
-                });
-                return;
-            }
-
             try
             {
+                if (_selectedSystem == null)
+                {
+                    // When no system is selected, show all available components
+                    var allComponents = await _componentService.GetAllComponentsAsync();
+                    
+                    await Application.Current.Dispatcher.InvokeAsync(() =>
+                    {
+                        AvailableComponents.Clear();
+                        foreach (var component in allComponents)
+                        {
+                            AvailableComponents.Add(component);
+                        }
+                    });
+                    return;
+                }
+
+                // When a system is selected, show only components for that system
                 var components = await _componentService.GetComponentsBySystemIdAsync(_selectedSystem.Id);
                 
                 await Application.Current.Dispatcher.InvokeAsync(() =>
@@ -644,7 +681,7 @@ namespace MaritimeERP.Desktop.ViewModels
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error loading components for system {SystemId}", _selectedSystem.Id);
+                _logger.LogError(ex, "Error loading components for system {SystemId}", _selectedSystem?.Id);
                 StatusMessage = "Error loading components";
             }
         }
