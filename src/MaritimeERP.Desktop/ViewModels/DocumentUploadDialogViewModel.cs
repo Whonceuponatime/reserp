@@ -320,7 +320,7 @@ namespace MaritimeERP.Desktop.ViewModels
                     ContentType = GetContentType(Path.GetExtension(_filePath)),
                     IsActive = true,
                     IsApproved = false,
-                    Status = DocumentStatus.PendingApproval
+                    StatusId = 1 // Pending Approval
                 };
 
                 using var fileStream = new FileStream(_filePath, FileMode.Open, FileAccess.Read);

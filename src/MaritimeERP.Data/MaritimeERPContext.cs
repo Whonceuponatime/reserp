@@ -324,7 +324,6 @@ namespace MaritimeERP.Data
                 entity.Property(e => e.ContentType).HasMaxLength(200).IsRequired();
                 entity.Property(e => e.Description).HasMaxLength(500);
                 entity.Property(e => e.Comments).HasMaxLength(1000);
-                entity.Property(e => e.Status).HasConversion<string>();
 
                 entity.HasOne(d => d.Category)
                       .WithMany(p => p.Documents)
@@ -334,6 +333,11 @@ namespace MaritimeERP.Data
                 entity.HasOne(d => d.Ship)
                       .WithMany(s => s.Documents)
                       .HasForeignKey(d => d.ShipId)
+                      .OnDelete(DeleteBehavior.SetNull);
+                      
+                entity.HasOne(d => d.Status)
+                      .WithMany(s => s.Documents)
+                      .HasForeignKey(d => d.StatusId)
                       .OnDelete(DeleteBehavior.SetNull);
                       
                 entity.HasOne(d => d.UploadedBy)
@@ -368,6 +372,15 @@ namespace MaritimeERP.Data
 
                 entity.HasIndex(e => e.Category);
                 entity.HasIndex(e => e.DisplayOrder);
+            });
+
+            // Configure DocumentStatus
+            modelBuilder.Entity<DocumentStatus>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Name).HasMaxLength(100).IsRequired();
+                entity.Property(e => e.Description).HasMaxLength(500);
+                entity.Property(e => e.Color).HasMaxLength(20);
             });
 
             // Configure DocumentVersion relationships
@@ -527,6 +540,13 @@ namespace MaritimeERP.Data
                     DisplayOrder = 6,
                     IsActive = true
                 }
+            );
+            
+            // Seed Document Statuses
+            modelBuilder.Entity<DocumentStatus>().HasData(
+                new DocumentStatus { Id = 1, Name = "Pending Approval", Description = "Document is awaiting approval", Color = "#FF9800" },
+                new DocumentStatus { Id = 2, Name = "Approved", Description = "Document has been approved", Color = "#4CAF50" },
+                new DocumentStatus { Id = 3, Name = "Rejected", Description = "Document has been rejected", Color = "#F44336" }
             );
         }
     }

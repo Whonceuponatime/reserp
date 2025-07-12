@@ -281,7 +281,7 @@ namespace MaritimeERP.Services
                 }
 
                 document.IsApproved = true;
-                document.Status = DocumentStatus.Approved;
+                document.StatusId = 2; // Approved
                 document.ApprovedByUserId = approvedByUserId;
                 document.ApprovedAt = DateTime.UtcNow;
                 document.UpdatedAt = DateTime.UtcNow;
@@ -318,7 +318,7 @@ namespace MaritimeERP.Services
                 }
 
                 document.IsApproved = false;
-                document.Status = DocumentStatus.Rejected;
+                document.StatusId = 3; // Rejected
                 document.ApprovedByUserId = rejectedByUserId;
                 document.ApprovedAt = DateTime.UtcNow;
                 document.UpdatedAt = DateTime.UtcNow;
@@ -623,7 +623,7 @@ namespace MaritimeERP.Services
                 // Update document version and reset approval status
                 document.Version = nextVersionNumber;
                 document.UpdatedAt = DateTime.UtcNow;
-                document.Status = DocumentStatus.PendingApproval;
+                document.StatusId = 1; // Pending Approval
                 document.IsApproved = false;
                 document.ApprovedByUserId = null;
                 document.ApprovedAt = null;
@@ -689,7 +689,7 @@ namespace MaritimeERP.Services
                     .Include(d => d.Category)
                     .Include(d => d.Ship)
                     .Include(d => d.UploadedBy)
-                    .Where(d => d.IsActive && !d.IsApproved)
+                    .Where(d => d.IsActive && d.StatusId == 1) // Pending Approval
                     .OrderBy(d => d.UploadedAt)
                     .ToListAsync();
             }
@@ -747,8 +747,9 @@ namespace MaritimeERP.Services
             try
             {
                 return await _context.Documents
+                    .Include(d => d.Status)
                     .Where(d => d.IsActive)
-                    .GroupBy(d => d.Status.ToString())
+                    .GroupBy(d => d.Status!.Name)
                     .ToDictionaryAsync(g => g.Key, g => g.Count());
             }
             catch (Exception ex)

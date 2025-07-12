@@ -204,10 +204,10 @@ namespace MaritimeERP.Desktop.ViewModels
         public bool CanUpload => _authService.CurrentUser?.Role?.Name == "Administrator";
         
         public bool CanApprove => _authService.CurrentUser?.Role?.Name == "Administrator" && 
-                                  SelectedDocument != null && SelectedDocument.Status != DocumentStatus.Approved;
+                                  SelectedDocument != null && SelectedDocument.StatusId != 2; // Not Approved
         
         public bool CanReject => _authService.CurrentUser?.Role?.Name == "Administrator" && 
-                                 SelectedDocument != null && SelectedDocument.Status != DocumentStatus.Approved;
+                                 SelectedDocument != null && SelectedDocument.StatusId != 2; // Not Approved
         
         public bool CanDelete => _authService.CurrentUser?.Role?.Name == "Administrator";
 
@@ -344,7 +344,7 @@ namespace MaritimeERP.Desktop.ViewModels
                 
                 var statusStats = await _documentService.GetDocumentStatsByStatus();
                 ApprovedDocuments = statusStats.ContainsKey("Approved") ? statusStats["Approved"] : 0;
-                PendingDocuments = statusStats.ContainsKey("PendingApproval") ? statusStats["PendingApproval"] : 0;
+                PendingDocuments = statusStats.ContainsKey("Pending Approval") ? statusStats["Pending Approval"] : 0;
 
                 var totalSize = await _documentService.GetTotalFileSize();
                 TotalFileSize = FormatFileSize(totalSize);
