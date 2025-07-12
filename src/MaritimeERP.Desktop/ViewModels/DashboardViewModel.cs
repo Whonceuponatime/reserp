@@ -251,23 +251,25 @@ namespace MaritimeERP.Desktop.ViewModels
         {
             try
             {
-                // Get ship statistics
+                // Get all data on background thread
                 var shipStats = await _shipService.GetShipStatisticsAsync();
-                TotalShips = shipStats.TotalShips;
-                TotalTonnage = shipStats.TotalGrossTonnage;
-
-                // Get active ships count
-                ActiveShips = await _shipService.GetActiveShipCountAsync();
-
-                // Get all ships to find newest and most common type
+                var activeShipsCount = await _shipService.GetActiveShipCountAsync();
                 var allShips = await _shipService.GetAllShipsAsync();
+                var allSystems = await _systemService.GetAllSystemsAsync();
+                var allComponents = await _componentService.GetAllComponentsAsync();
+
                 var shipsList = allShips.ToList();
+                
+                // Process data on background thread
+                string newestShipName = "N/A";
+                string mostCommonType = "N/A";
+                int recentChangesCount = 0;
 
                 if (shipsList.Any())
                 {
                     // Find newest ship
                     var newest = shipsList.OrderByDescending(s => s.CreatedAt).FirstOrDefault();
-                    NewestShip = newest?.ShipName ?? "N/A";
+                    newestShipName = newest?.ShipName ?? "N/A";
 
                     // Find most common ship type
                     var typeGroups = shipsList
@@ -275,20 +277,25 @@ namespace MaritimeERP.Desktop.ViewModels
                         .GroupBy(s => s.ShipType)
                         .OrderByDescending(g => g.Count())
                         .FirstOrDefault();
-                    MostCommonShipType = typeGroups?.Key ?? "N/A";
+                    mostCommonType = typeGroups?.Key ?? "N/A";
+
+                    // Calculate recent changes (last 30 days)
+                    var recentDate = DateTime.UtcNow.AddDays(-30);
+                    recentChangesCount = shipsList.Count(s => s.UpdatedAt >= recentDate || s.CreatedAt >= recentDate);
                 }
 
-                // Get systems count
-                var allSystems = await _systemService.GetAllSystemsAsync();
-                TotalSystems = allSystems.Count();
-
-                // Get components count
-                var allComponents = await _componentService.GetAllComponentsAsync();
-                TotalComponents = allComponents.Count();
-
-                // Calculate recent changes (last 30 days)
-                var recentDate = DateTime.UtcNow.AddDays(-30);
-                RecentChanges = shipsList.Count(s => s.UpdatedAt >= recentDate || s.CreatedAt >= recentDate);
+                // Update properties on UI thread
+                await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                {
+                    TotalShips = shipStats.TotalShips;
+                    TotalTonnage = shipStats.TotalGrossTonnage;
+                    ActiveShips = activeShipsCount;
+                    NewestShip = newestShipName;
+                    MostCommonShipType = mostCommonType;
+                    TotalSystems = allSystems.Count();
+                    TotalComponents = allComponents.Count();
+                    RecentChanges = recentChangesCount;
+                });
             }
             catch (Exception ex)
             {
@@ -300,22 +307,32 @@ namespace MaritimeERP.Desktop.ViewModels
         {
             try
             {
-                RecentActivities.Clear();
-                RecentShips.Clear();
-                RecentSystems.Clear();
-                RecentComponents.Clear();
-
-                // Get recent ships (last 5)
+                // Get data on background thread
                 var allShips = await _shipService.GetAllShipsAsync();
                 var recentShips = allShips
                     .OrderByDescending(s => s.CreatedAt)
                     .Take(5)
                     .ToList();
 
+                var allSystems = await _systemService.GetAllSystemsAsync();
+                var recentSystems = allSystems
+                    .OrderByDescending(s => s.CreatedAt)
+                    .Take(5)
+                    .ToList();
+
+                var allComponents = await _componentService.GetAllComponentsAsync();
+                var recentComponents = allComponents
+                    .OrderByDescending(c => c.CreatedAt)
+                    .Take(5)
+                    .ToList();
+
+                // Prepare activities list
+                var activities = new List<DashboardActivity>();
+
+                // Add ship activities
                 foreach (var ship in recentShips)
                 {
-                    RecentShips.Add(ship);
-                    RecentActivities.Add(new DashboardActivity
+                    activities.Add(new DashboardActivity
                     {
                         Type = "Ship",
                         Title = $"Ship Added: {ship.ShipName}",
@@ -325,17 +342,10 @@ namespace MaritimeERP.Desktop.ViewModels
                     });
                 }
 
-                // Get recent systems (last 5)
-                var allSystems = await _systemService.GetAllSystemsAsync();
-                var recentSystems = allSystems
-                    .OrderByDescending(s => s.CreatedAt)
-                    .Take(5)
-                    .ToList();
-
+                // Add system activities
                 foreach (var system in recentSystems)
                 {
-                    RecentSystems.Add(system);
-                    RecentActivities.Add(new DashboardActivity
+                    activities.Add(new DashboardActivity
                     {
                         Type = "System",
                         Title = $"System Added: {system.Name}",
@@ -345,17 +355,10 @@ namespace MaritimeERP.Desktop.ViewModels
                     });
                 }
 
-                // Get recent components (last 5)
-                var allComponents = await _componentService.GetAllComponentsAsync();
-                var recentComponents = allComponents
-                    .OrderByDescending(c => c.CreatedAt)
-                    .Take(5)
-                    .ToList();
-
+                // Add component activities
                 foreach (var component in recentComponents)
                 {
-                    RecentComponents.Add(component);
-                    RecentActivities.Add(new DashboardActivity
+                    activities.Add(new DashboardActivity
                     {
                         Type = "Component",
                         Title = $"Component Added: {component.Name}",
@@ -366,15 +369,37 @@ namespace MaritimeERP.Desktop.ViewModels
                 }
 
                 // Sort all activities by timestamp
-                var sortedActivities = RecentActivities
+                var sortedActivities = activities
                     .OrderByDescending(a => a.Timestamp)
                     .ToList();
 
-                RecentActivities.Clear();
-                foreach (var activity in sortedActivities)
+                // Update UI collections on UI thread
+                await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
                 {
-                    RecentActivities.Add(activity);
-                }
+                    RecentActivities.Clear();
+                    foreach (var activity in sortedActivities)
+                    {
+                        RecentActivities.Add(activity);
+                    }
+
+                    RecentShips.Clear();
+                    foreach (var ship in recentShips)
+                    {
+                        RecentShips.Add(ship);
+                    }
+
+                    RecentSystems.Clear();
+                    foreach (var system in recentSystems)
+                    {
+                        RecentSystems.Add(system);
+                    }
+
+                    RecentComponents.Clear();
+                    foreach (var component in recentComponents)
+                    {
+                        RecentComponents.Add(component);
+                    }
+                });
             }
             catch (Exception ex)
             {
@@ -386,11 +411,10 @@ namespace MaritimeERP.Desktop.ViewModels
         {
             try
             {
-                ShipTypeStatistics.Clear();
-                FleetStatistics.Clear();
-
-                // Ship type statistics
+                // Get data on background thread
                 var allShips = await _shipService.GetAllShipsAsync();
+                
+                // Ship type statistics
                 var shipTypeGroups = allShips
                     .Where(s => !string.IsNullOrEmpty(s.ShipType))
                     .GroupBy(s => s.ShipType)
@@ -403,17 +427,31 @@ namespace MaritimeERP.Desktop.ViewModels
                     .OrderByDescending(s => s.Count)
                     .ToList();
 
-                foreach (var stat in shipTypeGroups)
-                {
-                    ShipTypeStatistics.Add(stat);
-                }
-
                 // Fleet statistics by status
                 var activeCount = allShips.Count(s => s.IsActive);
                 var inactiveCount = allShips.Count(s => !s.IsActive);
 
-                FleetStatistics.Add(new FleetStatistic { Status = "Active", Count = activeCount });
-                FleetStatistics.Add(new FleetStatistic { Status = "Inactive", Count = inactiveCount });
+                var fleetStats = new List<FleetStatistic>
+                {
+                    new FleetStatistic { Status = "Active", Count = activeCount },
+                    new FleetStatistic { Status = "Inactive", Count = inactiveCount }
+                };
+
+                // Update UI collections on UI thread
+                await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                {
+                    ShipTypeStatistics.Clear();
+                    foreach (var stat in shipTypeGroups)
+                    {
+                        ShipTypeStatistics.Add(stat);
+                    }
+
+                    FleetStatistics.Clear();
+                    foreach (var stat in fleetStats)
+                    {
+                        FleetStatistics.Add(stat);
+                    }
+                });
             }
             catch (Exception ex)
             {

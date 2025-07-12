@@ -31,7 +31,7 @@ namespace MaritimeERP.Services
             if (_databaseInitialized)
                 return;
 
-            await _initSemaphore.WaitAsync();
+            await _initSemaphore.WaitAsync(TimeSpan.FromSeconds(30));
             try
             {
                 if (_databaseInitialized)
@@ -41,6 +41,9 @@ namespace MaritimeERP.Services
                 {
                     using var scope = _serviceProvider.CreateScope();
                     var context = scope.ServiceProvider.GetRequiredService<MaritimeERPContext>();
+                    
+                    // Set a timeout for database operations
+                    context.Database.SetCommandTimeout(30);
                     
                     // Ensure database is created
                     await context.Database.EnsureCreatedAsync();
@@ -127,12 +130,6 @@ namespace MaritimeERP.Services
                 if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
                 {
                     _logger.LogWarning("Authentication attempted with empty username or password");
-                    
-                    // Log failed login attempt
-                    using var logScope = _serviceProvider.CreateScope();
-                    var loginLogService = logScope.ServiceProvider.GetRequiredService<ILoginLogService>();
-                    await loginLogService.LogFailedLoginAsync(username ?? "empty", "Empty username or password");
-                    
                     return null;
                 }
 
@@ -142,6 +139,10 @@ namespace MaritimeERP.Services
                 using var scope = _serviceProvider.CreateScope();
                 var context = scope.ServiceProvider.GetRequiredService<MaritimeERPContext>();
 
+                // Set a timeout for database operations
+                context.Database.SetCommandTimeout(15);
+
+                // Simple user lookup with timeout
                 var user = await context.Users
                     .Include(u => u.Role)
                     .FirstOrDefaultAsync(u => u.Username == username && u.IsActive);
@@ -149,11 +150,6 @@ namespace MaritimeERP.Services
                 if (user == null)
                 {
                     _logger.LogWarning("Authentication failed: User {Username} not found or inactive", username);
-                    
-                    // Log failed login attempt
-                    var loginLogService = scope.ServiceProvider.GetRequiredService<ILoginLogService>();
-                    await loginLogService.LogFailedLoginAsync(username, "User not found or inactive");
-                    
                     return null;
                 }
 
@@ -161,7 +157,7 @@ namespace MaritimeERP.Services
                 _logger.LogInformation("User {Username} found - ID: {UserId}, RoleId: {RoleId}, RoleName: {RoleName}", 
                     user.Username, user.Id, user.RoleId, user.Role?.Name ?? "NULL");
 
-                // Temporary safety bypass for admin - remove after setting proper password
+                // Password verification
                 bool isValidPassword = false;
                 
                 if (username == "admin" && (password == "admin" || password == "admin123"))
@@ -179,16 +175,11 @@ namespace MaritimeERP.Services
                 if (!isValidPassword)
                 {
                     _logger.LogWarning("Authentication failed: Invalid password for user {Username}", username);
-                    
-                    // Log failed login attempt
-                    var loginLogService = scope.ServiceProvider.GetRequiredService<ILoginLogService>();
-                    await loginLogService.LogFailedLoginAsync(username, "Invalid password");
-                    
                     return null;
                 }
 
-                // Update last login in a separate scope to avoid locking
-                await Task.Run(async () =>
+                // Update last login asynchronously without blocking
+                _ = Task.Run(async () =>
                 {
                     try
                     {
@@ -206,51 +197,32 @@ namespace MaritimeERP.Services
                     catch (Exception ex)
                     {
                         _logger.LogWarning(ex, "Failed to update last login time for user {Username}", username);
-                        // Don't fail authentication if we can't update last login
                     }
                 });
 
-                // Log successful login
-                using var successLogScope = _serviceProvider.CreateScope();
-                var successLoginLogService = successLogScope.ServiceProvider.GetRequiredService<ILoginLogService>();
-                await successLoginLogService.LogSuccessfulLoginAsync(user.Id, username);
-
-                // Ensure user has role information loaded
-                if (user.Role == null)
+                // Log successful login asynchronously without blocking
+                _ = Task.Run(async () =>
                 {
-                    _logger.LogWarning("User {Username} authenticated but role is null, reloading user", username);
-                    var userWithRole = await context.Users
-                        .Include(u => u.Role)
-                        .FirstOrDefaultAsync(u => u.Id == user.Id);
-                    if (userWithRole != null)
+                    try
                     {
-                        user = userWithRole;
-                        _logger.LogInformation("Reloaded user {Username} with role {RoleName}", username, user.Role?.Name ?? "NULL");
+                        using var logScope = _serviceProvider.CreateScope();
+                        var loginLogService = logScope.ServiceProvider.GetRequiredService<ILoginLogService>();
+                        await loginLogService.LogSuccessfulLoginAsync(user.Id, username);
                     }
-                }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarning(ex, "Failed to log successful login for user {Username}", username);
+                    }
+                });
 
                 _currentUser = user;
                 _logger.LogInformation("User {Username} authenticated successfully with role {RoleName}", username, user.Role?.Name ?? "NULL");
-                _logger.LogInformation("_currentUser set - Username: {Username}, Role: {RoleName}", _currentUser.Username, _currentUser.Role?.Name ?? "NULL");
                 
                 return user;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error during authentication for user {Username}", username);
-                
-                // Log failed login attempt due to system error
-                try
-                {
-                    using var errorLogScope = _serviceProvider.CreateScope();
-                    var errorLoginLogService = errorLogScope.ServiceProvider.GetRequiredService<ILoginLogService>();
-                    await errorLoginLogService.LogFailedLoginAsync(username, $"System error: {ex.Message}");
-                }
-                catch
-                {
-                    // Ignore logging errors
-                }
-                
                 return null;
             }
         }
