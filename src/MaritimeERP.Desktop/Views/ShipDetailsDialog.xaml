@@ -20,7 +20,7 @@
                 <TextBlock Text="🚢" FontSize="32" VerticalAlignment="Center" Foreground="White" Margin="0,0,16,0"/>
                 <StackPanel>
                     <TextBlock Text="{Binding Ship.ShipName}" FontSize="24" FontWeight="Bold" Foreground="White"/>
-                    <TextBlock Text="{Binding Ship.ImoNumber, StringFormat='IMO: {0}'}" FontSize="14" Foreground="#E3F2FD"/>
+                    <TextBlock Text="{Binding Ship.ImoNumber}" FontSize="14" Foreground="#E3F2FD"/>
                 </StackPanel>
             </StackPanel>
         </Border>
@@ -98,13 +98,13 @@
                                 </Grid.RowDefinitions>
 
                                 <TextBlock Grid.Row="0" Grid.Column="0" Text="Gross Tonnage:" FontWeight="Medium" Foreground="#616161" Margin="0,0,8,4"/>
-                                <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding Ship.GrossTonnage, StringFormat='{0:N0} GT'}" Foreground="#212121" Margin="0,0,0,4"/>
+                                <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding Ship.GrossTonnage}" Foreground="#212121" Margin="0,0,0,4"/>
 
                                 <TextBlock Grid.Row="1" Grid.Column="0" Text="Net Tonnage:" FontWeight="Medium" Foreground="#616161" Margin="0,0,8,4"/>
-                                <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding Ship.NetTonnage, StringFormat='{0:N0} NT'}" Foreground="#212121" Margin="0,0,0,4"/>
+                                <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding Ship.NetTonnage}" Foreground="#212121" Margin="0,0,0,4"/>
 
                                 <TextBlock Grid.Row="2" Grid.Column="0" Text="Deadweight:" FontWeight="Medium" Foreground="#616161" Margin="0,0,8,4"/>
-                                <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding Ship.DeadweightTonnage, StringFormat='{0:N0} DWT'}" Foreground="#212121" Margin="0,0,0,4"/>
+                                <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding Ship.DeadweightTonnage}" Foreground="#212121" Margin="0,0,0,4"/>
                             </Grid>
                         </StackPanel>
                     </Border>
@@ -160,7 +160,7 @@
                                                 <StackPanel>
                                                     <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="12"/>
                                                     <TextBlock Text="{Binding Manufacturer}" FontSize="10" Foreground="#757575"/>
-                                                    <TextBlock Text="{Binding Components.Count, StringFormat='Components: {0}'}" 
+                                                    <TextBlock Text="{Binding Components.Count}" 
                                                                FontSize="10" Foreground="#1976D2" Margin="0,2,0,0"/>
                                                 </StackPanel>
                                             </Border>
@@ -182,7 +182,7 @@
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
                 
-                <TextBlock Grid.Column="0" Text="{Binding Ship.UpdatedAt, StringFormat='Last updated: {0:g}'}" 
+                <TextBlock Grid.Column="0" Text="{Binding Ship.UpdatedAt}" 
                            FontSize="11" Foreground="#757575" VerticalAlignment="Center"/>
                 
                 <Button Grid.Column="1" Content="Close" Click="Close_Click"

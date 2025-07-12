@@ -430,14 +430,4 @@ namespace MaritimeERP.Desktop.ViewModels
 
     // Ship Edit ViewModel - moved to separate file
     // See ShipEditViewModel.cs for implementation
-
-    public class ShipDetailsViewModel
-    {
-        public Ship Ship { get; }
-
-        public ShipDetailsViewModel(Ship ship)
-        {
-            Ship = ship;
-        }
-    }
 } 
