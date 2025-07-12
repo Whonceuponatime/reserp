@@ -155,15 +155,52 @@ namespace MaritimeERP.Desktop.ViewModels
                 }
                 _viewModelCache.Clear();
                 
-                // Close current window and show login window
+                // Get the current main window
                 var currentWindow = System.Windows.Application.Current.MainWindow;
                 
-                // Create and show login window
-                var loginWindow = _serviceProvider.GetRequiredService<LoginWindow>();
-                loginWindow.Show();
+                // Create login window with proper ViewModel
+                var authService = _serviceProvider.GetRequiredService<IAuthenticationService>();
+                var loginViewModel = new LoginViewModel(authService);
+                var loginWindow = new LoginWindow(loginViewModel);
                 
-                // Close main window
+                // Set up login success handler
+                loginViewModel.LoginSuccess += async (s, e) => 
+                {
+                    try
+                    {
+                        // Create main window on UI thread
+                        await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                        {
+                            var mainWindow = _serviceProvider.GetRequiredService<MainWindow>();
+                            
+                            // Set as new main window
+                            System.Windows.Application.Current.MainWindow = mainWindow;
+                            
+                            // Refresh navigation after successful login
+                            if (mainWindow.DataContext is MainViewModel mainViewModel)
+                            {
+                                mainViewModel.RefreshNavigationAfterLogin();
+                            }
+                            
+                            mainWindow.Show();
+                            loginWindow.Close();
+                        });
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Windows.MessageBox.Show($"Error opening main window: {ex.Message}", "Error", 
+                            System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+                    }
+                };
+                
+                // Set login window as main window temporarily
+                System.Windows.Application.Current.MainWindow = loginWindow;
+                
+                // Close current window
                 currentWindow?.Close();
+                
+                // Show login window as dialog
+                loginWindow.ShowDialog();
             }
             catch (Exception ex)
             {
