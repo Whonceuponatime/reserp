@@ -375,7 +375,7 @@ namespace MaritimeERP.Desktop.ViewModels
                         if (currentUser != null)
                         {
                             var changeRequestStats = await _changeRequestService.GetChangeRequestStatisticsAsync();
-                            pendingChangeReqCount = changeRequestStats.PendingApproval + changeRequestStats.UnderReview;
+                            pendingChangeReqCount = changeRequestStats.PendingApproval;
                         }
 
                         // Calculate alerts (pending items that need attention)
