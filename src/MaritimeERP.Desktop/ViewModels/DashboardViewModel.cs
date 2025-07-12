@@ -4,18 +4,21 @@ using System.Runtime.CompilerServices;
 using System.Windows.Input;
 using MaritimeERP.Core.Entities;
 using MaritimeERP.Desktop.Commands;
+using MaritimeERP.Desktop.Services;
 using MaritimeERP.Services.Interfaces;
 using Microsoft.Extensions.Logging;
 using Component = MaritimeERP.Core.Entities.Component;
 
 namespace MaritimeERP.Desktop.ViewModels
 {
-    public class DashboardViewModel : INotifyPropertyChanged
+    public class DashboardViewModel : INotifyPropertyChanged, IDisposable
     {
         private readonly IShipService _shipService;
         private readonly ISystemService _systemService;
         private readonly IComponentService _componentService;
+        private readonly IDataChangeNotificationService _dataChangeNotificationService;
         private readonly ILogger<DashboardViewModel> _logger;
+        private readonly System.Timers.Timer _refreshTimer;
 
         // Statistics Properties
         private int _totalShips = 0;
@@ -42,14 +45,19 @@ namespace MaritimeERP.Desktop.ViewModels
             IShipService shipService, 
             ISystemService systemService, 
             IComponentService componentService,
+            IDataChangeNotificationService dataChangeNotificationService,
             ILogger<DashboardViewModel> logger)
         {
             _shipService = shipService;
             _systemService = systemService;
             _componentService = componentService;
+            _dataChangeNotificationService = dataChangeNotificationService;
             _logger = logger;
+            _refreshTimer = new System.Timers.Timer();
 
             InitializeCommands();
+            SubscribeToDataChanges();
+            InitializeRefreshTimer();
             _ = LoadDashboardDataAsync();
         }
 
@@ -156,6 +164,47 @@ namespace MaritimeERP.Desktop.ViewModels
             ViewShipsCommand = new RelayCommand(() => { /* Navigate to ships */ });
             ViewSystemsCommand = new RelayCommand(() => { /* Navigate to systems */ });
             ViewComponentsCommand = new RelayCommand(() => { /* Navigate to components */ });
+        }
+
+        private void SubscribeToDataChanges()
+        {
+            _dataChangeNotificationService.DataChanged += OnDataChanged;
+        }
+
+        private void InitializeRefreshTimer()
+        {
+            // Refresh dashboard every 30 seconds
+            _refreshTimer.Interval = 30000; // 30 seconds
+            _refreshTimer.Elapsed += async (sender, e) =>
+            {
+                try
+                {
+                    await LoadDashboardDataAsync();
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error during periodic dashboard refresh");
+                }
+            };
+            _refreshTimer.Start();
+        }
+
+        private async void OnDataChanged(object? sender, DataChangeEventArgs e)
+        {
+            try
+            {
+                _logger.LogInformation("Dashboard received data change notification: {DataType} - {Operation}", e.DataType, e.Operation);
+                
+                // Refresh dashboard data when any relevant data changes
+                if (e.DataType == "Ship" || e.DataType == "System" || e.DataType == "Component")
+                {
+                    await LoadDashboardDataAsync();
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error handling data change notification");
+            }
         }
 
         public async Task LoadDashboardDataAsync()
@@ -375,6 +424,13 @@ namespace MaritimeERP.Desktop.ViewModels
             field = value;
             OnPropertyChanged(propertyName);
             return true;
+        }
+
+        public void Dispose()
+        {
+            _refreshTimer?.Stop();
+            _refreshTimer?.Dispose();
+            _dataChangeNotificationService.DataChanged -= OnDataChanged;
         }
     }
 

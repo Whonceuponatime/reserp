@@ -123,23 +123,24 @@ namespace MaritimeERP.Desktop
                     options.EnableSensitiveDataLogging(false);
                     options.EnableServiceProviderCaching(false);
                 }
-            }, ServiceLifetime.Scoped);
+            }, ServiceLifetime.Transient);
 
-            // Register services
-            services.AddScoped<IAuthenticationService, AuthenticationService>();
-            services.AddScoped<IUserService, UserService>();
-            services.AddScoped<IAuditLogService, AuditLogService>();
-            services.AddScoped<IShipService, ShipService>();
-            services.AddScoped<ISystemService, SystemService>();
-            services.AddScoped<IComponentService, ComponentService>();
-            services.AddScoped<ISoftwareService, SoftwareService>();
-            services.AddScoped<IChangeRequestService, ChangeRequestService>();
-            services.AddScoped<ISystemChangePlanService, SystemChangePlanService>();
-            services.AddScoped<IHardwareChangeRequestService, HardwareChangeRequestService>();
-            services.AddScoped<ISoftwareChangeRequestService, SoftwareChangeRequestService>();
-            services.AddScoped<ISecurityReviewStatementService, SecurityReviewStatementService>();
-            services.AddScoped<IDocumentService, DocumentService>();
-            services.AddScoped<ILoginLogService, LoginLogService>();
+            // Register services - AuthenticationService as Singleton to maintain user state
+            services.AddSingleton<IAuthenticationService, AuthenticationService>();
+            services.AddSingleton<IDataChangeNotificationService, DataChangeNotificationService>();
+            services.AddTransient<IUserService, UserService>();
+            services.AddTransient<IAuditLogService, AuditLogService>();
+            services.AddTransient<IShipService, ShipService>();
+            services.AddTransient<ISystemService, SystemService>();
+            services.AddTransient<IComponentService, ComponentService>();
+            services.AddTransient<ISoftwareService, SoftwareService>();
+            services.AddTransient<IChangeRequestService, ChangeRequestService>();
+            services.AddTransient<ISystemChangePlanService, SystemChangePlanService>();
+            services.AddTransient<IHardwareChangeRequestService, HardwareChangeRequestService>();
+            services.AddTransient<ISoftwareChangeRequestService, SoftwareChangeRequestService>();
+            services.AddTransient<ISecurityReviewStatementService, SecurityReviewStatementService>();
+            services.AddTransient<IDocumentService, DocumentService>();
+            services.AddTransient<ILoginLogService, LoginLogService>();
             services.AddSingleton<INavigationService, NavigationService>();
             services.AddSingleton<ViewLocator>();
             // Add other services here as they are implemented
@@ -190,6 +191,13 @@ namespace MaritimeERP.Desktop
                 loginViewModel.LoginSuccess += (s, _) => 
                 {
                     var mainWindow = _host.Services.GetRequiredService<MainWindow>();
+                    
+                    // Refresh navigation after successful login to ensure admin menus appear
+                    if (mainWindow.DataContext is MainViewModel mainViewModel)
+                    {
+                        mainViewModel.RefreshNavigationAfterLogin();
+                    }
+                    
                     mainWindow.Show();
                     loginWindow.Close();
                 };

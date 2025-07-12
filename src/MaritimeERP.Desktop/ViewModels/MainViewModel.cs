@@ -84,8 +84,13 @@ namespace MaritimeERP.Desktop.ViewModels
         {
             NavigationItems.Clear();
             
-            var isAdmin = CurrentUser?.Role?.Name == "Administrator";
-            var isEngineer = CurrentUser?.Role?.Name == "Engineer";
+            // Use the CurrentUser property which should have the latest user data
+            var currentUser = CurrentUser;
+            var isAdmin = currentUser?.Role?.Name == "Administrator";
+            var isEngineer = currentUser?.Role?.Name == "Engineer";
+            
+            // Debug logging to help diagnose role issues
+            Console.WriteLine($"InitializeNavigation - User: {currentUser?.Username}, Role: {currentUser?.Role?.Name}, IsAdmin: {isAdmin}");
             
             // Dashboard - visible to all users
             NavigationItems.Add(new NavigationItem
@@ -202,11 +207,15 @@ namespace MaritimeERP.Desktop.ViewModels
 
         private object CreateDashboardViewModel()
         {
-            if (!_viewModelCache.TryGetValue("Dashboard", out var viewModel))
+            // Don't cache the dashboard so it refreshes each time
+            // Dispose the old one if it exists
+            if (_viewModelCache.TryGetValue("Dashboard", out var oldViewModel) && oldViewModel is IDisposable disposable)
             {
-                viewModel = _serviceProvider.GetRequiredService<DashboardViewModel>();
-                _viewModelCache["Dashboard"] = viewModel;
+                disposable.Dispose();
             }
+            
+            var viewModel = _serviceProvider.GetRequiredService<DashboardViewModel>();
+            _viewModelCache["Dashboard"] = viewModel;
             return viewModel;
         }
 
@@ -403,6 +412,10 @@ namespace MaritimeERP.Desktop.ViewModels
         private async Task RefreshAsync()
         {
             CurrentUser = await _authenticationService.GetCurrentUserAsync();
+            
+            // Debug logging
+            Console.WriteLine($"RefreshAsync - User: {CurrentUser?.Username}, Role: {CurrentUser?.Role?.Name}");
+            
             // Clear cache to force refresh of all view models
             _viewModelCache.Clear();
             InitializeNavigation();
@@ -435,6 +448,34 @@ namespace MaritimeERP.Desktop.ViewModels
         public void ClearViewModelCache()
         {
             _viewModelCache.Clear();
+        }
+
+        public async void RefreshNavigationAfterLogin()
+        {
+            // First try to get the current user from the authentication service
+            var authUser = _authenticationService.CurrentUser;
+            Console.WriteLine($"RefreshNavigationAfterLogin - AuthService.CurrentUser: {authUser?.Username}, Role: {authUser?.Role?.Name}");
+            
+            // If the current user from auth service has role info, use it directly
+            if (authUser?.Role != null)
+            {
+                CurrentUser = authUser;
+                Console.WriteLine($"RefreshNavigationAfterLogin - Using AuthService user directly");
+            }
+            else
+            {
+                // Otherwise try to get fresh data
+                CurrentUser = await _authenticationService.GetCurrentUserAsync();
+                Console.WriteLine($"RefreshNavigationAfterLogin - After GetCurrentUserAsync: {CurrentUser?.Username}, Role: {CurrentUser?.Role?.Name}");
+            }
+            
+            InitializeNavigation();
+            
+            // Set default navigation if none selected
+            if (SelectedNavigation == null)
+            {
+                SelectedNavigation = NavigationItems.FirstOrDefault();
+            }
         }
     }
 

@@ -328,6 +328,7 @@
                                 <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
                             </Grid.RowDefinitions>
 
                             <!-- System Name -->
@@ -440,8 +441,23 @@
                                           BorderBrush="#E0E0E0"/>
                             </StackPanel>
 
+                            <!-- Security Zone -->
+                            <StackPanel Grid.Row="8" Margin="0,0,0,12">
+                                <TextBlock Text="Security Zone" FontSize="11" FontWeight="SemiBold" Foreground="#424242" Margin="0,0,0,4"/>
+                                <ComboBox ItemsSource="{Binding SecurityZones}"
+                                          SelectedItem="{Binding SelectedSecurityZone, UpdateSourceTrigger=PropertyChanged}"
+                                          DisplayMemberPath="Name"
+                                          IsEnabled="{Binding IsEditing}"
+                                          Height="24"
+                                          Padding="8,0"
+                                          FontSize="12"
+                                          Background="#F5F5F5"
+                                          BorderThickness="1"
+                                          BorderBrush="#E0E0E0"/>
+                            </StackPanel>
+
                             <!-- Action Buttons -->
-                            <StackPanel Grid.Row="8" Orientation="Vertical" Margin="0,12,0,0">
+                            <StackPanel Grid.Row="9" Orientation="Vertical" Margin="0,12,0,0">
                                 <Button Content="Save System" 
                                         Command="{Binding SaveSystemCommand}"
                                         Background="#4CAF50"

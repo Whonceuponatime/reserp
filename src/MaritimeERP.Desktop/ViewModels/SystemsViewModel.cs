@@ -4,6 +4,7 @@ using System.Runtime.CompilerServices;
 using System.Windows.Input;
 using MaritimeERP.Core.Entities;
 using MaritimeERP.Desktop.Commands;
+using MaritimeERP.Desktop.Services;
 using MaritimeERP.Services.Interfaces;
 using Microsoft.Extensions.Logging;
 using System.Windows;
@@ -15,6 +16,7 @@ namespace MaritimeERP.Desktop.ViewModels
         private readonly ISystemService _systemService;
         private readonly IShipService _shipService;
         private readonly IAuthenticationService _authenticationService;
+        private readonly IDataChangeNotificationService _dataChangeNotificationService;
         private readonly ILogger<SystemsViewModel> _logger;
         private readonly INavigationService _navigationService;
 
@@ -397,11 +399,12 @@ namespace MaritimeERP.Desktop.ViewModels
             private set => _saveSystemCommand = value;
         }
 
-        public SystemsViewModel(ISystemService systemService, IShipService shipService, IAuthenticationService authenticationService, ILogger<SystemsViewModel> logger, INavigationService navigationService)
+        public SystemsViewModel(ISystemService systemService, IShipService shipService, IAuthenticationService authenticationService, IDataChangeNotificationService dataChangeNotificationService, ILogger<SystemsViewModel> logger, INavigationService navigationService)
         {
             _systemService = systemService ?? throw new ArgumentNullException(nameof(systemService));
             _shipService = shipService ?? throw new ArgumentNullException(nameof(shipService));
             _authenticationService = authenticationService ?? throw new ArgumentNullException(nameof(authenticationService));
+            _dataChangeNotificationService = dataChangeNotificationService ?? throw new ArgumentNullException(nameof(dataChangeNotificationService));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _navigationService = navigationService ?? throw new ArgumentNullException(nameof(navigationService));
 
@@ -734,10 +737,18 @@ namespace MaritimeERP.Desktop.ViewModels
             
             ClearForm();
             IsEditing = true;
+            
+            // Set default security zone if available
+            if (SecurityZones.Count > 0)
+            {
+                SelectedSecurityZone = SecurityZones.FirstOrDefault();
+                _logger.LogInformation("AddSystem: Set default security zone to {ZoneName}", SelectedSecurityZone?.Name);
+            }
+            
             StatusMessage = "Adding new system - fill in all required fields";
             
-            _logger.LogInformation("AddSystem: After setting IsEditing=true, Ships count = {ShipCount}, Categories count = {CategoryCount}", 
-                Ships.Count, Categories.Count);
+            _logger.LogInformation("AddSystem: After setting IsEditing=true, Ships count = {ShipCount}, Categories count = {CategoryCount}, SecurityZones count = {ZoneCount}", 
+                Ships.Count, Categories.Count, SecurityZones.Count);
             
             RefreshSaveCommand();
         }
@@ -791,6 +802,9 @@ namespace MaritimeERP.Desktop.ViewModels
                         StatusMessage = "System created successfully";
                     });
                     
+                    // Notify dashboard of new system
+                    _dataChangeNotificationService.NotifyDataChanged("System", "Created", createdSystem);
+                    
                     _logger.LogInformation("System created successfully: {SystemName}", SystemName);
                 }
                 else
@@ -808,6 +822,9 @@ namespace MaritimeERP.Desktop.ViewModels
                         }
                         StatusMessage = "System updated successfully";
                     });
+                    
+                    // Notify dashboard of updated system
+                    _dataChangeNotificationService.NotifyDataChanged("System", "Updated", updatedSystem);
                     
                     _logger.LogInformation("System updated successfully: {SystemName}", SystemName);
                 }
@@ -842,6 +859,7 @@ namespace MaritimeERP.Desktop.ViewModels
                 
                 if (success)
                 {
+                    var deletedSystem = SelectedSystem;
                     await Application.Current.Dispatcher.InvokeAsync(() =>
                     {
                         Systems.Remove(SelectedSystem);
@@ -849,7 +867,10 @@ namespace MaritimeERP.Desktop.ViewModels
                         ClearForm();
                     });
                     
-                    _logger.LogInformation("System deleted: {SystemId}", SelectedSystem.Id);
+                    // Notify dashboard of deleted system
+                    _dataChangeNotificationService.NotifyDataChanged("System", "Deleted", deletedSystem);
+                    
+                    _logger.LogInformation("System deleted: {SystemId}", deletedSystem.Id);
                 }
                 else
                 {
@@ -922,8 +943,8 @@ namespace MaritimeERP.Desktop.ViewModels
                                  !string.IsNullOrWhiteSpace(Model) &&
                                  !string.IsNullOrWhiteSpace(SerialNumber) &&
                                  SelectedShip != null &&
-                                 SelectedCategory != null &&
-                                 SelectedSecurityZone != null;
+                                 SelectedCategory != null;
+                                 // SecurityZone is optional - will default to zone 1 if not selected
 
             return hasRequiredData && IsEditing;
         }

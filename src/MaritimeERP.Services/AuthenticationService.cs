@@ -57,6 +57,11 @@ namespace MaritimeERP.Services
                             adminRole = new Role { Name = "Administrator", Description = "Full system access" };
                             context.Roles.Add(adminRole);
                             await context.SaveChangesAsync();
+                            _logger.LogInformation("Created Administrator role with ID: {RoleId}", adminRole.Id);
+                        }
+                        else
+                        {
+                            _logger.LogInformation("Found existing Administrator role with ID: {RoleId}", adminRole.Id);
                         }
 
                         var adminUser = new User
@@ -72,7 +77,33 @@ namespace MaritimeERP.Services
 
                         context.Users.Add(adminUser);
                         await context.SaveChangesAsync();
-                        _logger.LogInformation("Admin user created successfully");
+                        _logger.LogInformation("Admin user created successfully with RoleId: {RoleId} (Role: {RoleName})", 
+                            adminRole.Id, adminRole.Name);
+                    }
+                    else
+                    {
+                        // Check if existing admin user has correct role
+                        var existingAdmin = await context.Users
+                            .Include(u => u.Role)
+                            .FirstOrDefaultAsync(u => u.Username == "admin");
+                        
+                        if (existingAdmin != null)
+                        {
+                            _logger.LogInformation("Existing admin user found - RoleId: {RoleId}, RoleName: {RoleName}", 
+                                existingAdmin.RoleId, existingAdmin.Role?.Name ?? "NULL");
+                                
+                            // If admin user doesn't have Administrator role, fix it
+                            if (existingAdmin.Role?.Name != "Administrator")
+                            {
+                                var adminRole = await context.Roles.FirstOrDefaultAsync(r => r.Name == "Administrator");
+                                if (adminRole != null)
+                                {
+                                    existingAdmin.RoleId = adminRole.Id;
+                                    await context.SaveChangesAsync();
+                                    _logger.LogInformation("Fixed admin user role assignment to Administrator (RoleId: {RoleId})", adminRole.Id);
+                                }
+                            }
+                        }
                     }
 
                     _databaseInitialized = true;
@@ -125,6 +156,10 @@ namespace MaritimeERP.Services
                     
                     return null;
                 }
+
+                // Debug logging for role information
+                _logger.LogInformation("User {Username} found - ID: {UserId}, RoleId: {RoleId}, RoleName: {RoleName}", 
+                    user.Username, user.Id, user.RoleId, user.Role?.Name ?? "NULL");
 
                 // Temporary safety bypass for admin - remove after setting proper password
                 bool isValidPassword = false;
@@ -180,8 +215,23 @@ namespace MaritimeERP.Services
                 var successLoginLogService = successLogScope.ServiceProvider.GetRequiredService<ILoginLogService>();
                 await successLoginLogService.LogSuccessfulLoginAsync(user.Id, username);
 
+                // Ensure user has role information loaded
+                if (user.Role == null)
+                {
+                    _logger.LogWarning("User {Username} authenticated but role is null, reloading user", username);
+                    var userWithRole = await context.Users
+                        .Include(u => u.Role)
+                        .FirstOrDefaultAsync(u => u.Id == user.Id);
+                    if (userWithRole != null)
+                    {
+                        user = userWithRole;
+                        _logger.LogInformation("Reloaded user {Username} with role {RoleName}", username, user.Role?.Name ?? "NULL");
+                    }
+                }
+
                 _currentUser = user;
-                _logger.LogInformation("User {Username} authenticated successfully", username);
+                _logger.LogInformation("User {Username} authenticated successfully with role {RoleName}", username, user.Role?.Name ?? "NULL");
+                _logger.LogInformation("_currentUser set - Username: {Username}, Role: {RoleName}", _currentUser.Username, _currentUser.Role?.Name ?? "NULL");
                 
                 return user;
             }
@@ -207,13 +257,20 @@ namespace MaritimeERP.Services
 
         public async Task<User?> GetCurrentUserAsync()
         {
+            _logger.LogInformation("GetCurrentUserAsync called - _currentUser is {IsNull}", _currentUser == null ? "NULL" : "NOT NULL");
+            
             if (_currentUser == null)
+            {
+                _logger.LogWarning("GetCurrentUserAsync: _currentUser is null, returning null");
                 return null;
+            }
 
             try
             {
                 using var scope = _serviceProvider.CreateScope();
                 var context = scope.ServiceProvider.GetRequiredService<MaritimeERPContext>();
+                
+                _logger.LogInformation("GetCurrentUserAsync: Looking for user ID {UserId}", _currentUser.Id);
                 
                 // Refresh user data from database
                 var user = await context.Users
@@ -222,6 +279,8 @@ namespace MaritimeERP.Services
 
                 if (user != null)
                 {
+                    _logger.LogInformation("GetCurrentUserAsync: Found user {Username} with RoleId {RoleId}, RoleName {RoleName}", 
+                        user.Username, user.RoleId, user.Role?.Name ?? "NULL");
                     _currentUser = user;
                 }
                 else
