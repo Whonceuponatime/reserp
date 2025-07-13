@@ -722,9 +722,9 @@ namespace MaritimeERP.Desktop.ViewModels
                          $"Requested by: {changeRequest.RequestedBy?.FullName ?? "Unknown"}\n" +
                          $"Requested at: {changeRequest.RequestedAt:yyyy-MM-dd HH:mm}\n";
 
-            if (!string.IsNullOrEmpty(changeRequest.Comments))
+            if (!string.IsNullOrEmpty(changeRequest.Description))
             {
-                details += $"Comments: {changeRequest.Comments}\n";
+                details += $"Additional Details: {changeRequest.Description}\n";
             }
 
             System.Windows.MessageBox.Show(details, "Change Request Details", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
@@ -744,7 +744,7 @@ namespace MaritimeERP.Desktop.ViewModels
 
                 if (result == System.Windows.MessageBoxResult.Yes)
                 {
-                    await _changeRequestService.ApproveAsync(changeRequest.Id, _authenticationService.CurrentUser!.Id);
+                    await _changeRequestService.ApproveChangeRequestAsync(changeRequest.Id, _authenticationService.CurrentUser!.Id);
                     await LoadDashboardDataAsync(); // Refresh the data
                     System.Windows.MessageBox.Show("Change request approved successfully!", "Success", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
                 }
@@ -770,7 +770,7 @@ namespace MaritimeERP.Desktop.ViewModels
 
                 if (result == System.Windows.MessageBoxResult.Yes)
                 {
-                    await _changeRequestService.RejectAsync(changeRequest.Id, _authenticationService.CurrentUser!.Id, "Rejected from dashboard");
+                    await _changeRequestService.RejectChangeRequestAsync(changeRequest.Id, _authenticationService.CurrentUser!.Id, "Rejected from dashboard");
                     await LoadDashboardDataAsync(); // Refresh the data
                     System.Windows.MessageBox.Show("Change request rejected successfully!", "Success", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
                 }
