@@ -7,6 +7,7 @@
     <UseWPF>true</UseWPF>
     <ImplicitUsings>enable</ImplicitUsings>
     <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>..\seacure_logo.ico</ApplicationIcon>
     <AssemblyTitle>SEACURE(CARE)</AssemblyTitle>
     <AssemblyDescription>Professional Maritime Enterprise Resource Planning System</AssemblyDescription>
     <AssemblyCompany>Maritime Solutions</AssemblyCompany>

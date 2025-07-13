@@ -36,9 +36,11 @@ namespace MaritimeERP.Desktop
         {
             try
             {
-                // Allocate console for debugging
+#if DEBUG
+                // Allocate console for debugging only in debug builds
                 AllocConsole();
                 Console.WriteLine("Maritime ERP Application Starting...");
+#endif
                 
                 _host = Host.CreateDefaultBuilder()
                     .ConfigureAppConfiguration((context, config) =>
@@ -59,23 +61,31 @@ namespace MaritimeERP.Desktop
                         var userConfigPath = Path.Combine(userDataDirectory, "appsettings.json");
                         if (File.Exists(userConfigPath))
                         {
+#if DEBUG
                             Console.WriteLine($"Found user config at: {userConfigPath}");
+#endif
                             config.AddJsonFile(userConfigPath, optional: false, reloadOnChange: true);
                         }
                         else
                         {
+#if DEBUG
                             Console.WriteLine($"No user config found at: {userConfigPath}");
+#endif
                             
                             // Check source directory for development
                         var sourceConfigPath = Path.Combine(Directory.GetCurrentDirectory(), "src", "MaritimeERP.Desktop", "appsettings.json");
                         if (File.Exists(sourceConfigPath))
                         {
+#if DEBUG
                                 Console.WriteLine($"Found source config at: {sourceConfigPath}");
+#endif
                             config.AddJsonFile(sourceConfigPath, optional: false, reloadOnChange: true);
                         }
                         else
                         {
+#if DEBUG
                                 Console.WriteLine($"No source config found at: {sourceConfigPath}");
+#endif
                                 
                                 // Default configuration for first run
                                 var defaultDbPath = Path.Combine(userDataDirectory, "Database", "maritime_erp.db");
@@ -90,8 +100,10 @@ namespace MaritimeERP.Desktop
                                     ["Application:CompanyName"] = "Maritime Solutions"
                             });
                                 
+#if DEBUG
                                 Console.WriteLine($"Using default database path: {defaultDbPath}");
                                 Console.WriteLine($"Using default document path: {defaultDocPath}");
+#endif
                             }
                         }
                     })
@@ -99,18 +111,27 @@ namespace MaritimeERP.Desktop
                     {
                         services.AddLogging(builder =>
                         {
+#if DEBUG
                             builder.AddConsole();
                             builder.AddDebug();
+#else
+                            // Only use debug logging in release builds (no console)
+                            builder.AddDebug();
+#endif
                         });
                         ConfigureServices(services, context.Configuration);
                     })
                     .Build();
                     
+#if DEBUG
                 Console.WriteLine("Host created successfully");
+#endif
             }
             catch (Exception ex)
             {
+#if DEBUG
                 Console.WriteLine($"Error in App constructor: {ex}");
+#endif
                 MessageBox.Show($"Error in App constructor: {ex.Message}", "Startup Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 throw;
             }
@@ -120,7 +141,9 @@ namespace MaritimeERP.Desktop
 
         private void ConfigureServices(IServiceCollection services, IConfiguration configuration)
         {
+#if DEBUG
             Console.WriteLine("Configuring services...");
+#endif
             
             // Database - Use SQLite for development with improved connection handling
             services.AddDbContext<MaritimeERPContext>(options =>
@@ -141,7 +164,9 @@ namespace MaritimeERP.Desktop
                         var dbDirectory = Path.GetDirectoryName(dbPath);
                         if (!string.IsNullOrEmpty(dbDirectory) && !Directory.Exists(dbDirectory))
                         {
+#if DEBUG
                             Console.WriteLine($"Creating database directory: {dbDirectory}");
+#endif
                             Directory.CreateDirectory(dbDirectory);
                         }
                     }
@@ -160,7 +185,9 @@ namespace MaritimeERP.Desktop
                         sqliteConnectionString += "Pooling=true;";
                     }
                     
+#if DEBUG
                     Console.WriteLine($"Using SQLite connection: {sqliteConnectionString}");
+#endif
                     options.UseSqlite(sqliteConnectionString);
                     options.EnableSensitiveDataLogging(false);
                     options.EnableServiceProviderCaching(false);
@@ -212,7 +239,9 @@ namespace MaritimeERP.Desktop
             services.AddTransient<LoginWindow>();
             services.AddTransient<MainWindow>();
             
+#if DEBUG
             Console.WriteLine("Services configured successfully");
+#endif
         }
 
         protected override async void OnStartup(StartupEventArgs e)
@@ -286,7 +315,9 @@ namespace MaritimeERP.Desktop
         {
             try
             {
+#if DEBUG
                 Console.WriteLine("Initializing database...");
+#endif
                 
                 using var scope = _host.Services.CreateScope();
                 var context = scope.ServiceProvider.GetRequiredService<MaritimeERPContext>();

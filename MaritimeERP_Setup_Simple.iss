@@ -7,14 +7,18 @@ AppPublisher=Maritime Solutions
 DefaultDirName={autopf}\SEACURE(CARE)
 DisableProgramGroupPage=yes
 PrivilegesRequired=admin
+PrivilegesRequiredOverridesAllowed=dialog
 OutputDir=Installer
 OutputBaseFilename=SEACURE_CARE_Setup_v1.0.0
 SetupIconFile=src\seacure_logo.ico
+UninstallDisplayIcon={app}\seacure_logo.ico
 Compression=lzma
 SolidCompression=yes
 WizardStyle=modern
-ArchitecturesAllowed=x64
-ArchitecturesInstallIn64BitMode=x64
+ArchitecturesAllowed=x64compatible
+ArchitecturesInstallIn64BitMode=x64compatible
+MinVersion=0,6.1
+AppMutex=SEACURE_CARE_MUTEX
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
@@ -37,8 +41,8 @@ Source: "maritime_erp.db"; DestDir: "{app}"; Flags: ignoreversion
 Source: "src\seacure_logo.ico"; DestDir: "{app}"; Flags: ignoreversion
 
 [Icons]
-Name: "{autoprograms}\SEACURE(CARE)"; Filename: "{app}\MaritimeERP.Desktop.exe"; IconFilename: "{app}\seacure_logo.ico"
-Name: "{autodesktop}\SEACURE(CARE)"; Filename: "{app}\MaritimeERP.Desktop.exe"; IconFilename: "{app}\seacure_logo.ico"; Tasks: desktopicon
+Name: "{autoprograms}\SEACURE(CARE)"; Filename: "{app}\MaritimeERP.Desktop.exe"; IconFilename: "{app}\seacure_logo.ico"; Comment: "SEACURE(CARE) Maritime ERP System"
+Name: "{autodesktop}\SEACURE(CARE)"; Filename: "{app}\MaritimeERP.Desktop.exe"; IconFilename: "{app}\seacure_logo.ico"; Tasks: desktopicon; Comment: "SEACURE(CARE) Maritime ERP System"
 
 [Run]
 Filename: "{app}\MaritimeERP.Desktop.exe"; Description: "{cm:LaunchProgram,SEACURE(CARE)}"; Flags: nowait postinstall skipifsilent 
