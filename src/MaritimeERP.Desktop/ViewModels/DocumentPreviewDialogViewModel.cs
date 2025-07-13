@@ -18,6 +18,7 @@ namespace MaritimeERP.Desktop.ViewModels
     {
         private readonly Document _document;
         private readonly IDocumentService _documentService;
+        private readonly IAuthenticationService? _authenticationService;
         private string _statusMessage = string.Empty;
         private BitmapImage? _imageSource;
         private string _textContent = string.Empty;
@@ -25,10 +26,11 @@ namespace MaritimeERP.Desktop.ViewModels
         public event PropertyChangedEventHandler? PropertyChanged;
         public event EventHandler? RequestClose;
 
-        public DocumentPreviewDialogViewModel(Document document, IDocumentService documentService)
+        public DocumentPreviewDialogViewModel(Document document, IDocumentService documentService, IAuthenticationService? authenticationService = null)
         {
             _document = document;
             _documentService = documentService;
+            _authenticationService = authenticationService;
 
             // Initialize commands
             DownloadCommand = new RelayCommand(async () => await DownloadDocumentAsync());
@@ -103,7 +105,8 @@ namespace MaritimeERP.Desktop.ViewModels
 
         public bool IsImageFile => IsImageFileType(_document.FileExtension);
         public bool IsTextFile => IsTextFileType(_document.FileExtension);
-        public bool IsOtherFile => !IsImageFile && !IsTextFile;
+        public bool IsPdfFile => IsPdfFileType(_document.FileExtension);
+        public bool IsOtherFile => !IsImageFile && !IsTextFile && !IsPdfFile;
 
         public bool CanApprove => !_document.IsApproved && IsAdmin();
         public bool CanReject => !_document.IsApproved && IsAdmin();
@@ -297,21 +300,23 @@ namespace MaritimeERP.Desktop.ViewModels
 
         private static bool IsTextFileType(string extension)
         {
-            var textExtensions = new[] { ".txt", ".csv", ".log", ".xml", ".json", ".html", ".css", ".js", ".sql", ".md" };
+            var textExtensions = new[] { ".txt", ".csv", ".log", ".xml", ".json", ".html", ".css", ".js", ".sql", ".md", ".rtf" };
             return Array.Exists(textExtensions, ext => ext.Equals(extension, StringComparison.OrdinalIgnoreCase));
         }
 
-        private static bool IsAdmin()
+        private static bool IsPdfFileType(string extension)
         {
-            // Get current user from authentication service
-            var authService = Application.Current.Services.GetService(typeof(IAuthenticationService)) as IAuthenticationService;
-            return authService?.CurrentUser?.Role?.Name == "Administrator";
+            return extension.Equals(".pdf", StringComparison.OrdinalIgnoreCase);
         }
 
-        private static User? GetCurrentUser()
+        private bool IsAdmin()
         {
-            var authService = Application.Current.Services.GetService(typeof(IAuthenticationService)) as IAuthenticationService;
-            return authService?.CurrentUser;
+            return _authenticationService?.CurrentUser?.Role?.Name == "Administrator";
+        }
+
+        private User? GetCurrentUser()
+        {
+            return _authenticationService?.CurrentUser;
         }
 
         protected virtual void OnPropertyChanged([CallerMemberName] string? propertyName = null)

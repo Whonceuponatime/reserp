@@ -50,6 +50,8 @@ namespace MaritimeERP.Desktop.ViewModels
             SaveCommand = new RelayCommand(async () => await SaveAsync(), CanSave);
             SubmitCommand = new RelayCommand(async () => await SubmitAsync(), CanSubmit);
             CancelCommand = new RelayCommand(Cancel);
+            ApproveCommand = new RelayCommand(async () => await ApproveAsync(), CanApprove);
+            RejectCommand = new RelayCommand(async () => await RejectAsync(), CanReject);
         }
 
         #region Properties
@@ -203,6 +205,12 @@ namespace MaritimeERP.Desktop.ViewModels
             set => SetProperty(ref _isViewMode, value);
         }
 
+        // Admin-specific properties
+        public bool IsAdmin => _authenticationService.CurrentUser?.Role?.Name == "Administrator";
+        public bool IsAdminViewing => IsAdmin && IsViewMode && IsUnderReview;
+        public bool ShowSaveSubmitButtons => !IsAdminViewing;
+        public bool ShowApproveRejectButtons => IsAdminViewing;
+
         #endregion
 
         #region Commands
@@ -210,6 +218,8 @@ namespace MaritimeERP.Desktop.ViewModels
         public ICommand SaveCommand { get; }
         public ICommand SubmitCommand { get; }
         public ICommand CancelCommand { get; }
+        public ICommand ApproveCommand { get; }
+        public ICommand RejectCommand { get; }
 
         #endregion
 
@@ -231,6 +241,33 @@ namespace MaritimeERP.Desktop.ViewModels
             _hardwareChangeRequest = hardwareChangeRequest;
             _isEditMode = true;
             IsEditMode = true;
+            
+            // Populate form fields with existing data
+            RequestNumber = hardwareChangeRequest.RequestNumber;
+            RequesterName = hardwareChangeRequest.RequesterName;
+            Department = hardwareChangeRequest.Department ?? "";
+            PositionTitle = hardwareChangeRequest.PositionTitle ?? "";
+            InstalledCbs = hardwareChangeRequest.InstalledCbs ?? "";
+            InstalledComponent = hardwareChangeRequest.InstalledComponent ?? "";
+            Reason = hardwareChangeRequest.Reason ?? "";
+            BeforeHwManufacturerModel = hardwareChangeRequest.BeforeHwManufacturerModel ?? "";
+            BeforeHwName = hardwareChangeRequest.BeforeHwName ?? "";
+            BeforeHwOs = hardwareChangeRequest.BeforeHwOs ?? "";
+            AfterHwManufacturerModel = hardwareChangeRequest.AfterHwManufacturerModel ?? "";
+            AfterHwName = hardwareChangeRequest.AfterHwName ?? "";
+            AfterHwOs = hardwareChangeRequest.AfterHwOs ?? "";
+            WorkDescription = hardwareChangeRequest.WorkDescription ?? "";
+            SecurityReviewComment = hardwareChangeRequest.SecurityReviewComment ?? "";
+            CreatedDate = hardwareChangeRequest.CreatedDate ?? DateTime.Now;
+            
+            // Set status flags based on the request status
+            IsUnderReview = hardwareChangeRequest.Status == "Under Review" || hardwareChangeRequest.Status == "Submitted";
+            IsApproved = hardwareChangeRequest.Status == "Approved";
+            
+            // Refresh UI properties
+            OnPropertyChanged(nameof(IsAdminViewing));
+            OnPropertyChanged(nameof(ShowSaveSubmitButtons));
+            OnPropertyChanged(nameof(ShowApproveRejectButtons));
         }
 
         private async Task GenerateRequestNumberAsync()
@@ -393,6 +430,76 @@ namespace MaritimeERP.Desktop.ViewModels
             }
         }
 
+        private async Task ApproveAsync()
+        {
+            try
+            {
+                if (_hardwareChangeRequest != null)
+                {
+                    await _hardwareChangeRequestService.ApproveAsync(_hardwareChangeRequest.Id, _authenticationService.CurrentUser?.Id ?? 0);
+                    
+                    // Update the corresponding ChangeRequest status
+                    var changeRequests = await _changeRequestService.GetAllChangeRequestsAsync();
+                    var correspondingChangeRequest = changeRequests.FirstOrDefault(cr => cr.RequestNo == _hardwareChangeRequest.RequestNumber);
+                    if (correspondingChangeRequest != null)
+                    {
+                        await _changeRequestService.ApproveChangeRequestAsync(correspondingChangeRequest.Id, _authenticationService.CurrentUser?.Id ?? 0);
+                    }
+                    
+                    IsApproved = true;
+                    IsUnderReview = false;
+                    
+                    MessageBox.Show("Hardware change request approved successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                    
+                    // Refresh the UI properties
+                    OnPropertyChanged(nameof(IsAdminViewing));
+                    OnPropertyChanged(nameof(ShowSaveSubmitButtons));
+                    OnPropertyChanged(nameof(ShowApproveRejectButtons));
+                    
+                    RequestClose?.Invoke(this, EventArgs.Empty);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error approving hardware change request: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private async Task RejectAsync()
+        {
+            try
+            {
+                if (_hardwareChangeRequest != null)
+                {
+                    await _hardwareChangeRequestService.RejectAsync(_hardwareChangeRequest.Id, _authenticationService.CurrentUser?.Id ?? 0);
+                    
+                    // Update the corresponding ChangeRequest status
+                    var changeRequests = await _changeRequestService.GetAllChangeRequestsAsync();
+                    var correspondingChangeRequest = changeRequests.FirstOrDefault(cr => cr.RequestNo == _hardwareChangeRequest.RequestNumber);
+                    if (correspondingChangeRequest != null)
+                    {
+                        await _changeRequestService.RejectChangeRequestAsync(correspondingChangeRequest.Id, _authenticationService.CurrentUser?.Id ?? 0);
+                    }
+                    
+                    IsApproved = false;
+                    IsUnderReview = false;
+                    
+                    MessageBox.Show("Hardware change request rejected.", "Rejected", MessageBoxButton.OK, MessageBoxImage.Information);
+                    
+                    // Refresh the UI properties
+                    OnPropertyChanged(nameof(IsAdminViewing));
+                    OnPropertyChanged(nameof(ShowSaveSubmitButtons));
+                    OnPropertyChanged(nameof(ShowApproveRejectButtons));
+                    
+                    RequestClose?.Invoke(this, EventArgs.Empty);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error rejecting hardware change request: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
         private void Cancel()
         {
             RequestClose?.Invoke(this, EventArgs.Empty);
@@ -400,14 +507,24 @@ namespace MaritimeERP.Desktop.ViewModels
 
         private bool CanSave()
         {
-            return !string.IsNullOrWhiteSpace(RequesterName) && 
+            return !IsViewMode && !string.IsNullOrWhiteSpace(RequesterName) && 
                    !string.IsNullOrWhiteSpace(Reason);
         }
 
         private bool CanSubmit()
         {
-            return CanSave() && 
+            return !IsViewMode && CanSave() && 
                    !string.IsNullOrWhiteSpace(WorkDescription);
+        }
+
+        private bool CanApprove()
+        {
+            return IsAdminViewing && _hardwareChangeRequest != null;
+        }
+
+        private bool CanReject()
+        {
+            return IsAdminViewing && _hardwareChangeRequest != null;
         }
 
         #endregion

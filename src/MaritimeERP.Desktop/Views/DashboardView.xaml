@@ -14,8 +14,8 @@
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
-                <RowDefinition Height="*"/>
                 <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
 
             <!-- Compact Header -->
@@ -378,7 +378,7 @@
 
                         <ScrollViewer Grid.Row="1" 
                                       VerticalScrollBarVisibility="Auto" 
-                                      Height="160">
+                                      Height="100">
                             <ItemsControl ItemsSource="{Binding RecentActivities}">
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
@@ -436,7 +436,7 @@
 
                         <ScrollViewer Grid.Row="1" 
                                       VerticalScrollBarVisibility="Auto" 
-                                      Height="160">
+                                      Height="100">
                             <StackPanel>
                                 <Grid Margin="0,0,0,8">
                                     <Grid.ColumnDefinitions>
@@ -590,7 +590,7 @@
                                            Margin="0,0,0,4"/>
                                 
                                 <ScrollViewer VerticalScrollBarVisibility="Auto" 
-                                              Height="120"
+                                              Height="180"
                                               Margin="0,0,0,4"
                                               CanContentScroll="False"
                                               PanningMode="VerticalOnly">
@@ -676,7 +676,7 @@
                                            Margin="0,0,0,4"/>
                                 
                                 <ScrollViewer VerticalScrollBarVisibility="Auto" 
-                                              Height="120"
+                                              Height="180"
                                               Margin="0,0,0,4"
                                               CanContentScroll="False"
                                               PanningMode="VerticalOnly">

@@ -38,6 +38,8 @@ namespace MaritimeERP.Desktop.ViewModels
             SaveCommand = new RelayCommand(async () => await SaveAsync(), () => CanSave());
             SubmitCommand = new RelayCommand(async () => await SubmitAsync(), () => CanSubmit());
             CancelCommand = new RelayCommand(() => CloseDialog());
+            ApproveCommand = new RelayCommand(async () => await ApproveAsync(), () => CanApprove());
+            RejectCommand = new RelayCommand(async () => await RejectAsync(), () => CanReject());
             
             // Initialize data asynchronously
             _ = InitializeAsync();
@@ -90,6 +92,12 @@ namespace MaritimeERP.Desktop.ViewModels
                 OnPropertyChanged();
             }
         }
+
+        // Admin-specific properties
+        public bool IsAdmin => _authenticationService.CurrentUser?.Role?.Name == "Administrator";
+        public bool IsAdminViewing => IsAdmin && IsViewMode && IsUnderReview;
+        public bool ShowSaveSubmitButtons => !IsAdminViewing;
+        public bool ShowApproveRejectButtons => IsAdminViewing;
 
         // Properties bound to UI - Header Information
         public string RequestNumber
@@ -349,6 +357,8 @@ namespace MaritimeERP.Desktop.ViewModels
         public ICommand SaveCommand { get; }
         public ICommand SubmitCommand { get; }
         public ICommand CancelCommand { get; }
+        public ICommand ApproveCommand { get; }
+        public ICommand RejectCommand { get; }
 
         public event Action? RequestClose;
 
@@ -357,7 +367,17 @@ namespace MaritimeERP.Desktop.ViewModels
             _securityReviewStatement = securityReviewStatement;
             _isEditMode = true;
             IsEditMode = true;
+            
+            // Set status flags based on the security review statement status
+            IsUnderReview = securityReviewStatement.IsUnderReview;
+            IsApproved = securityReviewStatement.IsApproved;
+            
             UpdateAllProperties();
+            
+            // Refresh UI properties
+            OnPropertyChanged(nameof(IsAdminViewing));
+            OnPropertyChanged(nameof(ShowSaveSubmitButtons));
+            OnPropertyChanged(nameof(ShowApproveRejectButtons));
         }
 
         private async Task InitializeAsync()
@@ -468,6 +488,76 @@ namespace MaritimeERP.Desktop.ViewModels
             }
         }
 
+        private async Task ApproveAsync()
+        {
+            try
+            {
+                if (_securityReviewStatement?.Id > 0)
+                {
+                    await _securityReviewStatementService.ApproveAsync(_securityReviewStatement.Id, _authenticationService.CurrentUser?.Id ?? 0);
+                    
+                    // Update the corresponding ChangeRequest status
+                    var changeRequests = await _changeRequestService.GetAllChangeRequestsAsync();
+                    var correspondingChangeRequest = changeRequests.FirstOrDefault(cr => cr.RequestNo == _securityReviewStatement.RequestNumber);
+                    if (correspondingChangeRequest != null)
+                    {
+                        await _changeRequestService.ApproveChangeRequestAsync(correspondingChangeRequest.Id, _authenticationService.CurrentUser?.Id ?? 0);
+                    }
+                    
+                    IsApproved = true;
+                    IsUnderReview = false;
+                    
+                    MessageBox.Show("Security review statement approved successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                    
+                    // Refresh the UI properties
+                    OnPropertyChanged(nameof(IsAdminViewing));
+                    OnPropertyChanged(nameof(ShowSaveSubmitButtons));
+                    OnPropertyChanged(nameof(ShowApproveRejectButtons));
+                    
+                    CloseDialog();
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error approving security review statement: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private async Task RejectAsync()
+        {
+            try
+            {
+                if (_securityReviewStatement?.Id > 0)
+                {
+                    await _securityReviewStatementService.RejectAsync(_securityReviewStatement.Id, _authenticationService.CurrentUser?.Id ?? 0);
+                    
+                    // Update the corresponding ChangeRequest status
+                    var changeRequests = await _changeRequestService.GetAllChangeRequestsAsync();
+                    var correspondingChangeRequest = changeRequests.FirstOrDefault(cr => cr.RequestNo == _securityReviewStatement.RequestNumber);
+                    if (correspondingChangeRequest != null)
+                    {
+                        await _changeRequestService.RejectChangeRequestAsync(correspondingChangeRequest.Id, _authenticationService.CurrentUser?.Id ?? 0);
+                    }
+                    
+                    IsApproved = false;
+                    IsUnderReview = false;
+                    
+                    MessageBox.Show("Security review statement rejected.", "Rejected", MessageBoxButton.OK, MessageBoxImage.Information);
+                    
+                    // Refresh the UI properties
+                    OnPropertyChanged(nameof(IsAdminViewing));
+                    OnPropertyChanged(nameof(ShowSaveSubmitButtons));
+                    OnPropertyChanged(nameof(ShowApproveRejectButtons));
+                    
+                    CloseDialog();
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error rejecting security review statement: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
         private async Task SubmitAsync()
         {
             try
@@ -518,6 +608,16 @@ namespace MaritimeERP.Desktop.ViewModels
             return CanSave() && 
                    !string.IsNullOrWhiteSpace(OverallReviewResult) &&
                    ReviewDate.HasValue;
+        }
+
+        private bool CanApprove()
+        {
+            return IsAdminViewing && _securityReviewStatement?.Id > 0;
+        }
+
+        private bool CanReject()
+        {
+            return IsAdminViewing && _securityReviewStatement?.Id > 0;
         }
 
         private void UpdateAllProperties()

@@ -10,6 +10,10 @@
         ResizeMode="CanResize"
         Background="White">
 
+    <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+    </Window.Resources>
+
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -328,6 +332,8 @@
         <!-- Action Buttons -->
         <Border Grid.Row="2" Background="#F8F9FA" Padding="20" BorderThickness="0,1,0,0" BorderBrush="#E0E0E0">
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                
+                <!-- Save/Submit Buttons (for normal users and non-admin viewing) -->
                 <Button Content="Save" 
                         Command="{Binding SaveCommand}"
                         Background="#27AE60"
@@ -337,7 +343,8 @@
                         Padding="25,0"
                         FontSize="14"
                         FontWeight="SemiBold"
-                        Margin="10"/>
+                        Margin="10"
+                        Visibility="{Binding ShowSaveSubmitButtons, Converter={StaticResource BooleanToVisibilityConverter}}"/>
                 
                 <Button Content="Submit" 
                         Command="{Binding SubmitCommand}"
@@ -348,8 +355,35 @@
                         Padding="25,0"
                         FontSize="14"
                         FontWeight="SemiBold"
-                        Margin="10"/>
+                        Margin="10"
+                        Visibility="{Binding ShowSaveSubmitButtons, Converter={StaticResource BooleanToVisibilityConverter}}"/>
                 
+                <!-- Admin Approve/Reject Buttons (for admin viewing submitted forms) -->
+                <Button Content="✅ Approve" 
+                        Command="{Binding ApproveCommand}"
+                        Background="#27AE60"
+                        Foreground="White"
+                        BorderThickness="0"
+                        Height="40"
+                        Padding="25,0"
+                        FontSize="14"
+                        FontWeight="SemiBold"
+                        Margin="10"
+                        Visibility="{Binding ShowApproveRejectButtons, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                
+                <Button Content="❌ Reject" 
+                        Command="{Binding RejectCommand}"
+                        Background="#E74C3C"
+                        Foreground="White"
+                        BorderThickness="0"
+                        Height="40"
+                        Padding="25,0"
+                        FontSize="14"
+                        FontWeight="SemiBold"
+                        Margin="10"
+                        Visibility="{Binding ShowApproveRejectButtons, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                
+                <!-- Cancel Button (always visible) -->
                 <Button Content="Cancel" 
                         Command="{Binding CancelCommand}"
                         Background="#95A5A6"

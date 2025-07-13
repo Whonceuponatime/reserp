@@ -38,6 +38,8 @@ namespace MaritimeERP.Desktop.ViewModels
             SaveCommand = new RelayCommand(async () => await SaveAsync(), () => CanSave());
             SubmitCommand = new RelayCommand(async () => await SubmitAsync(), () => CanSubmit());
             CancelCommand = new RelayCommand(() => CloseDialog());
+            ApproveCommand = new RelayCommand(async () => await ApproveAsync(), () => CanApprove());
+            RejectCommand = new RelayCommand(async () => await RejectAsync(), () => CanReject());
             
             // Initialize data asynchronously
             _ = InitializeAsync();
@@ -90,6 +92,12 @@ namespace MaritimeERP.Desktop.ViewModels
                 OnPropertyChanged();
             }
         }
+
+        // Admin-specific properties
+        public bool IsAdmin => _authenticationService.CurrentUser?.Role?.Name == "Administrator";
+        public bool IsAdminViewing => IsAdmin && IsViewMode && IsUnderReview;
+        public bool ShowSaveSubmitButtons => !IsAdminViewing;
+        public bool ShowApproveRejectButtons => IsAdminViewing;
 
         // Properties bound to UI
         public string RequestNumber
@@ -275,6 +283,8 @@ namespace MaritimeERP.Desktop.ViewModels
         public ICommand SaveCommand { get; }
         public ICommand SubmitCommand { get; }
         public ICommand CancelCommand { get; }
+        public ICommand ApproveCommand { get; }
+        public ICommand RejectCommand { get; }
 
         public event Action? RequestClose;
 
@@ -283,7 +293,17 @@ namespace MaritimeERP.Desktop.ViewModels
             _systemChangePlan = systemChangePlan;
             _isEditMode = true;
             IsEditMode = true;
+            
+            // Set status flags based on the system change plan status
+            IsUnderReview = systemChangePlan.IsUnderReview;
+            IsApproved = systemChangePlan.IsApproved;
+            
             UpdateAllProperties();
+            
+            // Refresh UI properties
+            OnPropertyChanged(nameof(IsAdminViewing));
+            OnPropertyChanged(nameof(ShowSaveSubmitButtons));
+            OnPropertyChanged(nameof(ShowApproveRejectButtons));
         }
 
         private async Task InitializeAsync()
@@ -394,6 +414,76 @@ namespace MaritimeERP.Desktop.ViewModels
             }
         }
 
+        private async Task ApproveAsync()
+        {
+            try
+            {
+                if (_systemChangePlan?.Id > 0)
+                {
+                    await _systemChangePlanService.ApproveAsync(_systemChangePlan.Id, _authenticationService.CurrentUser?.Id ?? 0);
+                    
+                    // Update the corresponding ChangeRequest status
+                    var changeRequests = await _changeRequestService.GetAllChangeRequestsAsync();
+                    var correspondingChangeRequest = changeRequests.FirstOrDefault(cr => cr.RequestNo == _systemChangePlan.RequestNumber);
+                    if (correspondingChangeRequest != null)
+                    {
+                        await _changeRequestService.ApproveChangeRequestAsync(correspondingChangeRequest.Id, _authenticationService.CurrentUser?.Id ?? 0);
+                    }
+                    
+                    IsApproved = true;
+                    IsUnderReview = false;
+                    
+                    MessageBox.Show("System change plan approved successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                    
+                    // Refresh the UI properties
+                    OnPropertyChanged(nameof(IsAdminViewing));
+                    OnPropertyChanged(nameof(ShowSaveSubmitButtons));
+                    OnPropertyChanged(nameof(ShowApproveRejectButtons));
+                    
+                    CloseDialog();
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error approving system change plan: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private async Task RejectAsync()
+        {
+            try
+            {
+                if (_systemChangePlan?.Id > 0)
+                {
+                    await _systemChangePlanService.RejectAsync(_systemChangePlan.Id, _authenticationService.CurrentUser?.Id ?? 0);
+                    
+                    // Update the corresponding ChangeRequest status
+                    var changeRequests = await _changeRequestService.GetAllChangeRequestsAsync();
+                    var correspondingChangeRequest = changeRequests.FirstOrDefault(cr => cr.RequestNo == _systemChangePlan.RequestNumber);
+                    if (correspondingChangeRequest != null)
+                    {
+                        await _changeRequestService.RejectChangeRequestAsync(correspondingChangeRequest.Id, _authenticationService.CurrentUser?.Id ?? 0);
+                    }
+                    
+                    IsApproved = false;
+                    IsUnderReview = false;
+                    
+                    MessageBox.Show("System change plan rejected.", "Rejected", MessageBoxButton.OK, MessageBoxImage.Information);
+                    
+                    // Refresh the UI properties
+                    OnPropertyChanged(nameof(IsAdminViewing));
+                    OnPropertyChanged(nameof(ShowSaveSubmitButtons));
+                    OnPropertyChanged(nameof(ShowApproveRejectButtons));
+                    
+                    CloseDialog();
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error rejecting system change plan: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
         private async Task SubmitAsync()
         {
             try
@@ -441,6 +531,16 @@ namespace MaritimeERP.Desktop.ViewModels
         private bool CanSubmit()
         {
             return CanSave() && !string.IsNullOrWhiteSpace(Reason);
+        }
+
+        private bool CanApprove()
+        {
+            return IsAdminViewing && _systemChangePlan?.Id > 0;
+        }
+
+        private bool CanReject()
+        {
+            return IsAdminViewing && _systemChangePlan?.Id > 0;
         }
 
         private void UpdateAllProperties()

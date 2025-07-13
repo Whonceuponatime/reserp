@@ -263,10 +263,18 @@ namespace MaritimeERP.Desktop.ViewModels
             }
         }
         
+        // Admin-specific properties
+        public bool IsAdmin => _authenticationService.CurrentUser?.Role?.Name == "Administrator";
+        public bool IsAdminViewing => IsAdmin && IsViewMode && IsUnderReview;
+        public bool ShowSaveSubmitButtons => !IsAdminViewing;
+        public bool ShowApproveRejectButtons => IsAdminViewing;
+        
         // Commands
         public ICommand SaveCommand { get; }
         public ICommand SubmitCommand { get; }
         public ICommand CancelCommand { get; }
+        public ICommand ApproveCommand { get; }
+        public ICommand RejectCommand { get; }
         
         public SoftwareChangeRequestDialogViewModel(ISoftwareChangeRequestService softwareChangeRequestService, IAuthenticationService authenticationService, IChangeRequestService changeRequestService, IShipService shipService)
         {
@@ -279,6 +287,8 @@ namespace MaritimeERP.Desktop.ViewModels
             SaveCommand = new RelayCommand(async () => await SaveAsync());
             SubmitCommand = new RelayCommand(async () => await SubmitAsync());
             CancelCommand = new RelayCommand(() => RequestClose?.Invoke(this, EventArgs.Empty));
+            ApproveCommand = new RelayCommand(async () => await ApproveAsync());
+            RejectCommand = new RelayCommand(async () => await RejectAsync());
             
             // Generate request number immediately
             _ = GenerateRequestNumberAsync();
@@ -373,8 +383,13 @@ namespace MaritimeERP.Desktop.ViewModels
             SecurityReviewComment = softwareChangeRequest.SecurityReviewComment ?? "";
             
             // Set status indicators
-            IsUnderReview = softwareChangeRequest.Status == "Under Review";
+            IsUnderReview = softwareChangeRequest.Status == "Under Review" || softwareChangeRequest.Status == "Submitted";
             IsApproved = softwareChangeRequest.Status == "Approved";
+            
+            // Refresh UI properties
+            OnPropertyChanged(nameof(IsAdminViewing));
+            OnPropertyChanged(nameof(ShowSaveSubmitButtons));
+            OnPropertyChanged(nameof(ShowApproveRejectButtons));
         }
         
         private async Task SaveAsync()
@@ -466,6 +481,76 @@ namespace MaritimeERP.Desktop.ViewModels
             catch (Exception ex)
             {
                 MessageBox.Show($"Error saving software change request: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+        
+        private async Task ApproveAsync()
+        {
+            try
+            {
+                if (_softwareChangeRequest != null)
+                {
+                    await _softwareChangeRequestService.ApproveAsync(_softwareChangeRequest.Id, _authenticationService.CurrentUser?.Id ?? 0);
+                    
+                    // Update the corresponding ChangeRequest status
+                    var changeRequests = await _changeRequestService.GetAllChangeRequestsAsync();
+                    var correspondingChangeRequest = changeRequests.FirstOrDefault(cr => cr.RequestNo == _softwareChangeRequest.RequestNumber);
+                    if (correspondingChangeRequest != null)
+                    {
+                        await _changeRequestService.ApproveChangeRequestAsync(correspondingChangeRequest.Id, _authenticationService.CurrentUser?.Id ?? 0);
+                    }
+                    
+                    IsApproved = true;
+                    IsUnderReview = false;
+                    
+                    MessageBox.Show("Software change request approved successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                    
+                    // Refresh the UI properties
+                    OnPropertyChanged(nameof(IsAdminViewing));
+                    OnPropertyChanged(nameof(ShowSaveSubmitButtons));
+                    OnPropertyChanged(nameof(ShowApproveRejectButtons));
+                    
+                    RequestClose?.Invoke(this, EventArgs.Empty);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error approving software change request: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private async Task RejectAsync()
+        {
+            try
+            {
+                if (_softwareChangeRequest != null)
+                {
+                    await _softwareChangeRequestService.RejectAsync(_softwareChangeRequest.Id, _authenticationService.CurrentUser?.Id ?? 0);
+                    
+                    // Update the corresponding ChangeRequest status
+                    var changeRequests = await _changeRequestService.GetAllChangeRequestsAsync();
+                    var correspondingChangeRequest = changeRequests.FirstOrDefault(cr => cr.RequestNo == _softwareChangeRequest.RequestNumber);
+                    if (correspondingChangeRequest != null)
+                    {
+                        await _changeRequestService.RejectChangeRequestAsync(correspondingChangeRequest.Id, _authenticationService.CurrentUser?.Id ?? 0);
+                    }
+                    
+                    IsApproved = false;
+                    IsUnderReview = false;
+                    
+                    MessageBox.Show("Software change request rejected.", "Rejected", MessageBoxButton.OK, MessageBoxImage.Information);
+                    
+                    // Refresh the UI properties
+                    OnPropertyChanged(nameof(IsAdminViewing));
+                    OnPropertyChanged(nameof(ShowSaveSubmitButtons));
+                    OnPropertyChanged(nameof(ShowApproveRejectButtons));
+                    
+                    RequestClose?.Invoke(this, EventArgs.Empty);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error rejecting software change request: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
         

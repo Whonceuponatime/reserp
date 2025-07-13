@@ -178,20 +178,41 @@
                                              BorderThickness="0"
                                              Visibility="{Binding IsTextFile, Converter={StaticResource BooleanToVisibilityConverter}}"/>
                                     
-                                    <!-- PDF/Other Files Message -->
-                                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center"
-                                                Visibility="{Binding IsOtherFile, Converter={StaticResource BooleanToVisibilityConverter}}">
-                                        <TextBlock Text="📄" FontSize="48" HorizontalAlignment="Center" 
-                                                   Foreground="#95A5A6" Margin="0,0,0,16"/>
-                                        <TextBlock Text="{Binding FileType}" FontSize="16" FontWeight="Bold" 
-                                                   HorizontalAlignment="Center" Foreground="#7F8C8D" Margin="0,0,0,8"/>
-                                        <TextBlock Text="Preview not available for this file type." 
-                                                   FontSize="12" HorizontalAlignment="Center" 
-                                                   Foreground="#95A5A6" Margin="0,0,0,8"/>
-                                        <TextBlock Text="Click Download to view the file." 
-                                                   FontSize="12" HorizontalAlignment="Center" 
-                                                   Foreground="#95A5A6"/>
-                                    </StackPanel>
+                                                                         <!-- PDF Preview -->
+                                     <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                 Visibility="{Binding IsPdfFile, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                         <TextBlock Text="📄" FontSize="48" HorizontalAlignment="Center" 
+                                                    Foreground="#E74C3C" Margin="0,0,0,16"/>
+                                         <TextBlock Text="PDF Document" FontSize="16" FontWeight="Bold" 
+                                                    HorizontalAlignment="Center" Foreground="#E74C3C" Margin="0,0,0,8"/>
+                                         <TextBlock Text="PDF preview is available by downloading the file." 
+                                                    FontSize="12" HorizontalAlignment="Center" 
+                                                    Foreground="#7F8C8D" Margin="0,0,0,8"/>
+                                         <TextBlock Text="Click the Download button above to view this PDF document." 
+                                                    FontSize="12" HorizontalAlignment="Center" 
+                                                    Foreground="#7F8C8D" Margin="0,0,0,8"/>
+                                         <Button Content="💾 Download PDF Now" 
+                                                 Command="{Binding DownloadCommand}"
+                                                 Background="#E74C3C" Foreground="White" 
+                                                 BorderThickness="0" Padding="16,8" 
+                                                 FontSize="12" FontWeight="SemiBold"
+                                                 Height="32" Margin="0,8,0,0"/>
+                                     </StackPanel>
+                                     
+                                     <!-- Other Files Message -->
+                                     <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                 Visibility="{Binding IsOtherFile, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                         <TextBlock Text="📄" FontSize="48" HorizontalAlignment="Center" 
+                                                    Foreground="#95A5A6" Margin="0,0,0,16"/>
+                                         <TextBlock Text="{Binding FileType}" FontSize="16" FontWeight="Bold" 
+                                                    HorizontalAlignment="Center" Foreground="#7F8C8D" Margin="0,0,0,8"/>
+                                         <TextBlock Text="Preview not available for this file type." 
+                                                    FontSize="12" HorizontalAlignment="Center" 
+                                                    Foreground="#95A5A6" Margin="0,0,0,8"/>
+                                         <TextBlock Text="Click Download to view the file." 
+                                                    FontSize="12" HorizontalAlignment="Center" 
+                                                    Foreground="#95A5A6"/>
+                                     </StackPanel>
                                 </Grid>
                             </Border>
                         </StackPanel>

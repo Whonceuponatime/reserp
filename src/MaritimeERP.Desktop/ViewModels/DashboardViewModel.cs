@@ -24,6 +24,10 @@ namespace MaritimeERP.Desktop.ViewModels
         private readonly INavigationService _navigationService;
         private readonly IDataChangeNotificationService _dataChangeNotificationService;
         private readonly ILogger<DashboardViewModel> _logger;
+        private readonly IHardwareChangeRequestService _hardwareChangeRequestService;
+        private readonly ISoftwareChangeRequestService _softwareChangeRequestService;
+        private readonly ISystemChangePlanService _systemChangePlanService;
+        private readonly ISecurityReviewStatementService _securityReviewStatementService;
         // Timer removed to prevent automatic refresh and visible screen flickering
 
         // Statistics Properties
@@ -70,7 +74,11 @@ namespace MaritimeERP.Desktop.ViewModels
             IAuthenticationService authenticationService,
             INavigationService navigationService,
             IDataChangeNotificationService dataChangeNotificationService,
-            ILogger<DashboardViewModel> logger)
+            ILogger<DashboardViewModel> logger,
+            IHardwareChangeRequestService hardwareChangeRequestService,
+            ISoftwareChangeRequestService softwareChangeRequestService,
+            ISystemChangePlanService systemChangePlanService,
+            ISecurityReviewStatementService securityReviewStatementService)
         {
             _shipService = shipService;
             _systemService = systemService;
@@ -81,6 +89,10 @@ namespace MaritimeERP.Desktop.ViewModels
             _navigationService = navigationService;
             _dataChangeNotificationService = dataChangeNotificationService;
             _logger = logger;
+            _hardwareChangeRequestService = hardwareChangeRequestService;
+            _softwareChangeRequestService = softwareChangeRequestService;
+            _systemChangePlanService = systemChangePlanService;
+            _securityReviewStatementService = securityReviewStatementService;
             // Check if current user is admin
             _isAdmin = _authenticationService.CurrentUser?.Role?.Name == "Administrator";
 
@@ -636,9 +648,16 @@ namespace MaritimeERP.Desktop.ViewModels
 
             try
             {
-                // Create and show document preview dialog
-                var previewDialog = new DocumentPreviewDialog(document, _documentService);
-                previewDialog.Owner = System.Windows.Application.Current.MainWindow;
+                // Create and show document preview dialog with authentication service
+                var previewDialog = new DocumentPreviewDialog(document, _documentService, _authenticationService);
+                
+                // Only set owner if current window is not the same as the dialog
+                var mainWindow = System.Windows.Application.Current.MainWindow;
+                if (mainWindow != null && mainWindow != previewDialog)
+                {
+                    previewDialog.Owner = mainWindow;
+                }
+                
                 previewDialog.ShowDialog();
             }
             catch (Exception ex)
@@ -831,31 +850,23 @@ namespace MaritimeERP.Desktop.ViewModels
         {
             try
             {
-                // Get the hardware change request service - need to add this to the constructor
-                var hardwareChangeRequestService = System.Windows.Application.Current.Services.GetService(typeof(IHardwareChangeRequestService)) as IHardwareChangeRequestService;
-                var shipService = System.Windows.Application.Current.Services.GetService(typeof(IShipService)) as IShipService;
-                
-                if (hardwareChangeRequestService == null || shipService == null)
-                {
-                    throw new InvalidOperationException("Required services not available");
-                }
-
                 // Load the detailed hardware change request data
-                var hardwareRequests = await hardwareChangeRequestService.GetAllAsync();
+                var hardwareRequests = await _hardwareChangeRequestService.GetAllAsync();
                 var hardwareRequest = hardwareRequests.FirstOrDefault(hr => hr.RequestNumber == changeRequest.RequestNo);
                 
-                var viewModel = new HardwareChangeRequestDialogViewModel(_authenticationService, hardwareChangeRequestService, _changeRequestService, shipService);
+                var viewModel = new HardwareChangeRequestDialogViewModel(_authenticationService, _hardwareChangeRequestService, _changeRequestService, _shipService);
                 
-                // Set view mode
+                // Set view mode for read-only viewing
                 viewModel.IsViewMode = true;
                 
                 // Pre-populate with existing data
                 viewModel.RequestNumber = changeRequest.RequestNo;
-                viewModel.Reason = changeRequest.Purpose;
+                viewModel.Reason = changeRequest.Purpose ?? "";
                 
                 // Set the selected ship from the change request
                 if (changeRequest.ShipId.HasValue)
                 {
+                    await Task.Delay(500); // Give time for ships to load
                     var selectedShip = viewModel.Ships.FirstOrDefault(s => s.Id == changeRequest.ShipId.Value);
                     if (selectedShip != null)
                     {
@@ -870,13 +881,21 @@ namespace MaritimeERP.Desktop.ViewModels
                 }
                 
                 var dialog = new HardwareChangeRequestDialog(viewModel);
-                dialog.Owner = System.Windows.Application.Current.MainWindow;
+                
+                // Set owner safely
+                var mainWindow = System.Windows.Application.Current.MainWindow;
+                if (mainWindow != null && mainWindow != dialog)
+                {
+                    dialog.Owner = mainWindow;
+                }
+                
                 dialog.ShowDialog();
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error opening hardware change request view");
-                throw;
+                // Fallback to basic details if form fails
+                ShowBasicChangeRequestDetails(changeRequest);
             }
         }
 
@@ -884,30 +903,23 @@ namespace MaritimeERP.Desktop.ViewModels
         {
             try
             {
-                var softwareChangeRequestService = System.Windows.Application.Current.Services.GetService(typeof(ISoftwareChangeRequestService)) as ISoftwareChangeRequestService;
-                var shipService = System.Windows.Application.Current.Services.GetService(typeof(IShipService)) as IShipService;
-                
-                if (softwareChangeRequestService == null || shipService == null)
-                {
-                    throw new InvalidOperationException("Required services not available");
-                }
-
                 // Load the detailed software change request data
-                var softwareRequests = await softwareChangeRequestService.GetAllAsync();
+                var softwareRequests = await _softwareChangeRequestService.GetAllAsync();
                 var softwareRequest = softwareRequests.FirstOrDefault(sr => sr.RequestNumber == changeRequest.RequestNo);
                 
-                var viewModel = new SoftwareChangeRequestDialogViewModel(softwareChangeRequestService, _authenticationService, _changeRequestService, shipService);
+                var viewModel = new SoftwareChangeRequestDialogViewModel(_softwareChangeRequestService, _authenticationService, _changeRequestService, _shipService);
                 
-                // Set view mode
+                // Set view mode for read-only viewing
                 viewModel.IsViewMode = true;
                 
                 // Pre-populate with existing data
                 viewModel.RequestNumber = changeRequest.RequestNo;
-                viewModel.Reason = changeRequest.Purpose;
+                viewModel.Reason = changeRequest.Purpose ?? "";
                 
                 // Set the selected ship from the change request
                 if (changeRequest.ShipId.HasValue)
                 {
+                    await Task.Delay(500); // Give time for ships to load
                     var selectedShip = viewModel.Ships.FirstOrDefault(s => s.Id == changeRequest.ShipId.Value);
                     if (selectedShip != null)
                     {
@@ -922,13 +934,21 @@ namespace MaritimeERP.Desktop.ViewModels
                 }
                 
                 var dialog = new SoftwareChangeRequestDialog(viewModel);
-                dialog.Owner = System.Windows.Application.Current.MainWindow;
+                
+                // Set owner safely
+                var mainWindow = System.Windows.Application.Current.MainWindow;
+                if (mainWindow != null && mainWindow != dialog)
+                {
+                    dialog.Owner = mainWindow;
+                }
+                
                 dialog.ShowDialog();
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error opening software change request view");
-                throw;
+                // Fallback to basic details if form fails
+                ShowBasicChangeRequestDetails(changeRequest);
             }
         }
 
@@ -936,30 +956,23 @@ namespace MaritimeERP.Desktop.ViewModels
         {
             try
             {
-                var systemChangePlanService = System.Windows.Application.Current.Services.GetService(typeof(ISystemChangePlanService)) as ISystemChangePlanService;
-                var shipService = System.Windows.Application.Current.Services.GetService(typeof(IShipService)) as IShipService;
-                
-                if (systemChangePlanService == null || shipService == null)
-                {
-                    throw new InvalidOperationException("Required services not available");
-                }
-
                 // Load the detailed system change plan data
-                var systemChangePlans = await systemChangePlanService.GetAllSystemChangePlansAsync();
+                var systemChangePlans = await _systemChangePlanService.GetAllSystemChangePlansAsync();
                 var systemChangePlan = systemChangePlans.FirstOrDefault(scp => scp.RequestNumber == changeRequest.RequestNo);
                 
-                var viewModel = new SystemChangePlanDialogViewModel(systemChangePlanService, _authenticationService, _changeRequestService, shipService);
+                var viewModel = new SystemChangePlanDialogViewModel(_systemChangePlanService, _authenticationService, _shipService, _changeRequestService);
                 
-                // Set view mode
+                // Set view mode for read-only viewing
                 viewModel.IsViewMode = true;
                 
                 // Pre-populate with existing data
                 viewModel.RequestNumber = changeRequest.RequestNo;
-                viewModel.Reason = changeRequest.Purpose;
+                viewModel.Reason = changeRequest.Purpose ?? "";
                 
                 // Set the selected ship from the change request
                 if (changeRequest.ShipId.HasValue)
                 {
+                    await Task.Delay(500); // Give time for ships to load
                     var selectedShip = viewModel.Ships.FirstOrDefault(s => s.Id == changeRequest.ShipId.Value);
                     if (selectedShip != null)
                     {
@@ -974,13 +987,21 @@ namespace MaritimeERP.Desktop.ViewModels
                 }
                 
                 var dialog = new SystemChangePlanDialog(viewModel);
-                dialog.Owner = System.Windows.Application.Current.MainWindow;
+                
+                // Set owner safely
+                var mainWindow = System.Windows.Application.Current.MainWindow;
+                if (mainWindow != null && mainWindow != dialog)
+                {
+                    dialog.Owner = mainWindow;
+                }
+                
                 dialog.ShowDialog();
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error opening system change plan view");
-                throw;
+                // Fallback to basic details if form fails
+                ShowBasicChangeRequestDetails(changeRequest);
             }
         }
 
@@ -988,30 +1009,22 @@ namespace MaritimeERP.Desktop.ViewModels
         {
             try
             {
-                var securityReviewStatementService = System.Windows.Application.Current.Services.GetService(typeof(ISecurityReviewStatementService)) as ISecurityReviewStatementService;
-                var shipService = System.Windows.Application.Current.Services.GetService(typeof(IShipService)) as IShipService;
-                
-                if (securityReviewStatementService == null || shipService == null)
-                {
-                    throw new InvalidOperationException("Required services not available");
-                }
-
                 // Load the detailed security review statement data
-                var securityReviewStatements = await securityReviewStatementService.GetAllAsync();
+                var securityReviewStatements = await _securityReviewStatementService.GetAllSecurityReviewStatementsAsync();
                 var securityReviewStatement = securityReviewStatements.FirstOrDefault(srs => srs.RequestNumber == changeRequest.RequestNo);
                 
-                var viewModel = new SecurityReviewStatementDialogViewModel(securityReviewStatementService, _authenticationService, _changeRequestService, shipService);
+                var viewModel = new SecurityReviewStatementDialogViewModel(_securityReviewStatementService, _authenticationService, _shipService, _changeRequestService);
                 
-                // Set view mode
+                // Set view mode for read-only viewing
                 viewModel.IsViewMode = true;
                 
                 // Pre-populate with existing data
                 viewModel.RequestNumber = changeRequest.RequestNo;
-                viewModel.Reason = changeRequest.Purpose;
                 
                 // Set the selected ship from the change request
                 if (changeRequest.ShipId.HasValue)
                 {
+                    await Task.Delay(500); // Give time for ships to load
                     var selectedShip = viewModel.Ships.FirstOrDefault(s => s.Id == changeRequest.ShipId.Value);
                     if (selectedShip != null)
                     {
@@ -1026,13 +1039,21 @@ namespace MaritimeERP.Desktop.ViewModels
                 }
                 
                 var dialog = new SecurityReviewStatementDialog(viewModel);
-                dialog.Owner = System.Windows.Application.Current.MainWindow;
+                
+                // Set owner safely
+                var mainWindow = System.Windows.Application.Current.MainWindow;
+                if (mainWindow != null && mainWindow != dialog)
+                {
+                    dialog.Owner = mainWindow;
+                }
+                
                 dialog.ShowDialog();
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error opening security review statement view");
-                throw;
+                // Fallback to basic details if form fails
+                ShowBasicChangeRequestDetails(changeRequest);
             }
         }
 

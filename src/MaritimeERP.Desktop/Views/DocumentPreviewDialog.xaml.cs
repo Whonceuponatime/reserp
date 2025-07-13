@@ -7,11 +7,11 @@ namespace MaritimeERP.Desktop.Views
 {
     public partial class DocumentPreviewDialog : Window
     {
-        public DocumentPreviewDialog(Document document, IDocumentService documentService)
+        public DocumentPreviewDialog(Document document, IDocumentService documentService, IAuthenticationService? authenticationService = null)
         {
             InitializeComponent();
             
-            var viewModel = new DocumentPreviewDialogViewModel(document, documentService);
+            var viewModel = new DocumentPreviewDialogViewModel(document, documentService, authenticationService);
             DataContext = viewModel;
             
             // Subscribe to close event
