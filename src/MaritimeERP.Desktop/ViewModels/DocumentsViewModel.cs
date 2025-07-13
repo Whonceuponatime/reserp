@@ -425,10 +425,28 @@ namespace MaritimeERP.Desktop.ViewModels
 
                 if (result == MessageBoxResult.Yes)
                 {
-                    await _documentService.ApproveDocumentAsync(document.Id, _authService.CurrentUser!.Id);
-                    await LoadDocumentsAsync();
-                    await LoadStatisticsAsync();
-                    StatusMessage = "Document approved successfully";
+                    // Get approval comments from user
+                    var comments = InputDialog.ShowDialog(
+                        "Enter approval comments (optional):",
+                        "Approve Document",
+                        "Approved from documents tab");
+
+                    if (comments != null) // User didn't cancel
+                    {
+                        await _documentService.ApproveDocumentAsync(document.Id, _authService.CurrentUser!.Id, comments);
+                        
+                        // Update the document object to reflect the new status for the notification
+                        document.IsApproved = true;
+                        document.ApprovedByUserId = _authService.CurrentUser!.Id;
+                        document.ApprovedAt = DateTime.UtcNow;
+                        
+                        // Notify other views that document data has changed
+                        _dataChangeNotificationService.NotifyDataChanged("Document", "APPROVE", document);
+                        
+                        await LoadDocumentsAsync();
+                        await LoadStatisticsAsync();
+                        StatusMessage = "Document approved successfully";
+                    }
                 }
             }
             catch (Exception ex)
@@ -452,6 +470,15 @@ namespace MaritimeERP.Desktop.ViewModels
                 if (!string.IsNullOrEmpty(reason))
                 {
                     await _documentService.RejectDocumentAsync(document.Id, _authService.CurrentUser!.Id, reason);
+                    
+                    // Update the document object to reflect the new status for the notification
+                    document.IsApproved = false;
+                    document.ApprovedByUserId = _authService.CurrentUser!.Id;
+                    document.ApprovedAt = DateTime.UtcNow;
+                    
+                    // Notify other views that document data has changed
+                    _dataChangeNotificationService.NotifyDataChanged("Document", "REJECT", document);
+                    
                     await LoadDocumentsAsync();
                     await LoadStatisticsAsync();
                     StatusMessage = "Document rejected successfully";
