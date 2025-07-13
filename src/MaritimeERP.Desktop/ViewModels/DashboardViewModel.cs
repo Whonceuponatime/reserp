@@ -264,11 +264,9 @@ namespace MaritimeERP.Desktop.ViewModels
         public ICommand ViewPendingDocumentsCommand { get; private set; } = null!;
         public ICommand ViewPendingChangeRequestsCommand { get; private set; } = null!;
         public ICommand ViewDocumentCommand { get; private set; } = null!;
-        public ICommand ApproveDocumentCommand { get; private set; } = null!;
-        public ICommand RejectDocumentCommand { get; private set; } = null!;
+        public ICommand RedirectToDocumentsCommand { get; private set; } = null!;
         public ICommand ViewChangeRequestCommand { get; private set; } = null!;
-        public ICommand ApproveChangeRequestCommand { get; private set; } = null!;
-        public ICommand RejectChangeRequestCommand { get; private set; } = null!;
+        public ICommand RedirectToChangeRequestsCommand { get; private set; } = null!;
 
         private void InitializeCommands()
         {
@@ -282,11 +280,9 @@ namespace MaritimeERP.Desktop.ViewModels
             ViewPendingDocumentsCommand = new RelayCommand(() => _navigationService.NavigateToPage("Documents"));
             ViewPendingChangeRequestsCommand = new RelayCommand(() => _navigationService.NavigateToPage("ChangeRequests"));
             ViewDocumentCommand = new RelayCommand<Document>(ViewDocument);
-            ApproveDocumentCommand = new RelayCommand<Document>(async (doc) => await ApproveDocumentAsync(doc));
-            RejectDocumentCommand = new RelayCommand<Document>(async (doc) => await RejectDocumentAsync(doc));
+            RedirectToDocumentsCommand = new RelayCommand<Document>(RedirectToDocuments);
             ViewChangeRequestCommand = new RelayCommand<ChangeRequest>(ViewChangeRequest);
-            ApproveChangeRequestCommand = new RelayCommand<ChangeRequest>(async (cr) => await ApproveChangeRequestAsync(cr));
-            RejectChangeRequestCommand = new RelayCommand<ChangeRequest>(async (cr) => await RejectChangeRequestAsync(cr));
+            RedirectToChangeRequestsCommand = new RelayCommand<ChangeRequest>(RedirectToChangeRequests);
         }
 
         private void SubscribeToDataChanges()
@@ -644,358 +640,108 @@ namespace MaritimeERP.Desktop.ViewModels
 
         private async void ViewDocument(Document? document)
         {
-            if (document == null) return;
+            if (document == null)
+            {
+                _logger.LogWarning("ViewDocument called with null document");
+                return;
+            }
 
             try
             {
-                // Create and show document preview dialog with authentication service
-                var previewDialog = new DocumentPreviewDialog(document, _documentService, _authenticationService);
+                _logger.LogInformation("Opening document dialog for document ID: {DocumentId}", document.Id);
                 
-                // Only set owner if current window is not the same as the dialog
-                var mainWindow = System.Windows.Application.Current.MainWindow;
-                if (mainWindow != null && mainWindow != previewDialog)
+                var dialog = new DocumentUploadDialog
                 {
-                    previewDialog.Owner = mainWindow;
-                }
+                    Owner = System.Windows.Application.Current.MainWindow
+                };
                 
-                previewDialog.ShowDialog();
+                var dialogViewModel = new DocumentUploadDialogViewModel(
+                    _documentService,
+                    _authenticationService,
+                    _dataChangeNotificationService,
+                    _logger.CreateLogger<DocumentUploadDialogViewModel>(),
+                    document);
+                
+                dialog.DataContext = dialogViewModel;
+                
+                var result = dialog.ShowDialog();
+                
+                if (result == true)
+                {
+                    _logger.LogInformation("Document dialog closed successfully");
+                    // Refresh the dashboard data to reflect any changes
+                    await LoadDashboardDataAsync();
+                }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error opening document preview");
-                
-                // Fallback to showing basic details
-                var details = $"Document: {document.Name}\n" +
-                             $"Category: {document.Category?.Name}\n" +
-                             $"Ship: {document.Ship?.ShipName ?? "Not assigned"}\n" +
-                             $"File Size: {document.FileSizeDisplay}\n" +
-                             $"Uploaded: {document.UploadedAtDisplay}\n" +
-                             $"Uploaded by: {document.UploaderDisplay}\n" +
-                             $"Status: {document.StatusDisplay}\n" +
-                             $"Version: {document.Version}\n";
-
-                if (!string.IsNullOrEmpty(document.Description))
-                {
-                    details += $"Description: {document.Description}\n";
-                }
-
-                if (!string.IsNullOrEmpty(document.Comments))
-                {
-                    details += $"Comments: {document.Comments}\n";
-                }
-
-                System.Windows.MessageBox.Show(details, "Document Details", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
+                _logger.LogError(ex, "Error opening document dialog for document ID: {DocumentId}", document.Id);
+                System.Windows.MessageBox.Show($"Error opening document: {ex.Message}", "Error", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
             }
         }
 
-        private async Task ApproveDocumentAsync(Document? document)
+        private void RedirectToDocuments(Document? document)
         {
-            if (document == null) return;
-
-            try
-            {
-                var result = System.Windows.MessageBox.Show(
-                    $"Are you sure you want to approve the document '{document.Name}'?",
-                    "Approve Document",
-                    System.Windows.MessageBoxButton.YesNo,
-                    System.Windows.MessageBoxImage.Question);
-
-                if (result == System.Windows.MessageBoxResult.Yes)
-                {
-                    // Get approval comments from user
-                    var comments = Views.InputDialog.ShowDialog(
-                        "Enter approval comments (optional):",
-                        "Approve Document",
-                        "Approved from dashboard");
-
-                    if (comments != null) // User didn't cancel
-                    {
-                        await _documentService.ApproveDocumentAsync(document.Id, _authenticationService.CurrentUser!.Id, comments);
-                        
-                        // Update the document object to reflect the new status for the notification
-                        document.IsApproved = true;
-                        document.ApprovedByUserId = _authenticationService.CurrentUser!.Id;
-                        document.ApprovedAt = DateTime.UtcNow;
-                        
-                        // Notify other views that document data has changed
-                        _dataChangeNotificationService.NotifyDataChanged("Document", "APPROVE", document);
-                        
-                        await LoadDashboardDataAsync(); // Refresh the data
-                        System.Windows.MessageBox.Show("Document approved successfully!", "Success", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error approving document {DocumentId}", document.Id);
-                System.Windows.MessageBox.Show($"Error approving document: {ex.Message}", "Error", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
-            }
-        }
-
-        private async Task RejectDocumentAsync(Document? document)
-        {
-            if (document == null) return;
-
-            try
-            {
-                var result = System.Windows.MessageBox.Show(
-                    $"Are you sure you want to reject the document '{document.Name}'?",
-                    "Reject Document",
-                    System.Windows.MessageBoxButton.YesNo,
-                    System.Windows.MessageBoxImage.Warning);
-
-                if (result == System.Windows.MessageBoxResult.Yes)
-                {
-                    // Get rejection comments from user
-                    var comments = Views.InputDialog.ShowDialog(
-                        "Enter rejection reason:",
-                        "Reject Document",
-                        "Rejected from dashboard");
-
-                    if (comments != null) // User didn't cancel
-                    {
-                        await _documentService.RejectDocumentAsync(document.Id, _authenticationService.CurrentUser!.Id, comments);
-                        
-                        // Update the document object to reflect the new status for the notification
-                        document.IsApproved = false;
-                        document.ApprovedByUserId = _authenticationService.CurrentUser!.Id;
-                        document.ApprovedAt = DateTime.UtcNow;
-                        
-                        // Notify other views that document data has changed
-                        _dataChangeNotificationService.NotifyDataChanged("Document", "REJECT", document);
-                        
-                        await LoadDashboardDataAsync(); // Refresh the data
-                        System.Windows.MessageBox.Show("Document rejected successfully!", "Success", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error rejecting document {DocumentId}", document.Id);
-                System.Windows.MessageBox.Show($"Error rejecting document: {ex.Message}", "Error", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
-            }
+            _logger.LogInformation("Redirecting to Documents page for document management");
+            _navigationService.NavigateToPage("Documents");
         }
 
         private async void ViewChangeRequest(ChangeRequest? changeRequest)
         {
-            if (changeRequest == null) return;
+            if (changeRequest == null)
+            {
+                _logger.LogWarning("ViewChangeRequest called with null change request");
+                return;
+            }
 
             try
             {
-                // Open the appropriate dialog based on request type
-                switch (changeRequest.RequestTypeId)
+                _logger.LogInformation("Opening change request view for ID: {ChangeRequestId}, Type: {ChangeType}", 
+                    changeRequest.Id, changeRequest.ChangeType);
+
+                switch (changeRequest.ChangeType)
                 {
-                    case 1: // Hardware Change
+                    case ChangeType.HardwareChange:
                         await OpenHardwareChangeRequestViewAsync(changeRequest);
                         break;
-                    case 2: // Software Change
+                    case ChangeType.SoftwareChange:
                         await OpenSoftwareChangeRequestViewAsync(changeRequest);
                         break;
-                    case 3: // System Plan
+                    case ChangeType.SystemChange:
                         await OpenSystemChangePlanViewAsync(changeRequest);
                         break;
-                    case 4: // Security Review Statement
+                    case ChangeType.SecurityReview:
                         await OpenSecurityReviewStatementViewAsync(changeRequest);
                         break;
                     default:
-                        // Fallback to basic details
+                        _logger.LogWarning("Unknown change type: {ChangeType}", changeRequest.ChangeType);
                         ShowBasicChangeRequestDetails(changeRequest);
                         break;
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error opening change request view for {RequestNo}", changeRequest.RequestNo);
-                ShowBasicChangeRequestDetails(changeRequest);
+                _logger.LogError(ex, "Error opening change request view for ID: {ChangeRequestId}", changeRequest.Id);
+                System.Windows.MessageBox.Show($"Error opening change request: {ex.Message}", "Error", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
             }
         }
 
         private void ShowBasicChangeRequestDetails(ChangeRequest changeRequest)
         {
-            var details = $"Request No: {changeRequest.RequestNo}\n" +
-                         $"Type: {changeRequest.RequestType?.Name ?? "Unknown"}\n" +
-                         $"Ship: {changeRequest.Ship?.ShipName ?? "Not assigned"}\n" +
-                         $"Purpose: {changeRequest.Purpose ?? "No purpose specified"}\n" +
-                         $"Description: {changeRequest.Description ?? "No description"}\n" +
-                         $"Status: {changeRequest.Status?.Name ?? "Unknown"}\n" +
-                         $"Requested by: {changeRequest.RequestedBy?.FullName ?? "Unknown"}\n" +
-                         $"Requested at: {changeRequest.RequestedAt:yyyy-MM-dd HH:mm}\n";
-
-            if (!string.IsNullOrEmpty(changeRequest.Description))
-            {
-                details += $"Additional Details: {changeRequest.Description}\n";
-            }
+            var details = $"Change Request: {changeRequest.RequestNo}\n" +
+                         $"Ship: {changeRequest.Ship.ShipName}\n" +
+                         $"Type: {changeRequest.ChangeType}\n" +
+                         $"Status: {changeRequest.Status}\n" +
+                         $"Created: {changeRequest.CreatedDate:MM/dd/yyyy}\n" +
+                         $"Requested By: {changeRequest.RequestedByUser?.Username}";
 
             System.Windows.MessageBox.Show(details, "Change Request Details", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
         }
 
-        private async Task ApproveChangeRequestAsync(ChangeRequest? changeRequest)
+        private void RedirectToChangeRequests(ChangeRequest? changeRequest)
         {
-            if (changeRequest == null) return;
-
-            try
-            {
-                var result = System.Windows.MessageBox.Show(
-                    $"Are you sure you want to approve the change request '{changeRequest.RequestNo}'?",
-                    "Approve Change Request",
-                    System.Windows.MessageBoxButton.YesNo,
-                    System.Windows.MessageBoxImage.Question);
-
-                if (result == System.Windows.MessageBoxResult.Yes)
-                {
-                    // Get approval comments from user
-                    var comments = Views.InputDialog.ShowDialog(
-                        "Enter approval comments (optional):",
-                        "Approve Change Request",
-                        "Approved from dashboard");
-
-                    if (comments != null) // User didn't cancel
-                    {
-                        var currentUserId = _authenticationService.CurrentUser?.Id ?? 0;
-                        
-                        // Approve the change request
-                        await _changeRequestService.ApproveChangeRequestAsync(changeRequest.Id, currentUserId, comments);
-                    
-                    // Also approve the underlying form based on request type
-                    switch (changeRequest.RequestTypeId)
-                    {
-                        case 1: // Hardware Change
-                            var hardwareRequests = await _hardwareChangeRequestService.GetAllAsync();
-                            var hardwareRequest = hardwareRequests.FirstOrDefault(hr => hr.RequestNumber == changeRequest.RequestNo);
-                            if (hardwareRequest != null)
-                            {
-                                await _hardwareChangeRequestService.ApproveAsync(hardwareRequest.Id, currentUserId);
-                            }
-                            break;
-                            
-                        case 2: // Software Change
-                            var softwareRequests = await _softwareChangeRequestService.GetAllAsync();
-                            var softwareRequest = softwareRequests.FirstOrDefault(sr => sr.RequestNumber == changeRequest.RequestNo);
-                            if (softwareRequest != null)
-                            {
-                                await _softwareChangeRequestService.ApproveAsync(softwareRequest.Id, currentUserId);
-                            }
-                            break;
-                            
-                        case 3: // System Plan
-                            var systemChangePlans = await _systemChangePlanService.GetAllSystemChangePlansAsync();
-                            var systemChangePlan = systemChangePlans.FirstOrDefault(scp => scp.RequestNumber == changeRequest.RequestNo);
-                            if (systemChangePlan != null)
-                            {
-                                systemChangePlan.IsApproved = true;
-                                systemChangePlan.IsUnderReview = false;
-                                await _systemChangePlanService.UpdateSystemChangePlanAsync(systemChangePlan);
-                            }
-                            break;
-                            
-                        case 4: // Security Review Statement
-                            var securityReviewStatements = await _securityReviewStatementService.GetAllSecurityReviewStatementsAsync();
-                            var securityReviewStatement = securityReviewStatements.FirstOrDefault(srs => srs.RequestNumber == changeRequest.RequestNo);
-                            if (securityReviewStatement != null)
-                            {
-                                await _securityReviewStatementService.ApproveAsync(securityReviewStatement.Id, currentUserId);
-                            }
-                            break;
-                    }
-                    
-                        // Notify other views that change request data has changed
-                        _dataChangeNotificationService.NotifyDataChanged("ChangeRequest", "APPROVE", changeRequest);
-                        
-                        await LoadDashboardDataAsync(); // Refresh the data
-                        System.Windows.MessageBox.Show("Change request approved successfully!", "Success", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error approving change request {ChangeRequestId}", changeRequest.Id);
-                System.Windows.MessageBox.Show($"Error approving change request: {ex.Message}", "Error", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
-            }
-        }
-
-        private async Task RejectChangeRequestAsync(ChangeRequest? changeRequest)
-        {
-            if (changeRequest == null) return;
-
-            try
-            {
-                var result = System.Windows.MessageBox.Show(
-                    $"Are you sure you want to reject the change request '{changeRequest.RequestNo}'?",
-                    "Reject Change Request",
-                    System.Windows.MessageBoxButton.YesNo,
-                    System.Windows.MessageBoxImage.Warning);
-
-                if (result == System.Windows.MessageBoxResult.Yes)
-                {
-                    // Get rejection comments from user
-                    var comments = Views.InputDialog.ShowDialog(
-                        "Enter rejection reason:",
-                        "Reject Change Request",
-                        "Rejected from dashboard");
-
-                    if (comments != null) // User didn't cancel
-                    {
-                        var currentUserId = _authenticationService.CurrentUser?.Id ?? 0;
-                        
-                        // Reject the change request
-                        await _changeRequestService.RejectChangeRequestAsync(changeRequest.Id, currentUserId, comments);
-                    
-                    // Also reject the underlying form based on request type
-                    switch (changeRequest.RequestTypeId)
-                    {
-                        case 1: // Hardware Change
-                            var hardwareRequests = await _hardwareChangeRequestService.GetAllAsync();
-                            var hardwareRequest = hardwareRequests.FirstOrDefault(hr => hr.RequestNumber == changeRequest.RequestNo);
-                            if (hardwareRequest != null)
-                            {
-                                await _hardwareChangeRequestService.RejectAsync(hardwareRequest.Id, currentUserId, comments);
-                            }
-                            break;
-                            
-                        case 2: // Software Change
-                            var softwareRequests = await _softwareChangeRequestService.GetAllAsync();
-                            var softwareRequest = softwareRequests.FirstOrDefault(sr => sr.RequestNumber == changeRequest.RequestNo);
-                            if (softwareRequest != null)
-                            {
-                                await _softwareChangeRequestService.RejectAsync(softwareRequest.Id, currentUserId, comments);
-                            }
-                            break;
-                            
-                        case 3: // System Plan
-                            var systemChangePlans = await _systemChangePlanService.GetAllSystemChangePlansAsync();
-                            var systemChangePlan = systemChangePlans.FirstOrDefault(scp => scp.RequestNumber == changeRequest.RequestNo);
-                            if (systemChangePlan != null)
-                            {
-                                systemChangePlan.IsApproved = false;
-                                systemChangePlan.IsUnderReview = false;
-                                systemChangePlan.SecurityReviewComments = comments;
-                                await _systemChangePlanService.UpdateSystemChangePlanAsync(systemChangePlan);
-                            }
-                            break;
-                            
-                        case 4: // Security Review Statement
-                            var securityReviewStatements = await _securityReviewStatementService.GetAllSecurityReviewStatementsAsync();
-                            var securityReviewStatement = securityReviewStatements.FirstOrDefault(srs => srs.RequestNumber == changeRequest.RequestNo);
-                            if (securityReviewStatement != null)
-                            {
-                                await _securityReviewStatementService.RejectAsync(securityReviewStatement.Id, currentUserId, comments);
-                            }
-                            break;
-                    }
-                    
-                        // Notify other views that change request data has changed
-                        _dataChangeNotificationService.NotifyDataChanged("ChangeRequest", "REJECT", changeRequest);
-                        
-                        await LoadDashboardDataAsync(); // Refresh the data
-                        System.Windows.MessageBox.Show("Change request rejected successfully!", "Success", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error rejecting change request {ChangeRequestId}", changeRequest.Id);
-                System.Windows.MessageBox.Show($"Error rejecting change request: {ex.Message}", "Error", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
-            }
+            _logger.LogInformation("Redirecting to Change Requests page for change request management");
+            _navigationService.NavigateToPage("ChangeRequests");
         }
 
         private async Task OpenHardwareChangeRequestViewAsync(ChangeRequest changeRequest)

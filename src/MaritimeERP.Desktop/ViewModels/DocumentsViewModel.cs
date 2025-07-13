@@ -425,28 +425,10 @@ namespace MaritimeERP.Desktop.ViewModels
 
                 if (result == MessageBoxResult.Yes)
                 {
-                    // Get approval comments from user
-                    var comments = InputDialog.ShowDialog(
-                        "Enter approval comments (optional):",
-                        "Approve Document",
-                        "Approved from documents tab");
-
-                    if (comments != null) // User didn't cancel
-                    {
-                        await _documentService.ApproveDocumentAsync(document.Id, _authService.CurrentUser!.Id, comments);
-                        
-                        // Update the document object to reflect the new status for the notification
-                        document.IsApproved = true;
-                        document.ApprovedByUserId = _authService.CurrentUser!.Id;
-                        document.ApprovedAt = DateTime.UtcNow;
-                        
-                        // Notify other views that document data has changed
-                        _dataChangeNotificationService.NotifyDataChanged("Document", "APPROVE", document);
-                        
-                        await LoadDocumentsAsync();
-                        await LoadStatisticsAsync();
-                        StatusMessage = "Document approved successfully";
-                    }
+                    await _documentService.ApproveDocumentAsync(document.Id, _authService.CurrentUser!.Id);
+                    await LoadDocumentsAsync();
+                    await LoadStatisticsAsync();
+                    StatusMessage = "Document approved successfully";
                 }
             }
             catch (Exception ex)
@@ -470,15 +452,6 @@ namespace MaritimeERP.Desktop.ViewModels
                 if (!string.IsNullOrEmpty(reason))
                 {
                     await _documentService.RejectDocumentAsync(document.Id, _authService.CurrentUser!.Id, reason);
-                    
-                    // Update the document object to reflect the new status for the notification
-                    document.IsApproved = false;
-                    document.ApprovedByUserId = _authService.CurrentUser!.Id;
-                    document.ApprovedAt = DateTime.UtcNow;
-                    
-                    // Notify other views that document data has changed
-                    _dataChangeNotificationService.NotifyDataChanged("Document", "REJECT", document);
-                    
                     await LoadDocumentsAsync();
                     await LoadStatisticsAsync();
                     StatusMessage = "Document rejected successfully";
@@ -707,14 +680,6 @@ namespace MaritimeERP.Desktop.ViewModels
                     e.Operation == "DELETE" || e.Operation == "APPROVE" || e.Operation == "REJECT"))
                 {
                     _logger.LogInformation("DocumentsViewModel received document data change notification: {DataType} - {Operation}", e.DataType, e.Operation);
-                    
-                    // Log document details if available
-                    if (e.Data is Document doc)
-                    {
-                        _logger.LogInformation("Notification document details: ID={DocumentId}, Name={DocumentName}, IsApproved={IsApproved}", 
-                            doc.Id, doc.Name, doc.IsApproved);
-                    }
-                    
                     _logger.LogInformation("Current document filters: ShowApprovedOnly={ShowApprovedOnly}, ShowPendingOnly={ShowPendingOnly}", ShowApprovedOnly, ShowPendingOnly);
                     
                     await LoadDocumentsAsync();
@@ -726,26 +691,22 @@ namespace MaritimeERP.Desktop.ViewModels
                     if (e.Operation == "APPROVE" && ShowPendingOnly)
                     {
                         var documentName = (e.Data as Document)?.Name ?? "Document";
-                        _logger.LogInformation("Document approved and ShowPendingOnly is active - clearing filter for document: {DocumentName}", documentName);
                         Application.Current.Dispatcher.Invoke(() =>
                         {
                             ShowPendingOnly = false;
                             FilterDocuments();
                         });
                         StatusMessage = $"Document '{documentName}' approved successfully. Cleared 'Pending Only' filter to show updated status.";
-                        _logger.LogInformation("Filter cleared. New FilteredDocuments count: {FilteredCount}", FilteredDocuments.Count);
                     }
                     else if (e.Operation == "REJECT" && ShowApprovedOnly)
                     {
                         var documentName = (e.Data as Document)?.Name ?? "Document";
-                        _logger.LogInformation("Document rejected and ShowApprovedOnly is active - clearing filter for document: {DocumentName}", documentName);
                         Application.Current.Dispatcher.Invoke(() =>
                         {
                             ShowApprovedOnly = false;
                             FilterDocuments();
                         });
                         StatusMessage = $"Document '{documentName}' rejected successfully. Cleared 'Approved Only' filter to show updated status.";
-                        _logger.LogInformation("Filter cleared. New FilteredDocuments count: {FilteredCount}", FilteredDocuments.Count);
                     }
                     else if (e.Operation == "APPROVE")
                     {
