@@ -81,9 +81,10 @@ namespace MaritimeERP.Services
                 return await _context.Ships
                     .Where(s => !s.IsDeleted && 
                                (s.ShipName.ToLower().Contains(term) ||
-                                s.ImoNumber.Contains(term) ||
+                                s.ImoNumber.ToLower().Contains(term) ||
+                                s.ShipType.ToLower().Contains(term) ||
                                 s.Flag.ToLower().Contains(term) ||
-                                s.PortOfRegistry.ToLower().Contains(term) ||
+                                s.ShipyardOfRegistry.ToLower().Contains(term) ||
                                 s.Class.ToLower().Contains(term) ||
                                 s.ClassNotation.ToLower().Contains(term) ||
                                 s.Owner.ToLower().Contains(term)))
@@ -208,7 +209,7 @@ namespace MaritimeERP.Services
                     ImoNumber = existingShip.ImoNumber,
                     ShipType = existingShip.ShipType,
                     Flag = existingShip.Flag,
-                    PortOfRegistry = existingShip.PortOfRegistry,
+                    ShipyardOfRegistry = existingShip.ShipyardOfRegistry,
                     Class = existingShip.Class,
                     ClassNotation = existingShip.ClassNotation,
                     BuildYear = existingShip.BuildYear,
@@ -227,7 +228,7 @@ namespace MaritimeERP.Services
                 existingShip.ImoNumber = ship.ImoNumber;
                 existingShip.ShipType = ship.ShipType;
                 existingShip.Flag = ship.Flag;
-                existingShip.PortOfRegistry = ship.PortOfRegistry;
+                existingShip.ShipyardOfRegistry = ship.ShipyardOfRegistry;
                 existingShip.Class = ship.Class;
                 existingShip.ClassNotation = ship.ClassNotation;
                 existingShip.BuildYear = ship.BuildYear;

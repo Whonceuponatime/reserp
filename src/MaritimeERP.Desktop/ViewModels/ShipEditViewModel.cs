@@ -77,11 +77,11 @@ namespace MaritimeERP.Desktop.ViewModels
             set => SetProperty(ref _flag, value);
         }
 
-        private string _portOfRegistry = string.Empty;
-        public string PortOfRegistry
+        private string _shipyardOfRegistry = string.Empty;
+        public string ShipyardOfRegistry
         {
-            get => _portOfRegistry;
-            set => SetProperty(ref _portOfRegistry, value);
+            get => _shipyardOfRegistry;
+            set => SetProperty(ref _shipyardOfRegistry, value);
         }
 
         private string _class = string.Empty;
@@ -321,7 +321,7 @@ namespace MaritimeERP.Desktop.ViewModels
             ImoNumber = ship.ImoNumber;
             ShipType = ship.ShipType;
             Flag = ship.Flag;
-            PortOfRegistry = ship.PortOfRegistry;
+            ShipyardOfRegistry = ship.ShipyardOfRegistry;
             Class = ship.Class;
             ClassNotation = ship.ClassNotation;
             BuildYear = ship.BuildYear;
@@ -344,7 +344,7 @@ namespace MaritimeERP.Desktop.ViewModels
                 ImoNumber = ImoNumber,
                 ShipType = ShipType,
                 Flag = Flag,
-                PortOfRegistry = PortOfRegistry,
+                ShipyardOfRegistry = ShipyardOfRegistry,
                 Class = Class,
                 ClassNotation = ClassNotation,
                 BuildYear = BuildYear,

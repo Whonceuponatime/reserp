@@ -131,10 +131,10 @@
                                       Style="{StaticResource ComboBoxStyle}"/>
                         </StackPanel>
 
-                        <!-- Port of Registry -->
+                                                  <!-- Shipyard of Registry -->
                         <StackPanel Grid.Row="2" Grid.Column="0" Margin="0,0,0,16">
-                            <TextBlock Text="Port of Registry" Style="{StaticResource LabelStyle}"/>
-                            <TextBox Text="{Binding PortOfRegistry}" 
+                                                          <TextBlock Text="Shipyard of Registry" Style="{StaticResource LabelStyle}"/>
+                            <TextBox Text="{Binding ShipyardOfRegistry}" 
                                      Style="{StaticResource InputFieldStyle}"/>
                         </StackPanel>
 
