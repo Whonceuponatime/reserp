@@ -178,18 +178,31 @@ namespace MaritimeERP.Desktop.ViewModels
             set => SetProperty(ref _securityReviewComment, value);
         }
 
+        public bool IsCreated
+        {
+            get => !_isUnderReview && !_isApproved;
+        }
+
         private bool _isUnderReview;
         public bool IsUnderReview
         {
             get => _isUnderReview;
-            set => SetProperty(ref _isUnderReview, value);
+            set
+            {
+                SetProperty(ref _isUnderReview, value);
+                OnPropertyChanged(nameof(IsCreated));
+            }
         }
 
         private bool _isApproved;
         public bool IsApproved
         {
             get => _isApproved;
-            set => SetProperty(ref _isApproved, value);
+            set
+            {
+                SetProperty(ref _isApproved, value);
+                OnPropertyChanged(nameof(IsCreated));
+            }
         }
 
         public bool IsEditMode

@@ -120,6 +120,11 @@ namespace MaritimeERP.Desktop.ViewModels
             }
         }
 
+        public bool IsCreated
+        {
+            get => !_systemChangePlan.IsUnderReview && !_systemChangePlan.IsApproved;
+        }
+
         public bool IsUnderReview
         {
             get => _systemChangePlan.IsUnderReview;
@@ -127,6 +132,7 @@ namespace MaritimeERP.Desktop.ViewModels
             {
                 _systemChangePlan.IsUnderReview = value;
                 OnPropertyChanged();
+                OnPropertyChanged(nameof(IsCreated));
             }
         }
 
@@ -137,6 +143,7 @@ namespace MaritimeERP.Desktop.ViewModels
             {
                 _systemChangePlan.IsApproved = value;
                 OnPropertyChanged();
+                OnPropertyChanged(nameof(IsCreated));
             }
         }
 
@@ -553,6 +560,7 @@ namespace MaritimeERP.Desktop.ViewModels
         {
             OnPropertyChanged(nameof(RequestNumber));
             OnPropertyChanged(nameof(CreatedDate));
+            OnPropertyChanged(nameof(IsCreated));
             OnPropertyChanged(nameof(IsUnderReview));
             OnPropertyChanged(nameof(IsApproved));
             OnPropertyChanged(nameof(Department));

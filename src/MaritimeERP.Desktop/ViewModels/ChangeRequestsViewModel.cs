@@ -318,10 +318,17 @@ namespace MaritimeERP.Desktop.ViewModels
                     _logger.LogInformation("ChangeRequestsViewModel received ship data change notification: {DataType} - {Operation}", e.DataType, e.Operation);
                     await RefreshShipDataAsync();
                 }
+                
+                // Refresh change request data when change requests are created, updated, or deleted
+                if (e.DataType == "ChangeRequest" && (e.Operation == "CREATE" || e.Operation == "UPDATE" || e.Operation == "DELETE" || e.Operation == "APPROVE" || e.Operation == "REJECT"))
+                {
+                    _logger.LogInformation("ChangeRequestsViewModel received change request data change notification: {DataType} - {Operation}", e.DataType, e.Operation);
+                    await LoadDataAsync();
+                }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error handling ship data change notification in ChangeRequestsViewModel");
+                _logger.LogError(ex, "Error handling data change notification in ChangeRequestsViewModel");
             }
         }
 

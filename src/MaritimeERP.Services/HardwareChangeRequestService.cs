@@ -173,7 +173,7 @@ namespace MaritimeERP.Services
         public async Task<bool> ApproveAsync(int id, int approverId)
         {
             var request = await _context.HardwareChangeRequests.FindAsync(id);
-            if (request == null || request.Status != "Under Review")
+            if (request == null || (request.Status != "Under Review" && request.Status != "Submitted"))
                 return false;
 
             var oldStatus = request.Status;

@@ -407,20 +407,20 @@ namespace MaritimeERP.Desktop.ViewModels
                             var changeRequestStats = await _changeRequestService.GetChangeRequestStatisticsAsync();
                             pendingChangeReqCount = changeRequestStats.PendingApproval;
                             
-                            // Get change requests for admin review (including approved items for record keeping)
+                            // Get pending change requests for admin action (to-do list behavior - exclude approved/completed items)
                             var allChangeRequests = await _changeRequestService.GetAllChangeRequestsAsync();
-                            var adminChangeRequests = allChangeRequests.Where(cr => cr.StatusId == 2 || cr.StatusId == 3 || cr.StatusId == 4).ToList(); // Submitted, Under Review, or Approved
+                            var pendingAdminChangeRequests = allChangeRequests.Where(cr => cr.StatusId == 2 || cr.StatusId == 3).ToList(); // Only Submitted or Under Review
                         
                             // Update change requests collection on UI thread
                             await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
                             {
                                 PendingChangeRequestsList.Clear();
-                                foreach (var cr in adminChangeRequests.Take(10)) // Show only first 10 for space
+                                foreach (var cr in pendingAdminChangeRequests.Take(10)) // Show only first 10 for space
                                 {
                                     PendingChangeRequestsList.Add(cr);
                                 }
                                 
-                                _logger.LogInformation("Dashboard loaded {AdminChangeReqCount} change requests for admin (including approved items)", adminChangeRequests.Count);
+                                _logger.LogInformation("Dashboard loaded {PendingChangeReqCount} pending change requests for admin (to-do list behavior)", pendingAdminChangeRequests.Count);
                             });
                         }
 
@@ -703,6 +703,10 @@ namespace MaritimeERP.Desktop.ViewModels
                 if (result == System.Windows.MessageBoxResult.Yes)
                 {
                     await _documentService.ApproveDocumentAsync(document.Id, _authenticationService.CurrentUser!.Id);
+                    
+                    // Notify other views that document data has changed
+                    _dataChangeNotificationService.NotifyDataChanged("Document", "APPROVE", document);
+                    
                     await LoadDashboardDataAsync(); // Refresh the data
                     System.Windows.MessageBox.Show("Document approved successfully!", "Success", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
                 }
@@ -730,6 +734,10 @@ namespace MaritimeERP.Desktop.ViewModels
                 {
                     // For now, reject without asking for reason - can be enhanced later with custom dialog
                     await _documentService.RejectDocumentAsync(document.Id, _authenticationService.CurrentUser!.Id, "Rejected from dashboard");
+                    
+                    // Notify other views that document data has changed
+                    _dataChangeNotificationService.NotifyDataChanged("Document", "REJECT", document);
+                    
                     await LoadDashboardDataAsync(); // Refresh the data
                     System.Windows.MessageBox.Show("Document rejected successfully!", "Success", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
                 }
@@ -855,6 +863,9 @@ namespace MaritimeERP.Desktop.ViewModels
                             break;
                     }
                     
+                    // Notify other views that change request data has changed
+                    _dataChangeNotificationService.NotifyDataChanged("ChangeRequest", "APPROVE", changeRequest);
+                    
                     await LoadDashboardDataAsync(); // Refresh the data
                     System.Windows.MessageBox.Show("Change request approved successfully!", "Success", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
                 }
@@ -926,6 +937,9 @@ namespace MaritimeERP.Desktop.ViewModels
                             }
                             break;
                     }
+                    
+                    // Notify other views that change request data has changed
+                    _dataChangeNotificationService.NotifyDataChanged("ChangeRequest", "REJECT", changeRequest);
                     
                     await LoadDashboardDataAsync(); // Refresh the data
                     System.Windows.MessageBox.Show("Change request rejected successfully!", "Success", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);

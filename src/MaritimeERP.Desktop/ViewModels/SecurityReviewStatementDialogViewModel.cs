@@ -120,6 +120,11 @@ namespace MaritimeERP.Desktop.ViewModels
             }
         }
 
+        public bool IsCreated
+        {
+            get => !_securityReviewStatement.IsUnderReview && !_securityReviewStatement.IsApproved;
+        }
+
         public bool IsUnderReview
         {
             get => _securityReviewStatement.IsUnderReview;
@@ -127,6 +132,7 @@ namespace MaritimeERP.Desktop.ViewModels
             {
                 _securityReviewStatement.IsUnderReview = value;
                 OnPropertyChanged();
+                OnPropertyChanged(nameof(IsCreated));
             }
         }
 
@@ -137,6 +143,7 @@ namespace MaritimeERP.Desktop.ViewModels
             {
                 _securityReviewStatement.IsApproved = value;
                 OnPropertyChanged();
+                OnPropertyChanged(nameof(IsCreated));
             }
         }
 
@@ -625,6 +632,7 @@ namespace MaritimeERP.Desktop.ViewModels
         {
             OnPropertyChanged(nameof(RequestNumber));
             OnPropertyChanged(nameof(CreatedDate));
+            OnPropertyChanged(nameof(IsCreated));
             OnPropertyChanged(nameof(IsUnderReview));
             OnPropertyChanged(nameof(IsApproved));
             OnPropertyChanged(nameof(ReviewerDepartment));

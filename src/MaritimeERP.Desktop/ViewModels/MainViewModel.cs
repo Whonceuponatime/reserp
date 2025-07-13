@@ -139,80 +139,47 @@ namespace MaritimeERP.Desktop.ViewModels
         {
             try
             {
-                // Clear current user
-                CurrentUser = null;
-                
-                // Clear authentication service asynchronously
-                _ = Task.Run(async () => await _authenticationService.LogoutAsync());
-                
-                // Clear cached ViewModels to prevent data leakage
-                foreach (var viewModel in _viewModelCache.Values)
+                var result = System.Windows.MessageBox.Show(
+                    "Are you sure you want to logout? The application will restart.",
+                    "Logout Confirmation",
+                    System.Windows.MessageBoxButton.YesNo,
+                    System.Windows.MessageBoxImage.Question);
+
+                if (result == System.Windows.MessageBoxResult.Yes)
                 {
-                    if (viewModel is IDisposable disposable)
+                    // Clear current user
+                    CurrentUser = null;
+                    
+                    // Clear authentication service asynchronously
+                    _ = Task.Run(async () => await _authenticationService.LogoutAsync());
+                    
+                    // Clear cached ViewModels to prevent data leakage
+                    foreach (var viewModel in _viewModelCache.Values)
                     {
-                        disposable.Dispose();
-                    }
-                }
-                _viewModelCache.Clear();
-                
-                // Get the current main window and store reference
-                var currentMainWindow = System.Windows.Application.Current.MainWindow;
-                
-                // Create login window with proper ViewModel
-                var authService = _serviceProvider.GetRequiredService<IAuthenticationService>();
-                var loginViewModel = new LoginViewModel(authService);
-                var loginWindow = new LoginWindow(loginViewModel);
-                
-                // Set up login success handler
-                loginViewModel.LoginSuccess += async (s, e) => 
-                {
-                    try
-                    {
-                        // Create new main window on UI thread
-                        await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                        if (viewModel is IDisposable disposable)
                         {
-                            var mainWindow = _serviceProvider.GetRequiredService<MainWindow>();
-                            
-                            // Set as new main window
-                            System.Windows.Application.Current.MainWindow = mainWindow;
-                            
-                            // Refresh navigation after successful login
-                            if (mainWindow.DataContext is MainViewModel mainViewModel)
-                            {
-                                mainViewModel.RefreshNavigationAfterLogin();
-                            }
-                            
-                            mainWindow.Show();
-                            loginWindow.Close();
-                        });
+                            disposable.Dispose();
+                        }
                     }
-                    catch (Exception ex)
+                    _viewModelCache.Clear();
+
+                    // Get the current executable path
+                    var currentExecutable = System.Diagnostics.Process.GetCurrentProcess().MainModule?.FileName;
+                    
+                    if (!string.IsNullOrEmpty(currentExecutable))
                     {
-                        System.Windows.MessageBox.Show($"Error opening main window: {ex.Message}", "Error", 
-                            System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+                        // Start a new instance of the application
+                        var startInfo = new System.Diagnostics.ProcessStartInfo
+                        {
+                            FileName = currentExecutable,
+                            UseShellExecute = true
+                        };
+                        
+                        System.Diagnostics.Process.Start(startInfo);
                     }
-                };
-                
-                // Hide the current main window first
-                if (currentMainWindow != null)
-                {
-                    currentMainWindow.Hide();
-                }
-                
-                // Set login window as the new main window
-                System.Windows.Application.Current.MainWindow = loginWindow;
-                
-                // Show login window
-                loginWindow.Show();
-                
-                // Close the current main window after showing login window
-                if (currentMainWindow != null)
-                {
-                    // Use BeginInvoke to ensure this happens after the login window is shown
-                    System.Windows.Application.Current.Dispatcher.BeginInvoke(new Action(() =>
-                    {
-                        currentMainWindow.Close();
-                    }));
+                    
+                    // Shutdown the current application
+                    System.Windows.Application.Current.Shutdown();
                 }
             }
             catch (Exception ex)

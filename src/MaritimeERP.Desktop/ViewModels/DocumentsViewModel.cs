@@ -3,6 +3,7 @@ using System.ComponentModel;
 using System.Windows.Input;
 using System.IO;
 using MaritimeERP.Core.Entities;
+using MaritimeERP.Core.Interfaces;
 using MaritimeERP.Services.Interfaces;
 using MaritimeERP.Desktop.Commands;
 using MaritimeERP.Desktop.Views;
@@ -17,17 +18,20 @@ namespace MaritimeERP.Desktop.ViewModels
         private readonly IDocumentService _documentService;
         private readonly IShipService _shipService;
         private readonly IAuthenticationService _authService;
+        private readonly IDataChangeNotificationService _dataChangeNotificationService;
         private readonly ILogger<DocumentsViewModel> _logger;
 
         public DocumentsViewModel(
             IDocumentService documentService,
             IShipService shipService,
             IAuthenticationService authService,
+            IDataChangeNotificationService dataChangeNotificationService,
             ILogger<DocumentsViewModel> logger)
         {
             _documentService = documentService;
             _shipService = shipService;
             _authService = authService;
+            _dataChangeNotificationService = dataChangeNotificationService;
             _logger = logger;
 
             Documents = new ObservableCollection<Document>();
@@ -47,6 +51,9 @@ namespace MaritimeERP.Desktop.ViewModels
             FilterDocumentsCommand = new RelayCommand(() => FilterDocuments());
             ClearFiltersCommand = new RelayCommand(() => ClearFilters());
             TestAuditLoggingCommand = new RelayCommand(async () => await TestAuditLoggingAsync());
+
+            // Subscribe to document data changes
+            SubscribeToDocumentDataChanges();
 
             // Initialize
             Task.Run(async () => await InitializeAsync());
@@ -657,6 +664,30 @@ namespace MaritimeERP.Desktop.ViewModels
             ShowApprovedOnly = false;
             ShowPendingOnly = false;
             FilterDocuments();
+        }
+
+        private void SubscribeToDocumentDataChanges()
+        {
+            _dataChangeNotificationService.DataChanged += OnDataChanged;
+        }
+
+        private async void OnDataChanged(object? sender, DataChangeEventArgs e)
+        {
+            try
+            {
+                // Refresh document data when documents are created, updated, approved, rejected, or deleted
+                if (e.DataType == "Document" && (e.Operation == "CREATE" || e.Operation == "UPDATE" || 
+                    e.Operation == "DELETE" || e.Operation == "APPROVE" || e.Operation == "REJECT"))
+                {
+                    _logger.LogInformation("DocumentsViewModel received document data change notification: {DataType} - {Operation}", e.DataType, e.Operation);
+                    await LoadDocumentsAsync();
+                    await LoadStatisticsAsync();
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error handling document data change notification in DocumentsViewModel");
+            }
         }
 
         private async Task TestAuditLoggingAsync()

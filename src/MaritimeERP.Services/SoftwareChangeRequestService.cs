@@ -168,7 +168,7 @@ namespace MaritimeERP.Services
         public async Task<SoftwareChangeRequest> ApproveAsync(int id, int approverId)
         {
             var request = await _context.SoftwareChangeRequests.FindAsync(id);
-            if (request == null || request.Status != "Under Review")
+            if (request == null || (request.Status != "Under Review" && request.Status != "Submitted"))
                 throw new InvalidOperationException("Cannot approve request");
 
             var oldStatus = request.Status;
