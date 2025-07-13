@@ -6,6 +6,7 @@
     <Nullable>enable</Nullable>
     <UseWPF>true</UseWPF>
     <ImplicitUsings>enable</ImplicitUsings>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
     <AssemblyTitle>SEACURE(CARE)</AssemblyTitle>
     <AssemblyDescription>Professional Maritime Enterprise Resource Planning System</AssemblyDescription>
     <AssemblyCompany>Maritime Solutions</AssemblyCompany>
@@ -41,6 +42,7 @@
     <None Update="appsettings.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Include="app.manifest" />
   </ItemGroup>
 
   <ItemGroup>
