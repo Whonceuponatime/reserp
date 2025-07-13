@@ -170,7 +170,7 @@ namespace MaritimeERP.Services
                 
                 try
                 {
-                    await _auditLogService.LogCreateAsync(document, "Document uploaded");
+                await _auditLogService.LogCreateAsync(document, "Document uploaded");
                     _logger.LogInformation("Successfully called audit log for document {DocumentId}", document.Id);
                 }
                 catch (Exception auditEx)
@@ -296,8 +296,8 @@ namespace MaritimeERP.Services
                 // Log the approval
                 try
                 {
-                    await _auditLogService.LogActionAsync("Document", "APPROVE", documentId.ToString(), 
-                        document.Name, $"Document approved. Comments: {comments}");
+                await _auditLogService.LogActionAsync("Document", "APPROVE", documentId.ToString(), 
+                    document.Name, $"Document approved. Comments: {comments}");
                     _logger.LogInformation("Successfully logged approval audit for document {DocumentId}", documentId);
                 }
                 catch (Exception auditEx)
@@ -339,8 +339,8 @@ namespace MaritimeERP.Services
                 // Log the rejection
                 try
                 {
-                    await _auditLogService.LogActionAsync("Document", "REJECT", documentId.ToString(), 
-                        document.Name, $"Document rejected. Reason: {comments}");
+                await _auditLogService.LogActionAsync("Document", "REJECT", documentId.ToString(), 
+                    document.Name, $"Document rejected. Reason: {comments}");
                     _logger.LogInformation("Successfully logged rejection audit for document {DocumentId}", documentId);
                 }
                 catch (Exception auditEx)
@@ -651,7 +651,7 @@ namespace MaritimeERP.Services
                 // Log version creation
                 try
                 {
-                    await _auditLogService.LogCreateAsync(version, $"New document version created: v{nextVersionNumber}");
+                await _auditLogService.LogCreateAsync(version, $"New document version created: v{nextVersionNumber}");
                     _logger.LogInformation("Successfully logged audit for document version {VersionNumber} of document {DocumentId}", 
                         nextVersionNumber, documentId);
                 }

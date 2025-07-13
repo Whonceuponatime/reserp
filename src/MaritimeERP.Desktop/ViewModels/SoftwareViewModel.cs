@@ -404,13 +404,18 @@ namespace MaritimeERP.Desktop.ViewModels
                         SoftwareTypes.Add(type);
                     }
 
-                    // Ensure no system is selected initially so all components remain available
+                    // Clear all filters to ensure all software is displayed by default
                     SelectedSystem = null;
                     SelectedShip = null;
+                    SelectedComponent = null;
+                    SearchTerm = string.Empty;
 
-                    ApplyFilters();
+                    // Don't apply filters - show all software by default
                     TotalSoftware = SoftwareList.Count;
-                    StatusMessage = "Data loaded successfully";
+                    StatusMessage = $"Data loaded successfully - {SoftwareList.Count} software items displayed";
+                    
+                    _logger.LogInformation("SoftwareViewModel loaded {SoftwareCount} software items, displaying all by default", 
+                        SoftwareList.Count);
                 });
             }
             catch (Exception ex)
@@ -616,9 +621,10 @@ namespace MaritimeERP.Desktop.ViewModels
                 try
                 {
                     var allComponents = await _componentService.GetAllComponentsAsync();
+                    var allSoftware = await _softwareService.GetAllSoftwareAsync();
                     
-                    _logger.LogInformation("ClearComponentFilter: Reloaded {ComponentCount} components from service", 
-                        allComponents.Count());
+                    _logger.LogInformation("ClearComponentFilter: Reloaded {ComponentCount} components and {SoftwareCount} software from service", 
+                        allComponents.Count(), allSoftware.Count());
                     
                     await Application.Current.Dispatcher.InvokeAsync(() =>
                     {
@@ -628,17 +634,24 @@ namespace MaritimeERP.Desktop.ViewModels
                             AvailableComponents.Add(component);
                         }
                         
-                        _logger.LogInformation("ClearComponentFilter: AvailableComponents updated to {Count} components", 
-                            AvailableComponents.Count);
+                        SoftwareList.Clear();
+                        foreach (var software in allSoftware)
+                        {
+                            SoftwareList.Add(software);
+                        }
+                        
+                        TotalSoftware = SoftwareList.Count;
+                        StatusMessage = $"Filters cleared - {SoftwareList.Count} software items displayed";
+                        
+                        _logger.LogInformation("ClearComponentFilter: All filters cleared, showing {Count} software items", 
+                            SoftwareList.Count);
                     });
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Error reloading components in ClearComponentFilter");
+                    _logger.LogError(ex, "Error reloading data in ClearComponentFilter");
                 }
             });
-            
-            _ = LoadDataAsync(); // Reload all software
         }
 
         private async void FilterSoftwareByComponent(ComponentEntity component)
@@ -669,17 +682,17 @@ namespace MaritimeERP.Desktop.ViewModels
         {
             try
             {
-                if (_selectedSystem == null)
-                {
+            if (_selectedSystem == null)
+            {
                     // When no system is selected, show all available components
                     var allComponents = await _componentService.GetAllComponentsAsync();
                     
                     _logger.LogInformation("UpdateComponentsForSystemAsync: No system selected, loading all {ComponentCount} components", 
                         allComponents.Count());
                     
-                    await Application.Current.Dispatcher.InvokeAsync(() =>
-                    {
-                        AvailableComponents.Clear();
+                await Application.Current.Dispatcher.InvokeAsync(() =>
+                {
+                    AvailableComponents.Clear();
                         foreach (var component in allComponents)
                         {
                             AvailableComponents.Add(component);
@@ -687,9 +700,9 @@ namespace MaritimeERP.Desktop.ViewModels
                         
                         _logger.LogInformation("AvailableComponents after clearing and reloading: {Count} components", 
                             AvailableComponents.Count);
-                    });
-                    return;
-                }
+                });
+                return;
+            }
 
                 // When a system is selected, show only components for that system
                 _logger.LogInformation("UpdateComponentsForSystemAsync: System {SystemId} selected, filtering components", 

@@ -397,7 +397,7 @@ namespace MaritimeERP.Desktop.ViewModels
                     NewestShip = newestShipName;
                     MostCommonShipType = mostCommonType;
                     TotalSystems = systemsList.Count;
-                    TotalComponents = allComponents.Count();
+                TotalComponents = allComponents.Count();
                     RecentChanges = recentChangesCount;
                     ActiveSystems = activeSystemsCount;
                     PendingDocuments = pendingDocsCount;

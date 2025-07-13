@@ -183,10 +183,10 @@
                         <StackPanel Grid.Column="0" Grid.Row="3" Margin="0,0,8,0">
                             <TextBlock Text="Security Zone" FontSize="12" Foreground="#757575" Margin="0,0,0,4"/>
                             <TextBox Text="{Binding SecurityZone}"
-                                     Height="32"
+                                      Height="32"
                                      Padding="8"
-                                     BorderBrush="#E0E0E0"
-                                     BorderThickness="1"/>
+                                      BorderBrush="#E0E0E0"
+                                      BorderThickness="1"/>
                         </StackPanel>
 
                         <!-- Description -->

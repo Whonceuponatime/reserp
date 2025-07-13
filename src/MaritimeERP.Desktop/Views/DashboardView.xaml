@@ -27,15 +27,15 @@
                     </Grid.ColumnDefinitions>
                     
                     <StackPanel Grid.Column="0">
-                        <TextBlock Text="Dashboard" 
-                                   FontSize="20" 
-                                   FontWeight="SemiBold"
-                                   Foreground="#1976D2"/>
+                    <TextBlock Text="Dashboard" 
+                               FontSize="20" 
+                               FontWeight="SemiBold"
+                               Foreground="#1976D2"/>
                         <TextBlock Text="Maritime ERP System Overview - Real-time updates every 15 seconds"
-                                   FontSize="12"
-                                   Foreground="#757575"
-                                   Margin="0,2,0,0"/>
-                    </StackPanel>
+                               FontSize="12"
+                               Foreground="#757575"
+                               Margin="0,2,0,0"/>
+                </StackPanel>
                     
                     <Button Grid.Column="1"
                             Content="🔄 Refresh"
@@ -544,31 +544,31 @@
                             <StackPanel Orientation="Horizontal">
                                 <Button Content="🚢 Ships" 
                                         Command="{Binding ViewShipsCommand}"
-                                        Background="#1976D2"
-                                        Foreground="White"
-                                        BorderThickness="0"
-                                        Height="32"
-                                        Padding="12,0"
-                                        FontSize="12"
+                                Background="#1976D2"
+                                Foreground="White"
+                                BorderThickness="0"
+                                Height="32"
+                                Padding="12,0"
+                                FontSize="12"
                                         Margin="0,0,8,0"
                                         ToolTip="View and manage ships"/>
                                 <Button Content="⚙️ Systems" 
                                         Command="{Binding ViewSystemsCommand}"
-                                        Background="#4CAF50"
-                                        Foreground="White"
-                                        BorderThickness="0"
-                                        Height="32"
-                                        Padding="12,0"
-                                        FontSize="12"
+                                Background="#4CAF50"
+                                Foreground="White"
+                                BorderThickness="0"
+                                Height="32"
+                                Padding="12,0"
+                                FontSize="12"
                                         Margin="0,0,8,0"
                                         ToolTip="View and manage systems"/>
                                 <Button Content="🔧 Components" 
                                         Command="{Binding ViewComponentsCommand}"
-                                        Background="#FF9800"
-                                        Foreground="White"
-                                        BorderThickness="0"
-                                        Height="32"
-                                        Padding="12,0"
+                                Background="#FF9800"
+                                Foreground="White"
+                                BorderThickness="0"
+                                Height="32"
+                                Padding="12,0"
                                         FontSize="12"
                                         ToolTip="View and manage components"/>
                             </StackPanel>
@@ -602,7 +602,7 @@
                                         FontSize="12"
                                         ToolTip="Review pending change requests"/>
                             </StackPanel>
-                        </StackPanel>
+                    </StackPanel>
                     </Grid>
                 </Grid>
             </Border>
