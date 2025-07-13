@@ -765,6 +765,42 @@ namespace MaritimeERP.Desktop.ViewModels
             if (SelectedSoftware != null)
             {
                 IsEditing = true;
+                
+                // Ensure all components are available when editing software
+                _ = Task.Run(async () =>
+                {
+                    try
+                    {
+                        var allComponents = await _componentService.GetAllComponentsAsync();
+                        _logger.LogInformation("StartEditing: Loading all {ComponentCount} components for editing software", allComponents.Count());
+                        
+                        await Application.Current.Dispatcher.InvokeAsync(() =>
+                        {
+                            AvailableComponents.Clear();
+                            foreach (var component in allComponents)
+                            {
+                                AvailableComponents.Add(component);
+                            }
+                            
+                            // Restore the selected component for the current software
+                            if (SelectedSoftware?.InstalledComponentId.HasValue == true)
+                            {
+                                SelectedComponent = AvailableComponents.FirstOrDefault(c => c.Id == SelectedSoftware.InstalledComponentId.Value);
+                            }
+                            
+                            _logger.LogInformation("StartEditing: AvailableComponents now has {Count} components", AvailableComponents.Count);
+                            StatusMessage = $"Editing software - {AvailableComponents.Count} components available";
+                        });
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Error loading components for editing software");
+                        await Application.Current.Dispatcher.InvokeAsync(() =>
+                        {
+                            StatusMessage = "Error loading components. Please try again.";
+                        });
+                    }
+                });
             }
         }
 
@@ -834,6 +870,36 @@ namespace MaritimeERP.Desktop.ViewModels
             SelectedSoftware = null;
             ClearForm();
             IsEditing = true;
+            
+            // Ensure all components are available when adding new software
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    var allComponents = await _componentService.GetAllComponentsAsync();
+                    _logger.LogInformation("AddSoftware: Loading all {ComponentCount} components for new software", allComponents.Count());
+                    
+                    await Application.Current.Dispatcher.InvokeAsync(() =>
+                    {
+                        AvailableComponents.Clear();
+                        foreach (var component in allComponents)
+                        {
+                            AvailableComponents.Add(component);
+                        }
+                        
+                        _logger.LogInformation("AddSoftware: AvailableComponents now has {Count} components", AvailableComponents.Count);
+                        StatusMessage = $"Ready to add new software - {AvailableComponents.Count} components available";
+                    });
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error loading components for new software");
+                    await Application.Current.Dispatcher.InvokeAsync(() =>
+                    {
+                        StatusMessage = "Error loading components. Please try again.";
+                    });
+                }
+            });
         }
 
         public int FilteredSoftwareCount => SoftwareList?.Count ?? 0;

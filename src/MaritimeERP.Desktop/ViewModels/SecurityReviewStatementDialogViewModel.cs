@@ -480,7 +480,8 @@ namespace MaritimeERP.Desktop.ViewModels
                     IsEditMode = true;
                 }
 
-                // Don't close dialog after save - let user submit if needed
+                // Close dialog after successful save
+                CloseDialog();
             }
             catch (Exception ex)
             {
