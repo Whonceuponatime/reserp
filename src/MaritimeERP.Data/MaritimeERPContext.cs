@@ -59,6 +59,7 @@ namespace MaritimeERP.Data
                 entity.HasKey(e => e.Id);
                 entity.Property(e => e.ShipName).HasMaxLength(200).IsRequired();
                 entity.Property(e => e.ImoNumber).HasMaxLength(7).IsRequired();
+                entity.Property(e => e.Class).HasMaxLength(100).IsRequired();
                 // Remove unique constraint to allow soft-deleted records to reuse IMO numbers
                 // Uniqueness is enforced in the application layer
             });

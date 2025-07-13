@@ -167,7 +167,7 @@
 
                         <!-- Class -->
                         <StackPanel Grid.Column="0" Margin="0,0,0,16">
-                            <TextBlock Text="Classification Society" Style="{StaticResource LabelStyle}"/>
+                            <TextBlock Text="Classification Society *" Style="{StaticResource LabelStyle}"/>
                             <ComboBox ItemsSource="{Binding Classes}"
                                       SelectedItem="{Binding Class}"
                                       IsEditable="True"

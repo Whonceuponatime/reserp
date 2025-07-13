@@ -258,6 +258,12 @@ namespace MaritimeERP.Desktop.ViewModels
             Classes.Add("Russian Maritime Register");
             Classes.Add("RINA");
             Classes.Add("Other");
+            
+            // Set default classification society for new ships
+            if (!IsEditing && string.IsNullOrEmpty(Class))
+            {
+                Class = "DNV"; // Set DNV as default
+            }
         }
 
         private void UpdateClassNotationOptions()
@@ -362,7 +368,8 @@ namespace MaritimeERP.Desktop.ViewModels
             return !IsLoading && 
                    !string.IsNullOrWhiteSpace(ShipName) && 
                    !string.IsNullOrWhiteSpace(ImoNumber) && 
-                   ImoNumber.Length == 7;
+                   ImoNumber.Length == 7 &&
+                   !string.IsNullOrWhiteSpace(Class);
         }
 
         private async Task SaveAsync()

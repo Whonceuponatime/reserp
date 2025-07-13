@@ -182,6 +182,7 @@ namespace MaritimeERP.Services
             try
             {
                 return await _context.Systems
+                    .Include(s => s.Ship)
                     .Include(s => s.Category)
                     .Where(s => s.ShipId == shipId)
                     .OrderBy(s => s.Category.Name)
