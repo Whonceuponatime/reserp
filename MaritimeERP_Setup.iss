@@ -16,7 +16,7 @@ DisableProgramGroupPage=yes
 ;PrivilegesRequired=lowest
 OutputDir=Installer
 OutputBaseFilename=SEACURE_CARE_Setup_v1.0.0
-SetupIconFile=src\logo.svg
+; SetupIconFile=src\logo.svg  ; SVG not supported by Inno Setup - commented out
 Compression=lzma
 SolidCompression=yes
 WizardStyle=modern
@@ -51,7 +51,7 @@ Source: "src\MaritimeERP.Desktop\bin\Release\net8.0-windows\zh-Hans\*"; DestDir:
 Source: "src\MaritimeERP.Desktop\bin\Release\net8.0-windows\zh-Hant\*"; DestDir: "{app}\zh-Hant"; Flags: ignoreversion recursesubdirs createallsubdirs; Languages: 
 
 ; Sample database (will be copied to user data folder)
-Source: "src\MaritimeERP.Desktop\bin\Release\net8.0-windows\maritime_erp.db"; DestDir: "{app}\Database"; Flags: ignoreversion; Check: not FileExists(ExpandConstant('{userappdata}\SEACURE(CARE)\Database\maritime_erp.db'))
+Source: "maritime_erp.db"; DestDir: "{app}\Database"; Flags: ignoreversion; Check: not FileExists(ExpandConstant('{userappdata}\SEACURE(CARE)\Database\maritime_erp.db'))
 
 ; Documentation
 Source: "README.md"; DestDir: "{app}"; Flags: ignoreversion
