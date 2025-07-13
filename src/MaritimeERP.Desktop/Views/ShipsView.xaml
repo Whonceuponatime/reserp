@@ -199,6 +199,10 @@
                                     Binding="{Binding Flag}"
                                     Width="100"
                                     MinWidth="80"/>
+                <DataGridTextColumn Header="Shipyard of Registry"
+                                    Binding="{Binding ShipyardOfRegistry}"
+                                    Width="120"
+                                    MinWidth="100"/>
                 <DataGridTextColumn Header="Built Year"
                                     Binding="{Binding BuildYear}"
                                     Width="80"

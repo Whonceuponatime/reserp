@@ -43,28 +43,56 @@ namespace MaritimeERP.Desktop
                 _host = Host.CreateDefaultBuilder()
                     .ConfigureAppConfiguration((context, config) =>
                     {
-                        // Use the application directory instead of current working directory
-                        var appDirectory = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location) ?? Directory.GetCurrentDirectory();
-                        Console.WriteLine($"Looking for appsettings.json in: {appDirectory}");
+                        // Configuration hierarchy (highest priority first):
+                        // 1. User data directory (for installed application)
+                        // 2. Application directory (for portable/dev)
+                        // 3. Source directory (for development)
                         
+                        var appDirectory = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location) ?? Directory.GetCurrentDirectory();
+                        var userDataDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Maritime ERP System");
+                        
+                        // Start with app directory
                         config.SetBasePath(appDirectory);
                         config.AddJsonFile("appsettings.json", optional: true, reloadOnChange: true);
                         
-                        // Also try the source directory for development
-                        var sourceConfigPath = Path.Combine(Directory.GetCurrentDirectory(), "src", "MaritimeERP.Desktop", "appsettings.json");
-                        if (File.Exists(sourceConfigPath))
+                        // Check for user-specific configuration (highest priority)
+                        var userConfigPath = Path.Combine(userDataDirectory, "appsettings.json");
+                        if (File.Exists(userConfigPath))
                         {
-                            Console.WriteLine($"Found appsettings.json in source directory: {sourceConfigPath}");
-                            config.AddJsonFile(sourceConfigPath, optional: false, reloadOnChange: true);
+                            Console.WriteLine($"Found user config at: {userConfigPath}");
+                            config.AddJsonFile(userConfigPath, optional: false, reloadOnChange: true);
                         }
                         else
                         {
-                            Console.WriteLine($"Source config not found at: {sourceConfigPath}");
-                            // Add minimal configuration as fallback
-                            config.AddInMemoryCollection(new Dictionary<string, string?>
+                            Console.WriteLine($"No user config found at: {userConfigPath}");
+                            
+                            // Check source directory for development
+                            var sourceConfigPath = Path.Combine(Directory.GetCurrentDirectory(), "src", "MaritimeERP.Desktop", "appsettings.json");
+                            if (File.Exists(sourceConfigPath))
                             {
-                                ["ConnectionStrings:DefaultConnection"] = "Data Source=maritime_erp.db"
-                            });
+                                Console.WriteLine($"Found source config at: {sourceConfigPath}");
+                                config.AddJsonFile(sourceConfigPath, optional: false, reloadOnChange: true);
+                            }
+                            else
+                            {
+                                Console.WriteLine($"No source config found at: {sourceConfigPath}");
+                                
+                                // Default configuration for first run
+                                var defaultDbPath = Path.Combine(userDataDirectory, "Database", "maritime_erp.db");
+                                var defaultDocPath = Path.Combine(userDataDirectory, "Documents");
+                                
+                                config.AddInMemoryCollection(new Dictionary<string, string?>
+                                {
+                                    ["ConnectionStrings:DefaultConnection"] = $"Data Source={defaultDbPath}",
+                                    ["Application:DocumentStoragePath"] = defaultDocPath,
+                                    ["Application:Name"] = "Maritime ERP System",
+                                    ["Application:Version"] = "1.0.0",
+                                    ["Application:CompanyName"] = "Maritime Solutions"
+                                });
+                                
+                                Console.WriteLine($"Using default database path: {defaultDbPath}");
+                                Console.WriteLine($"Using default document path: {defaultDocPath}");
+                            }
                         }
                     })
                     .ConfigureServices((context, services) =>
@@ -105,6 +133,19 @@ namespace MaritimeERP.Desktop
                 else
                 {
                     var sqliteConnectionString = connectionString ?? "Data Source=maritime_erp.db";
+                    
+                    // Ensure database directory exists
+                    if (sqliteConnectionString.StartsWith("Data Source="))
+                    {
+                        var dbPath = sqliteConnectionString.Substring("Data Source=".Length).Split(';')[0];
+                        var dbDirectory = Path.GetDirectoryName(dbPath);
+                        if (!string.IsNullOrEmpty(dbDirectory) && !Directory.Exists(dbDirectory))
+                        {
+                            Console.WriteLine($"Creating database directory: {dbDirectory}");
+                            Directory.CreateDirectory(dbDirectory);
+                        }
+                    }
+                    
                     // Add SQLite-specific options to prevent locking
                     if (!sqliteConnectionString.Contains("Cache="))
                     {
@@ -119,6 +160,7 @@ namespace MaritimeERP.Desktop
                         sqliteConnectionString += "Pooling=true;";
                     }
                     
+                    Console.WriteLine($"Using SQLite connection: {sqliteConnectionString}");
                     options.UseSqlite(sqliteConnectionString);
                     options.EnableSensitiveDataLogging(false);
                     options.EnableServiceProviderCaching(false);

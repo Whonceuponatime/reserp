@@ -55,6 +55,7 @@
                                     <RowDefinition Height="Auto"/>
                                     <RowDefinition Height="Auto"/>
                                     <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
                                 </Grid.RowDefinitions>
 
                                 <TextBlock Grid.Row="0" Grid.Column="0" Text="Name:" FontWeight="Medium" Foreground="#616161" Margin="0,0,8,4"/>
@@ -66,14 +67,17 @@
                                 <TextBlock Grid.Row="2" Grid.Column="0" Text="Flag:" FontWeight="Medium" Foreground="#616161" Margin="0,0,8,4"/>
                                 <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding Ship.Flag}" Foreground="#212121" Margin="0,0,0,4"/>
 
-                                <TextBlock Grid.Row="3" Grid.Column="0" Text="Owner:" FontWeight="Medium" Foreground="#616161" Margin="0,0,8,4"/>
-                                <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding Ship.Owner}" Foreground="#212121" Margin="0,0,0,4"/>
+                                <TextBlock Grid.Row="3" Grid.Column="0" Text="Shipyard of Registry:" FontWeight="Medium" Foreground="#616161" Margin="0,0,8,4"/>
+                                <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding Ship.ShipyardOfRegistry}" Foreground="#212121" Margin="0,0,0,4"/>
 
-                                <TextBlock Grid.Row="4" Grid.Column="0" Text="Built:" FontWeight="Medium" Foreground="#616161" Margin="0,0,8,4"/>
-                                <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding Ship.BuildYear}" Foreground="#212121" Margin="0,0,0,4"/>
+                                <TextBlock Grid.Row="4" Grid.Column="0" Text="Owner:" FontWeight="Medium" Foreground="#616161" Margin="0,0,8,4"/>
+                                <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding Ship.Owner}" Foreground="#212121" Margin="0,0,0,4"/>
 
-                                <TextBlock Grid.Row="5" Grid.Column="0" Text="Class:" FontWeight="Medium" Foreground="#616161" Margin="0,0,8,4"/>
-                                <TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding Ship.Class}" Foreground="#212121" Margin="0,0,0,4"/>
+                                <TextBlock Grid.Row="5" Grid.Column="0" Text="Built:" FontWeight="Medium" Foreground="#616161" Margin="0,0,8,4"/>
+                                <TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding Ship.BuildYear}" Foreground="#212121" Margin="0,0,0,4"/>
+
+                                <TextBlock Grid.Row="6" Grid.Column="0" Text="Class:" FontWeight="Medium" Foreground="#616161" Margin="0,0,8,4"/>
+                                <TextBlock Grid.Row="6" Grid.Column="1" Text="{Binding Ship.Class}" Foreground="#212121" Margin="0,0,0,4"/>
                             </Grid>
                         </StackPanel>
                     </Border>
