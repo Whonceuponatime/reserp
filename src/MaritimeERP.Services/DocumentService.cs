@@ -44,8 +44,9 @@ namespace MaritimeERP.Services
             _logger = logger;
             _auditLogService = auditLogService;
             
-            // Create documents directory if it doesn't exist
-            _documentsPath = Path.Combine(Directory.GetCurrentDirectory(), "Documents");
+            // Create documents directory in user's AppData (writable location)
+            var appDataPath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+            _documentsPath = Path.Combine(appDataPath, "SEACURE(CARE)", "Documents");
             if (!Directory.Exists(_documentsPath))
             {
                 Directory.CreateDirectory(_documentsPath);

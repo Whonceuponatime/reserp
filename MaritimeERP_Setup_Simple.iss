@@ -8,6 +8,7 @@ DefaultDirName={autopf}\SEACURE(CARE)
 DisableProgramGroupPage=yes
 OutputDir=Installer
 OutputBaseFilename=SEACURE_CARE_Setup_v1.0.0
+SetupIconFile=src\seacure_logo.ico
 Compression=lzma
 SolidCompression=yes
 WizardStyle=modern
@@ -31,10 +32,12 @@ Source: "src\MaritimeERP.Desktop\bin\Release\net8.0-windows\*.json"; DestDir: "{
 Source: "src\MaritimeERP.Desktop\bin\Release\net8.0-windows\runtimes\*"; DestDir: "{app}\runtimes"; Flags: ignoreversion recursesubdirs createallsubdirs
 ; Database file from root directory
 Source: "maritime_erp.db"; DestDir: "{app}"; Flags: ignoreversion
+; Icon file
+Source: "src\seacure_logo.ico"; DestDir: "{app}"; Flags: ignoreversion
 
 [Icons]
-Name: "{autoprograms}\SEACURE(CARE)"; Filename: "{app}\MaritimeERP.Desktop.exe"
-Name: "{autodesktop}\SEACURE(CARE)"; Filename: "{app}\MaritimeERP.Desktop.exe"; Tasks: desktopicon
+Name: "{autoprograms}\SEACURE(CARE)"; Filename: "{app}\MaritimeERP.Desktop.exe"; IconFilename: "{app}\seacure_logo.ico"
+Name: "{autodesktop}\SEACURE(CARE)"; Filename: "{app}\MaritimeERP.Desktop.exe"; IconFilename: "{app}\seacure_logo.ico"; Tasks: desktopicon
 
 [Run]
 Filename: "{app}\MaritimeERP.Desktop.exe"; Description: "{cm:LaunchProgram,SEACURE(CARE)}"; Flags: nowait postinstall skipifsilent 
