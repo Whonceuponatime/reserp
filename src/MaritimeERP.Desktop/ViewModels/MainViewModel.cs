@@ -193,15 +193,17 @@ namespace MaritimeERP.Desktop.ViewModels
                     }
                 };
                 
-                // Show login window as dialog first
-                loginWindow.ShowDialog();
+                // Set login window as the new main window BEFORE closing current window
+                System.Windows.Application.Current.MainWindow = loginWindow;
                 
-                // Force close the main window after login window is closed
-                // This ensures the main window is properly disposed
-                if (currentMainWindow != null && currentMainWindow.IsVisible)
+                // Close the current main window immediately
+                if (currentMainWindow != null && currentMainWindow != loginWindow)
                 {
                     currentMainWindow.Close();
                 }
+                
+                // Show login window
+                loginWindow.Show();
             }
             catch (Exception ex)
             {

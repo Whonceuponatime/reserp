@@ -283,7 +283,7 @@
                                        FontSize="18" 
                                        FontWeight="Bold" 
                                        Foreground="#4CAF50"/>
-                            <TextBlock Text="Pending Change Requests" 
+                                                            <TextBlock Text="Change Requests (Recent)" 
                                        FontSize="10" 
                                        Foreground="#757575"/>
                         </StackPanel>
@@ -638,7 +638,8 @@
                                                                     FontSize="9"
                                                                     Background="Transparent" 
                                                                     BorderThickness="0"
-                                                                    Margin="1,0"/>
+                                                                    Margin="1,0"
+                                                                    Visibility="{Binding DataContext.IsAdmin, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BooleanToVisibilityConverter}}"/>
                                                             <Button Content="❌" 
                                                                     Command="{Binding DataContext.RejectDocumentCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                                     CommandParameter="{Binding}"
@@ -647,7 +648,8 @@
                                                                     FontSize="9"
                                                                     Background="Transparent" 
                                                                     BorderThickness="0"
-                                                                    Margin="1,0"/>
+                                                                    Margin="1,0"
+                                                                    Visibility="{Binding DataContext.IsAdmin, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BooleanToVisibilityConverter}}"/>
                                                         </StackPanel>
                                                     </Grid>
                                                 </Border>
@@ -724,7 +726,8 @@
                                                                     FontSize="9"
                                                                     Background="Transparent" 
                                                                     BorderThickness="0"
-                                                                    Margin="1,0"/>
+                                                                    Margin="1,0"
+                                                                    Visibility="{Binding DataContext.IsAdmin, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BooleanToVisibilityConverter}}"/>
                                                             <Button Content="❌" 
                                                                     Command="{Binding DataContext.RejectChangeRequestCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                                     CommandParameter="{Binding}"
@@ -733,7 +736,8 @@
                                                                     FontSize="9"
                                                                     Background="Transparent" 
                                                                     BorderThickness="0"
-                                                                    Margin="1,0"/>
+                                                                    Margin="1,0"
+                                                                    Visibility="{Binding DataContext.IsAdmin, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BooleanToVisibilityConverter}}"/>
                                                         </StackPanel>
                                                     </Grid>
                                                 </Border>

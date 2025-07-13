@@ -407,20 +407,20 @@ namespace MaritimeERP.Desktop.ViewModels
                             var changeRequestStats = await _changeRequestService.GetChangeRequestStatisticsAsync();
                             pendingChangeReqCount = changeRequestStats.PendingApproval;
                             
-                            // Get actual pending change requests for the list
+                            // Get change requests for admin review (including approved items for record keeping)
                             var allChangeRequests = await _changeRequestService.GetAllChangeRequestsAsync();
-                            var pendingChangeRequests = allChangeRequests.Where(cr => cr.StatusId == 2 || cr.StatusId == 3).ToList(); // Submitted or Under Review
+                            var adminChangeRequests = allChangeRequests.Where(cr => cr.StatusId == 2 || cr.StatusId == 3 || cr.StatusId == 4).ToList(); // Submitted, Under Review, or Approved
                         
                             // Update change requests collection on UI thread
                             await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
                             {
                                 PendingChangeRequestsList.Clear();
-                                foreach (var cr in pendingChangeRequests.Take(10)) // Show only first 10 for space
+                                foreach (var cr in adminChangeRequests.Take(10)) // Show only first 10 for space
                                 {
                                     PendingChangeRequestsList.Add(cr);
                                 }
                                 
-                                _logger.LogInformation("Dashboard loaded {PendingChangeReqCount} pending change requests for admin", pendingChangeRequests.Count);
+                                _logger.LogInformation("Dashboard loaded {AdminChangeReqCount} change requests for admin (including approved items)", adminChangeRequests.Count);
                             });
                         }
 
@@ -808,7 +808,53 @@ namespace MaritimeERP.Desktop.ViewModels
 
                 if (result == System.Windows.MessageBoxResult.Yes)
                 {
-                    await _changeRequestService.ApproveChangeRequestAsync(changeRequest.Id, _authenticationService.CurrentUser!.Id);
+                    var currentUserId = _authenticationService.CurrentUser?.Id ?? 0;
+                    
+                    // Approve the change request
+                    await _changeRequestService.ApproveChangeRequestAsync(changeRequest.Id, currentUserId);
+                    
+                    // Also approve the underlying form based on request type
+                    switch (changeRequest.RequestTypeId)
+                    {
+                        case 1: // Hardware Change
+                            var hardwareRequests = await _hardwareChangeRequestService.GetAllAsync();
+                            var hardwareRequest = hardwareRequests.FirstOrDefault(hr => hr.RequestNumber == changeRequest.RequestNo);
+                            if (hardwareRequest != null)
+                            {
+                                await _hardwareChangeRequestService.ApproveAsync(hardwareRequest.Id, currentUserId);
+                            }
+                            break;
+                            
+                        case 2: // Software Change
+                            var softwareRequests = await _softwareChangeRequestService.GetAllAsync();
+                            var softwareRequest = softwareRequests.FirstOrDefault(sr => sr.RequestNumber == changeRequest.RequestNo);
+                            if (softwareRequest != null)
+                            {
+                                await _softwareChangeRequestService.ApproveAsync(softwareRequest.Id, currentUserId);
+                            }
+                            break;
+                            
+                        case 3: // System Plan
+                            var systemChangePlans = await _systemChangePlanService.GetAllSystemChangePlansAsync();
+                            var systemChangePlan = systemChangePlans.FirstOrDefault(scp => scp.RequestNumber == changeRequest.RequestNo);
+                            if (systemChangePlan != null)
+                            {
+                                systemChangePlan.IsApproved = true;
+                                systemChangePlan.IsUnderReview = false;
+                                await _systemChangePlanService.UpdateSystemChangePlanAsync(systemChangePlan);
+                            }
+                            break;
+                            
+                        case 4: // Security Review Statement
+                            var securityReviewStatements = await _securityReviewStatementService.GetAllSecurityReviewStatementsAsync();
+                            var securityReviewStatement = securityReviewStatements.FirstOrDefault(srs => srs.RequestNumber == changeRequest.RequestNo);
+                            if (securityReviewStatement != null)
+                            {
+                                await _securityReviewStatementService.ApproveAsync(securityReviewStatement.Id, currentUserId);
+                            }
+                            break;
+                    }
+                    
                     await LoadDashboardDataAsync(); // Refresh the data
                     System.Windows.MessageBox.Show("Change request approved successfully!", "Success", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
                 }
@@ -834,7 +880,53 @@ namespace MaritimeERP.Desktop.ViewModels
 
                 if (result == System.Windows.MessageBoxResult.Yes)
                 {
-                    await _changeRequestService.RejectChangeRequestAsync(changeRequest.Id, _authenticationService.CurrentUser!.Id, "Rejected from dashboard");
+                    var currentUserId = _authenticationService.CurrentUser?.Id ?? 0;
+                    
+                    // Reject the change request
+                    await _changeRequestService.RejectChangeRequestAsync(changeRequest.Id, currentUserId, "Rejected from dashboard");
+                    
+                    // Also reject the underlying form based on request type
+                    switch (changeRequest.RequestTypeId)
+                    {
+                        case 1: // Hardware Change
+                            var hardwareRequests = await _hardwareChangeRequestService.GetAllAsync();
+                            var hardwareRequest = hardwareRequests.FirstOrDefault(hr => hr.RequestNumber == changeRequest.RequestNo);
+                            if (hardwareRequest != null)
+                            {
+                                await _hardwareChangeRequestService.RejectAsync(hardwareRequest.Id, currentUserId, "Rejected from dashboard");
+                            }
+                            break;
+                            
+                        case 2: // Software Change
+                            var softwareRequests = await _softwareChangeRequestService.GetAllAsync();
+                            var softwareRequest = softwareRequests.FirstOrDefault(sr => sr.RequestNumber == changeRequest.RequestNo);
+                            if (softwareRequest != null)
+                            {
+                                await _softwareChangeRequestService.RejectAsync(softwareRequest.Id, currentUserId, "Rejected from dashboard");
+                            }
+                            break;
+                            
+                        case 3: // System Plan
+                            var systemChangePlans = await _systemChangePlanService.GetAllSystemChangePlansAsync();
+                            var systemChangePlan = systemChangePlans.FirstOrDefault(scp => scp.RequestNumber == changeRequest.RequestNo);
+                            if (systemChangePlan != null)
+                            {
+                                systemChangePlan.IsApproved = false;
+                                systemChangePlan.IsUnderReview = false;
+                                await _systemChangePlanService.UpdateSystemChangePlanAsync(systemChangePlan);
+                            }
+                            break;
+                            
+                        case 4: // Security Review Statement
+                            var securityReviewStatements = await _securityReviewStatementService.GetAllSecurityReviewStatementsAsync();
+                            var securityReviewStatement = securityReviewStatements.FirstOrDefault(srs => srs.RequestNumber == changeRequest.RequestNo);
+                            if (securityReviewStatement != null)
+                            {
+                                await _securityReviewStatementService.RejectAsync(securityReviewStatement.Id, currentUserId, "Rejected from dashboard");
+                            }
+                            break;
+                    }
+                    
                     await LoadDashboardDataAsync(); // Refresh the data
                     System.Windows.MessageBox.Show("Change request rejected successfully!", "Success", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
                 }

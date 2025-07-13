@@ -1169,6 +1169,23 @@ namespace MaritimeERP.Desktop.ViewModels
                 
                 var viewModel = new HardwareChangeRequestDialogViewModel(_authenticationService, _hardwareChangeRequestService, _changeRequestService, _shipService);
                 
+                // Determine if this should be view mode (admin reviewing submitted form) or edit mode
+                var currentUser = _authenticationService.CurrentUser;
+                var isAdmin = currentUser?.Role?.Name == "Administrator";
+                var isSubmitted = changeRequest.StatusId == 2 || changeRequest.StatusId == 3; // Submitted or Under Review
+                
+                if (isAdmin && isSubmitted)
+                {
+                    // Admin reviewing submitted form - use view mode with approve/reject buttons
+                    viewModel.IsViewMode = true;
+                    viewModel.IsEditMode = true; // Set to true to populate data
+                }
+                else
+                {
+                    // Normal edit mode for the form creator or draft forms
+                    viewModel.IsEditMode = true;
+                }
+                
                 // Pre-populate with existing data
                 viewModel.RequestNumber = changeRequest.RequestNo;
                 viewModel.Reason = changeRequest.Purpose;
@@ -1200,7 +1217,6 @@ namespace MaritimeERP.Desktop.ViewModels
                     viewModel.WorkDescription = hardwareRequest.WorkDescription ?? "";
                     viewModel.SecurityReviewComment = hardwareRequest.SecurityReviewComment ?? "";
                     viewModel.CreatedDate = hardwareRequest.CreatedDate;
-                    viewModel.IsEditMode = true;
                     
                     // Set the internal hardware change request for editing
                     viewModel.SetExistingHardwareChangeRequest(hardwareRequest);
@@ -1217,7 +1233,7 @@ namespace MaritimeERP.Desktop.ViewModels
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error loading hardware change request details: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show($"Error opening hardware change request: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -1230,6 +1246,23 @@ namespace MaritimeERP.Desktop.ViewModels
                 var softwareRequest = softwareRequests.FirstOrDefault(sr => sr.RequestNumber == changeRequest.RequestNo);
                 
                 var viewModel = new SoftwareChangeRequestDialogViewModel(_softwareChangeRequestService, _authenticationService, _changeRequestService, _shipService);
+                
+                // Determine if this should be view mode (admin reviewing submitted form) or edit mode
+                var currentUser = _authenticationService.CurrentUser;
+                var isAdmin = currentUser?.Role?.Name == "Administrator";
+                var isSubmitted = changeRequest.StatusId == 2 || changeRequest.StatusId == 3; // Submitted or Under Review
+                
+                if (isAdmin && isSubmitted)
+                {
+                    // Admin reviewing submitted form - use view mode with approve/reject buttons
+                    viewModel.IsViewMode = true;
+                    viewModel.IsEditMode = true; // Set to true to populate data
+                }
+                else
+                {
+                    // Normal edit mode for the form creator or draft forms
+                    viewModel.IsEditMode = true;
+                }
                 
                 // Pre-populate with existing data
                 viewModel.RequestNumber = changeRequest.RequestNo;
@@ -1262,123 +1295,131 @@ namespace MaritimeERP.Desktop.ViewModels
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error loading software change request details: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show($"Error opening software change request: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
-        private void EditSystemPlanChangeRequest(ChangeRequest changeRequest)
+        private async void EditSystemPlanChangeRequest(ChangeRequest changeRequest)
         {
-            // For now, we'll need to find the SystemChangePlan by request number
-            // In a real implementation, you might want to add a foreign key relationship
-            Task.Run(async () =>
+            try
             {
-                try
+                // Load the detailed system change plan data
+                var systemChangePlans = await _systemChangePlanService.GetAllSystemChangePlansAsync();
+                var systemChangePlan = systemChangePlans.FirstOrDefault(scp => scp.RequestNumber == changeRequest.RequestNo);
+                
+                var viewModel = new SystemChangePlanDialogViewModel(_systemChangePlanService, _authenticationService, _shipService, _changeRequestService);
+                
+                // Determine if this should be view mode (admin reviewing submitted form) or edit mode
+                var currentUser = _authenticationService.CurrentUser;
+                var isAdmin = currentUser?.Role?.Name == "Administrator";
+                var isSubmitted = changeRequest.StatusId == 2 || changeRequest.StatusId == 3; // Submitted or Under Review
+                
+                if (isAdmin && isSubmitted)
                 {
-                    var systemChangePlans = await _systemChangePlanService.GetAllSystemChangePlansAsync();
-                    var systemChangePlan = systemChangePlans.FirstOrDefault(scp => scp.RequestNumber == changeRequest.RequestNo);
-                    
-                    await Application.Current.Dispatcher.InvokeAsync(() =>
+                    // Admin reviewing submitted form - use view mode with approve/reject buttons
+                    viewModel.IsViewMode = true;
+                    viewModel.IsEditMode = true; // Set to true to populate data
+                }
+                else
+                {
+                    // Normal edit mode for the form creator or draft forms
+                    viewModel.IsEditMode = true;
+                }
+                
+                // Pre-populate with existing data
+                viewModel.RequestNumber = changeRequest.RequestNo;
+                viewModel.Reason = changeRequest.Purpose;
+                
+                // Set the selected ship from the change request
+                if (changeRequest.ShipId.HasValue)
+                {
+                    var selectedShip = viewModel.Ships.FirstOrDefault(s => s.Id == changeRequest.ShipId.Value);
+                    if (selectedShip != null)
                     {
-                        if (systemChangePlan != null)
-                        {
-                            var viewModel = new SystemChangePlanDialogViewModel(_systemChangePlanService, _authenticationService, _shipService, _changeRequestService);
-                            
-                            // Set the system change plan data
-                            viewModel.SystemChangePlan = systemChangePlan;
-                            viewModel.IsEditMode = true;
-                            
-                            // Set the selected ship from the change request
-                            if (changeRequest.ShipId.HasValue)
-                            {
-                                var selectedShip = viewModel.Ships.FirstOrDefault(s => s.Id == changeRequest.ShipId.Value);
-                                if (selectedShip != null)
-                                {
-                                    viewModel.SelectedShip = selectedShip;
-                                }
-                            }
-                            
-                            var dialog = new SystemChangePlanDialog(viewModel);
-                            var result = dialog.ShowDialog();
+                        viewModel.SelectedShip = selectedShip;
+                    }
+                }
+                
+                // Load system-specific data if found
+                if (systemChangePlan != null)
+                {
+                    viewModel.SetExistingSystemChangePlan(systemChangePlan);
+                }
+                
+                var dialog = new SystemChangePlanDialog(viewModel);
+                var result = dialog.ShowDialog();
 
-                            if (result == true)
-                            {
-                                // Update the change request with the form data
-                                changeRequest.Purpose = systemChangePlan.Reason;
-                                changeRequest.Description = $"System Plan: {systemChangePlan.BeforeHwSwName} → {systemChangePlan.AfterHwSwName}";
-                                
-                                // Save to database
-                                _ = UpdateChangeRequestAsync(changeRequest);
-                            }
-                        }
-                        else
-                        {
-                            MessageBox.Show("System Change Plan data not found.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                        }
-                    });
-                }
-                catch (Exception ex)
+                if (result == true)
                 {
-                    await Application.Current.Dispatcher.InvokeAsync(() =>
-                    {
-                        MessageBox.Show($"Error loading System Change Plan: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                    });
+                    // Refresh the change requests list
+                    _ = LoadDataAsync();
                 }
-            });
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error opening system change plan: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
-        private void EditSecurityReviewStatement(ChangeRequest changeRequest)
+        private async void EditSecurityReviewStatement(ChangeRequest changeRequest)
         {
-            // Find the SecurityReviewStatement by request number
-            Task.Run(async () =>
+            try
             {
-                try
+                var securityReviewStatements = await _securityReviewStatementService.GetAllSecurityReviewStatementsAsync();
+                var securityReviewStatement = securityReviewStatements.FirstOrDefault(srs => srs.RequestNumber == changeRequest.RequestNo);
+                
+                if (securityReviewStatement != null)
                 {
-                    var securityReviewStatements = await _securityReviewStatementService.GetAllSecurityReviewStatementsAsync();
-                    var securityReviewStatement = securityReviewStatements.FirstOrDefault(srs => srs.RequestNumber == changeRequest.RequestNo);
+                    var viewModel = new SecurityReviewStatementDialogViewModel(_securityReviewStatementService, _authenticationService, _shipService, _changeRequestService);
                     
-                    await Application.Current.Dispatcher.InvokeAsync(() =>
+                    // Determine if this should be view mode (admin reviewing submitted form) or edit mode
+                    var currentUser = _authenticationService.CurrentUser;
+                    var isAdmin = currentUser?.Role?.Name == "Administrator";
+                    var isSubmitted = changeRequest.StatusId == 2 || changeRequest.StatusId == 3; // Submitted or Under Review
+                    
+                    if (isAdmin && isSubmitted)
                     {
-                        if (securityReviewStatement != null)
+                        // Admin reviewing submitted form - use view mode with approve/reject buttons
+                        viewModel.IsViewMode = true;
+                        viewModel.IsEditMode = true; // Set to true to populate data
+                    }
+                    else
+                    {
+                        // Normal edit mode for the form creator or draft forms
+                        viewModel.IsEditMode = true;
+                    }
+                    
+                    // Set the security review statement data
+                    viewModel.SecurityReviewStatement = securityReviewStatement;
+                    
+                    // Set the selected ship from the change request
+                    if (changeRequest.ShipId.HasValue)
+                    {
+                        var selectedShip = viewModel.Ships.FirstOrDefault(s => s.Id == changeRequest.ShipId.Value);
+                        if (selectedShip != null)
                         {
-                            var viewModel = new SecurityReviewStatementDialogViewModel(_securityReviewStatementService, _authenticationService, _shipService, _changeRequestService);
-                            
-                            // Set the security review statement data
-                            viewModel.SecurityReviewStatement = securityReviewStatement;
-                            viewModel.IsEditMode = true;
-                            
-                            // Set the selected ship from the change request
-                            if (changeRequest.ShipId.HasValue)
-                            {
-                                var selectedShip = viewModel.Ships.FirstOrDefault(s => s.Id == changeRequest.ShipId.Value);
-                                if (selectedShip != null)
-                                {
-                                    viewModel.SelectedShip = selectedShip;
-                                }
-                            }
-                            
-                            var dialog = new SecurityReviewStatementDialog(viewModel);
-                            var result = dialog.ShowDialog();
+                            viewModel.SelectedShip = selectedShip;
+                        }
+                    }
+                    
+                    var dialog = new SecurityReviewStatementDialog(viewModel);
+                    var result = dialog.ShowDialog();
 
-                            if (result == true)
-                            {
-                                // Refresh the change requests list
-                                _ = LoadDataAsync();
-                            }
-                        }
-                        else
-                        {
-                            MessageBox.Show("Security Review Statement data not found.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                        }
-                    });
-                }
-                catch (Exception ex)
-                {
-                    await Application.Current.Dispatcher.InvokeAsync(() =>
+                    if (result == true)
                     {
-                        MessageBox.Show($"Error loading Security Review Statement: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                    });
+                        // Refresh the change requests list
+                        _ = LoadDataAsync();
+                    }
                 }
-            });
+                else
+                {
+                    MessageBox.Show("Security Review Statement data not found.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error opening security review statement: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
         private async Task UpdateChangeRequestAsync(ChangeRequest changeRequest)
