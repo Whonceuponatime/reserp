@@ -958,7 +958,7 @@ namespace MaritimeERP.Desktop.ViewModels
                             {
                                 systemChangePlan.IsApproved = false;
                                 systemChangePlan.IsUnderReview = false;
-                                systemChangePlan.ReviewOpinion = comments;
+                                systemChangePlan.SecurityReviewComments = comments;
                                 await _systemChangePlanService.UpdateSystemChangePlanAsync(systemChangePlan);
                             }
                             break;
