@@ -251,6 +251,17 @@ namespace MaritimeERP.Desktop.ViewModels
                 OnPropertyChanged(nameof(IsEditMode));
             }
         }
+
+        private bool _isViewMode;
+        public bool IsViewMode
+        {
+            get => _isViewMode;
+            set
+            {
+                _isViewMode = value;
+                OnPropertyChanged(nameof(IsViewMode));
+            }
+        }
         
         // Commands
         public ICommand SaveCommand { get; }

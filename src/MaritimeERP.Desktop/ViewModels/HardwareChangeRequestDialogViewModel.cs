@@ -196,6 +196,13 @@ namespace MaritimeERP.Desktop.ViewModels
             set => SetProperty(ref _isEditMode, value);
         }
 
+        private bool _isViewMode;
+        public bool IsViewMode
+        {
+            get => _isViewMode;
+            set => SetProperty(ref _isViewMode, value);
+        }
+
         #endregion
 
         #region Commands

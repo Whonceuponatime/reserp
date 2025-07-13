@@ -80,6 +80,17 @@ namespace MaritimeERP.Desktop.ViewModels
             }
         }
 
+        private bool _isViewMode;
+        public bool IsViewMode
+        {
+            get => _isViewMode;
+            set
+            {
+                _isViewMode = value;
+                OnPropertyChanged();
+            }
+        }
+
         // Properties bound to UI
         public string RequestNumber
         {
@@ -266,6 +277,14 @@ namespace MaritimeERP.Desktop.ViewModels
         public ICommand CancelCommand { get; }
 
         public event Action? RequestClose;
+
+        public void SetExistingSystemChangePlan(SystemChangePlan systemChangePlan)
+        {
+            _systemChangePlan = systemChangePlan;
+            _isEditMode = true;
+            IsEditMode = true;
+            UpdateAllProperties();
+        }
 
         private async Task InitializeAsync()
         {

@@ -8,6 +8,8 @@ using MaritimeERP.Desktop.Commands;
 using MaritimeERP.Services.Interfaces;
 using Microsoft.Extensions.Logging;
 using Component = MaritimeERP.Core.Entities.Component;
+using MaritimeERP.Desktop.Views;
+using MaritimeERP.Desktop.ViewModels;
 
 namespace MaritimeERP.Desktop.ViewModels
 {
@@ -628,31 +630,43 @@ namespace MaritimeERP.Desktop.ViewModels
             return true;
         }
 
-        private void ViewDocument(Document? document)
+        private async void ViewDocument(Document? document)
         {
             if (document == null) return;
 
-            // Show document details
-            var details = $"Document: {document.Name}\n" +
-                         $"Category: {document.Category?.Name}\n" +
-                         $"Ship: {document.Ship?.ShipName ?? "Not assigned"}\n" +
-                         $"File Size: {document.FileSizeDisplay}\n" +
-                         $"Uploaded: {document.UploadedAtDisplay}\n" +
-                         $"Uploaded by: {document.UploaderDisplay}\n" +
-                         $"Status: {document.StatusDisplay}\n" +
-                         $"Version: {document.Version}\n";
-
-            if (!string.IsNullOrEmpty(document.Description))
+            try
             {
-                details += $"Description: {document.Description}\n";
+                // Create and show document preview dialog
+                var previewDialog = new DocumentPreviewDialog(document, _documentService);
+                previewDialog.Owner = System.Windows.Application.Current.MainWindow;
+                previewDialog.ShowDialog();
             }
-
-            if (!string.IsNullOrEmpty(document.Comments))
+            catch (Exception ex)
             {
-                details += $"Comments: {document.Comments}\n";
-            }
+                _logger.LogError(ex, "Error opening document preview");
+                
+                // Fallback to showing basic details
+                var details = $"Document: {document.Name}\n" +
+                             $"Category: {document.Category?.Name}\n" +
+                             $"Ship: {document.Ship?.ShipName ?? "Not assigned"}\n" +
+                             $"File Size: {document.FileSizeDisplay}\n" +
+                             $"Uploaded: {document.UploadedAtDisplay}\n" +
+                             $"Uploaded by: {document.UploaderDisplay}\n" +
+                             $"Status: {document.StatusDisplay}\n" +
+                             $"Version: {document.Version}\n";
 
-            System.Windows.MessageBox.Show(details, "Document Details", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
+                if (!string.IsNullOrEmpty(document.Description))
+                {
+                    details += $"Description: {document.Description}\n";
+                }
+
+                if (!string.IsNullOrEmpty(document.Comments))
+                {
+                    details += $"Comments: {document.Comments}\n";
+                }
+
+                System.Windows.MessageBox.Show(details, "Document Details", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
+            }
         }
 
         private async Task ApproveDocumentAsync(Document? document)
@@ -708,11 +722,42 @@ namespace MaritimeERP.Desktop.ViewModels
             }
         }
 
-        private void ViewChangeRequest(ChangeRequest? changeRequest)
+        private async void ViewChangeRequest(ChangeRequest? changeRequest)
         {
             if (changeRequest == null) return;
 
-            // Show change request details
+            try
+            {
+                // Open the appropriate dialog based on request type
+                switch (changeRequest.RequestTypeId)
+                {
+                    case 1: // Hardware Change
+                        await OpenHardwareChangeRequestViewAsync(changeRequest);
+                        break;
+                    case 2: // Software Change
+                        await OpenSoftwareChangeRequestViewAsync(changeRequest);
+                        break;
+                    case 3: // System Plan
+                        await OpenSystemChangePlanViewAsync(changeRequest);
+                        break;
+                    case 4: // Security Review Statement
+                        await OpenSecurityReviewStatementViewAsync(changeRequest);
+                        break;
+                    default:
+                        // Fallback to basic details
+                        ShowBasicChangeRequestDetails(changeRequest);
+                        break;
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error opening change request view for {RequestNo}", changeRequest.RequestNo);
+                ShowBasicChangeRequestDetails(changeRequest);
+            }
+        }
+
+        private void ShowBasicChangeRequestDetails(ChangeRequest changeRequest)
+        {
             var details = $"Request No: {changeRequest.RequestNo}\n" +
                          $"Type: {changeRequest.RequestType?.Name ?? "Unknown"}\n" +
                          $"Ship: {changeRequest.Ship?.ShipName ?? "Not assigned"}\n" +
@@ -779,6 +824,215 @@ namespace MaritimeERP.Desktop.ViewModels
             {
                 _logger.LogError(ex, "Error rejecting change request {ChangeRequestId}", changeRequest.Id);
                 System.Windows.MessageBox.Show($"Error rejecting change request: {ex.Message}", "Error", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+            }
+        }
+
+        private async Task OpenHardwareChangeRequestViewAsync(ChangeRequest changeRequest)
+        {
+            try
+            {
+                // Get the hardware change request service - need to add this to the constructor
+                var hardwareChangeRequestService = System.Windows.Application.Current.Services.GetService(typeof(IHardwareChangeRequestService)) as IHardwareChangeRequestService;
+                var shipService = System.Windows.Application.Current.Services.GetService(typeof(IShipService)) as IShipService;
+                
+                if (hardwareChangeRequestService == null || shipService == null)
+                {
+                    throw new InvalidOperationException("Required services not available");
+                }
+
+                // Load the detailed hardware change request data
+                var hardwareRequests = await hardwareChangeRequestService.GetAllAsync();
+                var hardwareRequest = hardwareRequests.FirstOrDefault(hr => hr.RequestNumber == changeRequest.RequestNo);
+                
+                var viewModel = new HardwareChangeRequestDialogViewModel(_authenticationService, hardwareChangeRequestService, _changeRequestService, shipService);
+                
+                // Set view mode
+                viewModel.IsViewMode = true;
+                
+                // Pre-populate with existing data
+                viewModel.RequestNumber = changeRequest.RequestNo;
+                viewModel.Reason = changeRequest.Purpose;
+                
+                // Set the selected ship from the change request
+                if (changeRequest.ShipId.HasValue)
+                {
+                    var selectedShip = viewModel.Ships.FirstOrDefault(s => s.Id == changeRequest.ShipId.Value);
+                    if (selectedShip != null)
+                    {
+                        viewModel.SelectedShip = selectedShip;
+                    }
+                }
+                
+                // Load hardware-specific data if found
+                if (hardwareRequest != null)
+                {
+                    viewModel.SetExistingHardwareChangeRequest(hardwareRequest);
+                }
+                
+                var dialog = new HardwareChangeRequestDialog(viewModel);
+                dialog.Owner = System.Windows.Application.Current.MainWindow;
+                dialog.ShowDialog();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error opening hardware change request view");
+                throw;
+            }
+        }
+
+        private async Task OpenSoftwareChangeRequestViewAsync(ChangeRequest changeRequest)
+        {
+            try
+            {
+                var softwareChangeRequestService = System.Windows.Application.Current.Services.GetService(typeof(ISoftwareChangeRequestService)) as ISoftwareChangeRequestService;
+                var shipService = System.Windows.Application.Current.Services.GetService(typeof(IShipService)) as IShipService;
+                
+                if (softwareChangeRequestService == null || shipService == null)
+                {
+                    throw new InvalidOperationException("Required services not available");
+                }
+
+                // Load the detailed software change request data
+                var softwareRequests = await softwareChangeRequestService.GetAllAsync();
+                var softwareRequest = softwareRequests.FirstOrDefault(sr => sr.RequestNumber == changeRequest.RequestNo);
+                
+                var viewModel = new SoftwareChangeRequestDialogViewModel(softwareChangeRequestService, _authenticationService, _changeRequestService, shipService);
+                
+                // Set view mode
+                viewModel.IsViewMode = true;
+                
+                // Pre-populate with existing data
+                viewModel.RequestNumber = changeRequest.RequestNo;
+                viewModel.Reason = changeRequest.Purpose;
+                
+                // Set the selected ship from the change request
+                if (changeRequest.ShipId.HasValue)
+                {
+                    var selectedShip = viewModel.Ships.FirstOrDefault(s => s.Id == changeRequest.ShipId.Value);
+                    if (selectedShip != null)
+                    {
+                        viewModel.SelectedShip = selectedShip;
+                    }
+                }
+                
+                // Load software-specific data if found
+                if (softwareRequest != null)
+                {
+                    viewModel.SetExistingSoftwareChangeRequest(softwareRequest);
+                }
+                
+                var dialog = new SoftwareChangeRequestDialog(viewModel);
+                dialog.Owner = System.Windows.Application.Current.MainWindow;
+                dialog.ShowDialog();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error opening software change request view");
+                throw;
+            }
+        }
+
+        private async Task OpenSystemChangePlanViewAsync(ChangeRequest changeRequest)
+        {
+            try
+            {
+                var systemChangePlanService = System.Windows.Application.Current.Services.GetService(typeof(ISystemChangePlanService)) as ISystemChangePlanService;
+                var shipService = System.Windows.Application.Current.Services.GetService(typeof(IShipService)) as IShipService;
+                
+                if (systemChangePlanService == null || shipService == null)
+                {
+                    throw new InvalidOperationException("Required services not available");
+                }
+
+                // Load the detailed system change plan data
+                var systemChangePlans = await systemChangePlanService.GetAllSystemChangePlansAsync();
+                var systemChangePlan = systemChangePlans.FirstOrDefault(scp => scp.RequestNumber == changeRequest.RequestNo);
+                
+                var viewModel = new SystemChangePlanDialogViewModel(systemChangePlanService, _authenticationService, _changeRequestService, shipService);
+                
+                // Set view mode
+                viewModel.IsViewMode = true;
+                
+                // Pre-populate with existing data
+                viewModel.RequestNumber = changeRequest.RequestNo;
+                viewModel.Reason = changeRequest.Purpose;
+                
+                // Set the selected ship from the change request
+                if (changeRequest.ShipId.HasValue)
+                {
+                    var selectedShip = viewModel.Ships.FirstOrDefault(s => s.Id == changeRequest.ShipId.Value);
+                    if (selectedShip != null)
+                    {
+                        viewModel.SelectedShip = selectedShip;
+                    }
+                }
+                
+                // Load system-specific data if found
+                if (systemChangePlan != null)
+                {
+                    viewModel.SetExistingSystemChangePlan(systemChangePlan);
+                }
+                
+                var dialog = new SystemChangePlanDialog(viewModel);
+                dialog.Owner = System.Windows.Application.Current.MainWindow;
+                dialog.ShowDialog();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error opening system change plan view");
+                throw;
+            }
+        }
+
+        private async Task OpenSecurityReviewStatementViewAsync(ChangeRequest changeRequest)
+        {
+            try
+            {
+                var securityReviewStatementService = System.Windows.Application.Current.Services.GetService(typeof(ISecurityReviewStatementService)) as ISecurityReviewStatementService;
+                var shipService = System.Windows.Application.Current.Services.GetService(typeof(IShipService)) as IShipService;
+                
+                if (securityReviewStatementService == null || shipService == null)
+                {
+                    throw new InvalidOperationException("Required services not available");
+                }
+
+                // Load the detailed security review statement data
+                var securityReviewStatements = await securityReviewStatementService.GetAllAsync();
+                var securityReviewStatement = securityReviewStatements.FirstOrDefault(srs => srs.RequestNumber == changeRequest.RequestNo);
+                
+                var viewModel = new SecurityReviewStatementDialogViewModel(securityReviewStatementService, _authenticationService, _changeRequestService, shipService);
+                
+                // Set view mode
+                viewModel.IsViewMode = true;
+                
+                // Pre-populate with existing data
+                viewModel.RequestNumber = changeRequest.RequestNo;
+                viewModel.Reason = changeRequest.Purpose;
+                
+                // Set the selected ship from the change request
+                if (changeRequest.ShipId.HasValue)
+                {
+                    var selectedShip = viewModel.Ships.FirstOrDefault(s => s.Id == changeRequest.ShipId.Value);
+                    if (selectedShip != null)
+                    {
+                        viewModel.SelectedShip = selectedShip;
+                    }
+                }
+                
+                // Load security-specific data if found
+                if (securityReviewStatement != null)
+                {
+                    viewModel.SetExistingSecurityReviewStatement(securityReviewStatement);
+                }
+                
+                var dialog = new SecurityReviewStatementDialog(viewModel);
+                dialog.Owner = System.Windows.Application.Current.MainWindow;
+                dialog.ShowDialog();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error opening security review statement view");
+                throw;
             }
         }
 
