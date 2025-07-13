@@ -6,6 +6,7 @@ AppVerName=SEACURE(CARE) 1.0.0
 AppPublisher=Maritime Solutions
 DefaultDirName={autopf}\SEACURE(CARE)
 DisableProgramGroupPage=yes
+PrivilegesRequired=admin
 OutputDir=Installer
 OutputBaseFilename=SEACURE_CARE_Setup_v1.0.0
 SetupIconFile=src\seacure_logo.ico
