@@ -258,7 +258,7 @@ namespace MaritimeERP.Desktop.ViewModels
             AfterHwOs = hardwareChangeRequest.AfterHwOs ?? "";
             WorkDescription = hardwareChangeRequest.WorkDescription ?? "";
             SecurityReviewComment = hardwareChangeRequest.SecurityReviewComment ?? "";
-            CreatedDate = hardwareChangeRequest.CreatedDate ?? DateTime.Now;
+            CreatedDate = hardwareChangeRequest.CreatedDate == default ? DateTime.Now : hardwareChangeRequest.CreatedDate;
             
             // Set status flags based on the request status
             IsUnderReview = hardwareChangeRequest.Status == "Under Review" || hardwareChangeRequest.Status == "Submitted";
@@ -471,14 +471,14 @@ namespace MaritimeERP.Desktop.ViewModels
             {
                 if (_hardwareChangeRequest != null)
                 {
-                    await _hardwareChangeRequestService.RejectAsync(_hardwareChangeRequest.Id, _authenticationService.CurrentUser?.Id ?? 0);
+                    await _hardwareChangeRequestService.RejectAsync(_hardwareChangeRequest.Id, _authenticationService.CurrentUser?.Id ?? 0, "Rejected by administrator");
                     
                     // Update the corresponding ChangeRequest status
                     var changeRequests = await _changeRequestService.GetAllChangeRequestsAsync();
                     var correspondingChangeRequest = changeRequests.FirstOrDefault(cr => cr.RequestNo == _hardwareChangeRequest.RequestNumber);
                     if (correspondingChangeRequest != null)
                     {
-                        await _changeRequestService.RejectChangeRequestAsync(correspondingChangeRequest.Id, _authenticationService.CurrentUser?.Id ?? 0);
+                        await _changeRequestService.RejectChangeRequestAsync(correspondingChangeRequest.Id, _authenticationService.CurrentUser?.Id ?? 0, "Rejected by administrator");
                     }
                     
                     IsApproved = false;

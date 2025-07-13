@@ -529,14 +529,14 @@ namespace MaritimeERP.Desktop.ViewModels
             {
                 if (_securityReviewStatement?.Id > 0)
                 {
-                    await _securityReviewStatementService.RejectAsync(_securityReviewStatement.Id, _authenticationService.CurrentUser?.Id ?? 0);
+                    await _securityReviewStatementService.RejectAsync(_securityReviewStatement.Id, _authenticationService.CurrentUser?.Id ?? 0, "Rejected by administrator");
                     
                     // Update the corresponding ChangeRequest status
                     var changeRequests = await _changeRequestService.GetAllChangeRequestsAsync();
                     var correspondingChangeRequest = changeRequests.FirstOrDefault(cr => cr.RequestNo == _securityReviewStatement.RequestNumber);
                     if (correspondingChangeRequest != null)
                     {
-                        await _changeRequestService.RejectChangeRequestAsync(correspondingChangeRequest.Id, _authenticationService.CurrentUser?.Id ?? 0);
+                        await _changeRequestService.RejectChangeRequestAsync(correspondingChangeRequest.Id, _authenticationService.CurrentUser?.Id ?? 0, "Rejected by administrator");
                     }
                     
                     IsApproved = false;

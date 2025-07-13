@@ -420,7 +420,10 @@ namespace MaritimeERP.Desktop.ViewModels
             {
                 if (_systemChangePlan?.Id > 0)
                 {
-                    await _systemChangePlanService.ApproveAsync(_systemChangePlan.Id, _authenticationService.CurrentUser?.Id ?? 0);
+                    // Update the system change plan status directly
+                    _systemChangePlan.IsApproved = true;
+                    _systemChangePlan.IsUnderReview = false;
+                    await _systemChangePlanService.UpdateSystemChangePlanAsync(_systemChangePlan);
                     
                     // Update the corresponding ChangeRequest status
                     var changeRequests = await _changeRequestService.GetAllChangeRequestsAsync();
@@ -455,14 +458,17 @@ namespace MaritimeERP.Desktop.ViewModels
             {
                 if (_systemChangePlan?.Id > 0)
                 {
-                    await _systemChangePlanService.RejectAsync(_systemChangePlan.Id, _authenticationService.CurrentUser?.Id ?? 0);
+                    // Update the system change plan status directly
+                    _systemChangePlan.IsApproved = false;
+                    _systemChangePlan.IsUnderReview = false;
+                    await _systemChangePlanService.UpdateSystemChangePlanAsync(_systemChangePlan);
                     
                     // Update the corresponding ChangeRequest status
                     var changeRequests = await _changeRequestService.GetAllChangeRequestsAsync();
                     var correspondingChangeRequest = changeRequests.FirstOrDefault(cr => cr.RequestNo == _systemChangePlan.RequestNumber);
                     if (correspondingChangeRequest != null)
                     {
-                        await _changeRequestService.RejectChangeRequestAsync(correspondingChangeRequest.Id, _authenticationService.CurrentUser?.Id ?? 0);
+                        await _changeRequestService.RejectChangeRequestAsync(correspondingChangeRequest.Id, _authenticationService.CurrentUser?.Id ?? 0, "Rejected by administrator");
                     }
                     
                     IsApproved = false;
