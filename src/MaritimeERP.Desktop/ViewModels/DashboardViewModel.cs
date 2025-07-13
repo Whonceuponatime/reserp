@@ -702,13 +702,22 @@ namespace MaritimeERP.Desktop.ViewModels
 
                 if (result == System.Windows.MessageBoxResult.Yes)
                 {
-                    await _documentService.ApproveDocumentAsync(document.Id, _authenticationService.CurrentUser!.Id);
-                    
-                    // Notify other views that document data has changed
-                    _dataChangeNotificationService.NotifyDataChanged("Document", "APPROVE", document);
-                    
-                    await LoadDashboardDataAsync(); // Refresh the data
-                    System.Windows.MessageBox.Show("Document approved successfully!", "Success", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
+                    // Get approval comments from user
+                    var comments = Views.InputDialog.ShowDialog(
+                        "Enter approval comments (optional):",
+                        "Approve Document",
+                        "Approved from dashboard");
+
+                    if (comments != null) // User didn't cancel
+                    {
+                        await _documentService.ApproveDocumentAsync(document.Id, _authenticationService.CurrentUser!.Id, comments);
+                        
+                        // Notify other views that document data has changed
+                        _dataChangeNotificationService.NotifyDataChanged("Document", "APPROVE", document);
+                        
+                        await LoadDashboardDataAsync(); // Refresh the data
+                        System.Windows.MessageBox.Show("Document approved successfully!", "Success", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
+                    }
                 }
             }
             catch (Exception ex)
@@ -732,14 +741,22 @@ namespace MaritimeERP.Desktop.ViewModels
 
                 if (result == System.Windows.MessageBoxResult.Yes)
                 {
-                    // For now, reject without asking for reason - can be enhanced later with custom dialog
-                    await _documentService.RejectDocumentAsync(document.Id, _authenticationService.CurrentUser!.Id, "Rejected from dashboard");
-                    
-                    // Notify other views that document data has changed
-                    _dataChangeNotificationService.NotifyDataChanged("Document", "REJECT", document);
-                    
-                    await LoadDashboardDataAsync(); // Refresh the data
-                    System.Windows.MessageBox.Show("Document rejected successfully!", "Success", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
+                    // Get rejection comments from user
+                    var comments = Views.InputDialog.ShowDialog(
+                        "Enter rejection reason:",
+                        "Reject Document",
+                        "Rejected from dashboard");
+
+                    if (comments != null) // User didn't cancel
+                    {
+                        await _documentService.RejectDocumentAsync(document.Id, _authenticationService.CurrentUser!.Id, comments);
+                        
+                        // Notify other views that document data has changed
+                        _dataChangeNotificationService.NotifyDataChanged("Document", "REJECT", document);
+                        
+                        await LoadDashboardDataAsync(); // Refresh the data
+                        System.Windows.MessageBox.Show("Document rejected successfully!", "Success", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
+                    }
                 }
             }
             catch (Exception ex)
@@ -816,10 +833,18 @@ namespace MaritimeERP.Desktop.ViewModels
 
                 if (result == System.Windows.MessageBoxResult.Yes)
                 {
-                    var currentUserId = _authenticationService.CurrentUser?.Id ?? 0;
-                    
-                    // Approve the change request
-                    await _changeRequestService.ApproveChangeRequestAsync(changeRequest.Id, currentUserId);
+                    // Get approval comments from user
+                    var comments = Views.InputDialog.ShowDialog(
+                        "Enter approval comments (optional):",
+                        "Approve Change Request",
+                        "Approved from dashboard");
+
+                    if (comments != null) // User didn't cancel
+                    {
+                        var currentUserId = _authenticationService.CurrentUser?.Id ?? 0;
+                        
+                        // Approve the change request
+                        await _changeRequestService.ApproveChangeRequestAsync(changeRequest.Id, currentUserId, comments);
                     
                     // Also approve the underlying form based on request type
                     switch (changeRequest.RequestTypeId)
@@ -863,11 +888,12 @@ namespace MaritimeERP.Desktop.ViewModels
                             break;
                     }
                     
-                    // Notify other views that change request data has changed
-                    _dataChangeNotificationService.NotifyDataChanged("ChangeRequest", "APPROVE", changeRequest);
-                    
-                    await LoadDashboardDataAsync(); // Refresh the data
-                    System.Windows.MessageBox.Show("Change request approved successfully!", "Success", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
+                        // Notify other views that change request data has changed
+                        _dataChangeNotificationService.NotifyDataChanged("ChangeRequest", "APPROVE", changeRequest);
+                        
+                        await LoadDashboardDataAsync(); // Refresh the data
+                        System.Windows.MessageBox.Show("Change request approved successfully!", "Success", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
+                    }
                 }
             }
             catch (Exception ex)
@@ -891,10 +917,18 @@ namespace MaritimeERP.Desktop.ViewModels
 
                 if (result == System.Windows.MessageBoxResult.Yes)
                 {
-                    var currentUserId = _authenticationService.CurrentUser?.Id ?? 0;
-                    
-                    // Reject the change request
-                    await _changeRequestService.RejectChangeRequestAsync(changeRequest.Id, currentUserId, "Rejected from dashboard");
+                    // Get rejection comments from user
+                    var comments = Views.InputDialog.ShowDialog(
+                        "Enter rejection reason:",
+                        "Reject Change Request",
+                        "Rejected from dashboard");
+
+                    if (comments != null) // User didn't cancel
+                    {
+                        var currentUserId = _authenticationService.CurrentUser?.Id ?? 0;
+                        
+                        // Reject the change request
+                        await _changeRequestService.RejectChangeRequestAsync(changeRequest.Id, currentUserId, comments);
                     
                     // Also reject the underlying form based on request type
                     switch (changeRequest.RequestTypeId)
@@ -904,7 +938,7 @@ namespace MaritimeERP.Desktop.ViewModels
                             var hardwareRequest = hardwareRequests.FirstOrDefault(hr => hr.RequestNumber == changeRequest.RequestNo);
                             if (hardwareRequest != null)
                             {
-                                await _hardwareChangeRequestService.RejectAsync(hardwareRequest.Id, currentUserId, "Rejected from dashboard");
+                                await _hardwareChangeRequestService.RejectAsync(hardwareRequest.Id, currentUserId, comments);
                             }
                             break;
                             
@@ -913,7 +947,7 @@ namespace MaritimeERP.Desktop.ViewModels
                             var softwareRequest = softwareRequests.FirstOrDefault(sr => sr.RequestNumber == changeRequest.RequestNo);
                             if (softwareRequest != null)
                             {
-                                await _softwareChangeRequestService.RejectAsync(softwareRequest.Id, currentUserId, "Rejected from dashboard");
+                                await _softwareChangeRequestService.RejectAsync(softwareRequest.Id, currentUserId, comments);
                             }
                             break;
                             
@@ -924,6 +958,7 @@ namespace MaritimeERP.Desktop.ViewModels
                             {
                                 systemChangePlan.IsApproved = false;
                                 systemChangePlan.IsUnderReview = false;
+                                systemChangePlan.ReviewOpinion = comments;
                                 await _systemChangePlanService.UpdateSystemChangePlanAsync(systemChangePlan);
                             }
                             break;
@@ -933,16 +968,17 @@ namespace MaritimeERP.Desktop.ViewModels
                             var securityReviewStatement = securityReviewStatements.FirstOrDefault(srs => srs.RequestNumber == changeRequest.RequestNo);
                             if (securityReviewStatement != null)
                             {
-                                await _securityReviewStatementService.RejectAsync(securityReviewStatement.Id, currentUserId, "Rejected from dashboard");
+                                await _securityReviewStatementService.RejectAsync(securityReviewStatement.Id, currentUserId, comments);
                             }
                             break;
                     }
                     
-                    // Notify other views that change request data has changed
-                    _dataChangeNotificationService.NotifyDataChanged("ChangeRequest", "REJECT", changeRequest);
-                    
-                    await LoadDashboardDataAsync(); // Refresh the data
-                    System.Windows.MessageBox.Show("Change request rejected successfully!", "Success", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
+                        // Notify other views that change request data has changed
+                        _dataChangeNotificationService.NotifyDataChanged("ChangeRequest", "REJECT", changeRequest);
+                        
+                        await LoadDashboardDataAsync(); // Refresh the data
+                        System.Windows.MessageBox.Show("Change request rejected successfully!", "Success", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
+                    }
                 }
             }
             catch (Exception ex)
