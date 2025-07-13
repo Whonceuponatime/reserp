@@ -783,6 +783,28 @@ namespace MaritimeERP.Desktop.ViewModels
             }
         }
 
+        private async Task RefreshManufacturersAsync()
+        {
+            try
+            {
+                var manufacturers = await _systemService.GetManufacturersAsync();
+                await Application.Current.Dispatcher.InvokeAsync(() =>
+                {
+                    Manufacturers.Clear();
+                    foreach (var manufacturer in manufacturers)
+                    {
+                        Manufacturers.Add(manufacturer);
+                    }
+                    _logger.LogInformation("Refreshed manufacturers dropdown - {ManufacturerCount} manufacturers loaded", 
+                        Manufacturers.Count);
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error refreshing manufacturers dropdown");
+            }
+        }
+
         private async Task SaveSystemAsync()
         {
             if (!CanSaveSystem())
@@ -851,6 +873,9 @@ namespace MaritimeERP.Desktop.ViewModels
                     _logger.LogInformation("System updated successfully: {SystemName}", SystemName);
                 }
 
+                // Refresh manufacturers dropdown after saving
+                await RefreshManufacturersAsync();
+
                 IsEditing = false;
                 ClearForm();
             }
@@ -892,6 +917,9 @@ namespace MaritimeERP.Desktop.ViewModels
                     
                     // Notify dashboard of deleted system
                     _dataChangeNotificationService.NotifyDataChanged("System", "Deleted", deletedSystem);
+                    
+                    // Refresh manufacturers dropdown after deleting
+                    await RefreshManufacturersAsync();
                     
                     _logger.LogInformation("System deleted: {SystemId}", deletedSystem.Id);
                 }
