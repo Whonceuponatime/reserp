@@ -712,6 +712,11 @@ namespace MaritimeERP.Desktop.ViewModels
                     {
                         await _documentService.ApproveDocumentAsync(document.Id, _authenticationService.CurrentUser!.Id, comments);
                         
+                        // Update the document object to reflect the new status for the notification
+                        document.IsApproved = true;
+                        document.ApprovedByUserId = _authenticationService.CurrentUser!.Id;
+                        document.ApprovedAt = DateTime.UtcNow;
+                        
                         // Notify other views that document data has changed
                         _dataChangeNotificationService.NotifyDataChanged("Document", "APPROVE", document);
                         
@@ -750,6 +755,11 @@ namespace MaritimeERP.Desktop.ViewModels
                     if (comments != null) // User didn't cancel
                     {
                         await _documentService.RejectDocumentAsync(document.Id, _authenticationService.CurrentUser!.Id, comments);
+                        
+                        // Update the document object to reflect the new status for the notification
+                        document.IsApproved = false;
+                        document.ApprovedByUserId = _authenticationService.CurrentUser!.Id;
+                        document.ApprovedAt = DateTime.UtcNow;
                         
                         // Notify other views that document data has changed
                         _dataChangeNotificationService.NotifyDataChanged("Document", "REJECT", document);
