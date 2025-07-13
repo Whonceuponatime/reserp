@@ -574,35 +574,35 @@
                             </StackPanel>
                         </StackPanel>
 
-                        <!-- Admin Actions - Pending Documents -->
-                        <StackPanel Grid.Column="1" Visibility="{Binding IsAdmin, Converter={StaticResource BooleanToVisibilityConverter}}">
-                            <Grid>
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="*"/>
-                                    <RowDefinition Height="Auto"/>
-                                </Grid.RowDefinitions>
-                                
-                                <TextBlock Grid.Row="0" 
-                                           Text="📄 Pending Documents" 
-                                           FontSize="12" 
+                        <!-- Admin Actions - Pending Items -->
+                        <Grid Grid.Column="1" Visibility="{Binding IsAdmin, Converter={StaticResource BooleanToVisibilityConverter}}">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            
+                            <!-- Pending Documents -->
+                            <StackPanel Grid.Column="0" Margin="0,0,4,0">
+                                <TextBlock Text="📄 Pending Documents" 
+                                           FontSize="11" 
                                            FontWeight="SemiBold" 
                                            Foreground="#666" 
-                                           Margin="0,0,0,8"/>
+                                           Margin="0,0,0,6"/>
                                 
-                                <ScrollViewer Grid.Row="1" 
-                                              VerticalScrollBarVisibility="Auto" 
-                                              Height="120"
-                                              Margin="0,0,0,8">
+                                <ScrollViewer VerticalScrollBarVisibility="Auto" 
+                                              Height="100"
+                                              Margin="0,0,0,6"
+                                              CanContentScroll="False"
+                                              PanningMode="VerticalOnly">
                                     <ItemsControl ItemsSource="{Binding PendingDocumentsList}">
                                         <ItemsControl.ItemTemplate>
                                             <DataTemplate>
                                                 <Border Background="#FFF3E0" 
                                                         BorderBrush="#FF9800" 
                                                         BorderThickness="1" 
-                                                        CornerRadius="4" 
-                                                        Margin="0,0,0,4" 
-                                                        Padding="8,6">
+                                                        CornerRadius="3" 
+                                                        Margin="0,0,0,3" 
+                                                        Padding="6,4">
                                                     <Grid>
                                                         <Grid.ColumnDefinitions>
                                                             <ColumnDefinition Width="*"/>
@@ -611,14 +611,11 @@
                                                         
                                                         <StackPanel Grid.Column="0">
                                                             <TextBlock Text="{Binding Name}" 
-                                                                       FontSize="11" 
+                                                                       FontSize="10" 
                                                                        FontWeight="SemiBold" 
                                                                        Foreground="#E65100"
                                                                        TextTrimming="CharacterEllipsis"/>
                                                             <TextBlock Text="{Binding Ship.ShipName}" 
-                                                                       FontSize="10" 
-                                                                       Foreground="#757575"/>
-                                                            <TextBlock Text="{Binding UploadedAtDisplay}" 
                                                                        FontSize="9" 
                                                                        Foreground="#757575"/>
                                                         </StackPanel>
@@ -627,30 +624,30 @@
                                                             <Button Content="👁️" 
                                                                     Command="{Binding DataContext.ViewDocumentCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                                     CommandParameter="{Binding}"
-                                                                    ToolTip="View Details"
-                                                                    Width="20" Height="20" 
-                                                                    FontSize="10"
+                                                                    ToolTip="View"
+                                                                    Width="18" Height="18" 
+                                                                    FontSize="9"
                                                                     Background="Transparent" 
                                                                     BorderThickness="0"
-                                                                    Margin="2,0"/>
+                                                                    Margin="1,0"/>
                                                             <Button Content="✅" 
                                                                     Command="{Binding DataContext.ApproveDocumentCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                                     CommandParameter="{Binding}"
                                                                     ToolTip="Approve"
-                                                                    Width="20" Height="20" 
-                                                                    FontSize="10"
+                                                                    Width="18" Height="18" 
+                                                                    FontSize="9"
                                                                     Background="Transparent" 
                                                                     BorderThickness="0"
-                                                                    Margin="2,0"/>
+                                                                    Margin="1,0"/>
                                                             <Button Content="❌" 
                                                                     Command="{Binding DataContext.RejectDocumentCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                                     CommandParameter="{Binding}"
                                                                     ToolTip="Reject"
-                                                                    Width="20" Height="20" 
-                                                                    FontSize="10"
+                                                                    Width="18" Height="18" 
+                                                                    FontSize="9"
                                                                     Background="Transparent" 
                                                                     BorderThickness="0"
-                                                                    Margin="2,0"/>
+                                                                    Margin="1,0"/>
                                                         </StackPanel>
                                                     </Grid>
                                                 </Border>
@@ -659,18 +656,103 @@
                                     </ItemsControl>
                                 </ScrollViewer>
                                 
-                                <Button Grid.Row="2" 
-                                        Content="View All Documents" 
+                                <Button Content="View All Documents" 
                                         Command="{Binding ViewPendingDocumentsCommand}"
                                         Background="#9C27B0"
                                         Foreground="White"
                                         BorderThickness="0"
-                                        Height="24"
-                                        Padding="8,0"
-                                        FontSize="11"
+                                        Height="20"
+                                        Padding="6,0"
+                                        FontSize="9"
                                         ToolTip="Go to Documents page"/>
-                            </Grid>
-                        </StackPanel>
+                            </StackPanel>
+                            
+                            <!-- Pending Change Requests -->
+                            <StackPanel Grid.Column="1" Margin="4,0,0,0">
+                                <TextBlock Text="📝 Pending Change Requests" 
+                                           FontSize="11" 
+                                           FontWeight="SemiBold" 
+                                           Foreground="#666" 
+                                           Margin="0,0,0,6"/>
+                                
+                                <ScrollViewer VerticalScrollBarVisibility="Auto" 
+                                              Height="100"
+                                              Margin="0,0,0,6"
+                                              CanContentScroll="False"
+                                              PanningMode="VerticalOnly">
+                                    <ItemsControl ItemsSource="{Binding PendingChangeRequestsList}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Border Background="#E8F5E8" 
+                                                        BorderBrush="#4CAF50" 
+                                                        BorderThickness="1" 
+                                                        CornerRadius="3" 
+                                                        Margin="0,0,0,3" 
+                                                        Padding="6,4">
+                                                    <Grid>
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="*"/>
+                                                            <ColumnDefinition Width="Auto"/>
+                                                        </Grid.ColumnDefinitions>
+                                                        
+                                                        <StackPanel Grid.Column="0">
+                                                            <TextBlock Text="{Binding RequestNo}" 
+                                                                       FontSize="10" 
+                                                                       FontWeight="SemiBold" 
+                                                                       Foreground="#2E7D32"
+                                                                       TextTrimming="CharacterEllipsis"/>
+                                                            <TextBlock Text="{Binding Ship.ShipName}" 
+                                                                       FontSize="9" 
+                                                                       Foreground="#757575"/>
+                                                        </StackPanel>
+                                                        
+                                                        <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Top">
+                                                            <Button Content="👁️" 
+                                                                    Command="{Binding DataContext.ViewChangeRequestCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                                    CommandParameter="{Binding}"
+                                                                    ToolTip="View"
+                                                                    Width="18" Height="18" 
+                                                                    FontSize="9"
+                                                                    Background="Transparent" 
+                                                                    BorderThickness="0"
+                                                                    Margin="1,0"/>
+                                                            <Button Content="✅" 
+                                                                    Command="{Binding DataContext.ApproveChangeRequestCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                                    CommandParameter="{Binding}"
+                                                                    ToolTip="Approve"
+                                                                    Width="18" Height="18" 
+                                                                    FontSize="9"
+                                                                    Background="Transparent" 
+                                                                    BorderThickness="0"
+                                                                    Margin="1,0"/>
+                                                            <Button Content="❌" 
+                                                                    Command="{Binding DataContext.RejectChangeRequestCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                                    CommandParameter="{Binding}"
+                                                                    ToolTip="Reject"
+                                                                    Width="18" Height="18" 
+                                                                    FontSize="9"
+                                                                    Background="Transparent" 
+                                                                    BorderThickness="0"
+                                                                    Margin="1,0"/>
+                                                        </StackPanel>
+                                                    </Grid>
+                                                </Border>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </ScrollViewer>
+                                
+                                <Button Content="View All Change Requests" 
+                                        Command="{Binding ViewPendingChangeRequestsCommand}"
+                                        Background="#607D8B"
+                                        Foreground="White"
+                                        BorderThickness="0"
+                                        Height="20"
+                                        Padding="6,0"
+                                        FontSize="9"
+                                        ToolTip="Go to Change Requests page"/>
+                            </StackPanel>
+                        </Grid>
                     </Grid>
                 </Grid>
             </Border>

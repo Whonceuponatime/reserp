@@ -252,6 +252,9 @@ namespace MaritimeERP.Desktop.ViewModels
         public ICommand ViewDocumentCommand { get; private set; } = null!;
         public ICommand ApproveDocumentCommand { get; private set; } = null!;
         public ICommand RejectDocumentCommand { get; private set; } = null!;
+        public ICommand ViewChangeRequestCommand { get; private set; } = null!;
+        public ICommand ApproveChangeRequestCommand { get; private set; } = null!;
+        public ICommand RejectChangeRequestCommand { get; private set; } = null!;
 
         private void InitializeCommands()
         {
@@ -267,6 +270,9 @@ namespace MaritimeERP.Desktop.ViewModels
             ViewDocumentCommand = new RelayCommand<Document>(ViewDocument);
             ApproveDocumentCommand = new RelayCommand<Document>(async (doc) => await ApproveDocumentAsync(doc));
             RejectDocumentCommand = new RelayCommand<Document>(async (doc) => await RejectDocumentAsync(doc));
+            ViewChangeRequestCommand = new RelayCommand<ChangeRequest>(ViewChangeRequest);
+            ApproveChangeRequestCommand = new RelayCommand<ChangeRequest>(async (cr) => await ApproveChangeRequestAsync(cr));
+            RejectChangeRequestCommand = new RelayCommand<ChangeRequest>(async (cr) => await RejectChangeRequestAsync(cr));
         }
 
         private void SubscribeToDataChanges()
@@ -386,6 +392,22 @@ namespace MaritimeERP.Desktop.ViewModels
                         {
                             var changeRequestStats = await _changeRequestService.GetChangeRequestStatisticsAsync();
                             pendingChangeReqCount = changeRequestStats.PendingApproval;
+                            
+                            // Get actual pending change requests for the list
+                            var allChangeRequests = await _changeRequestService.GetAllChangeRequestsAsync();
+                            var pendingChangeRequests = allChangeRequests.Where(cr => cr.StatusId == 2 || cr.StatusId == 3).ToList(); // Submitted or Under Review
+                        
+                            // Update change requests collection on UI thread
+                            await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                            {
+                                PendingChangeRequestsList.Clear();
+                                foreach (var cr in pendingChangeRequests.Take(10)) // Show only first 10 for space
+                                {
+                                    PendingChangeRequestsList.Add(cr);
+                                }
+                                
+                                _logger.LogInformation("Dashboard loaded {PendingChangeReqCount} pending change requests for admin", pendingChangeRequests.Count);
+                            });
                         }
 
                         // Calculate alerts (pending items that need attention)
@@ -683,6 +705,80 @@ namespace MaritimeERP.Desktop.ViewModels
             {
                 _logger.LogError(ex, "Error rejecting document {DocumentId}", document.Id);
                 System.Windows.MessageBox.Show($"Error rejecting document: {ex.Message}", "Error", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+            }
+        }
+
+        private void ViewChangeRequest(ChangeRequest? changeRequest)
+        {
+            if (changeRequest == null) return;
+
+            // Show change request details
+            var details = $"Request No: {changeRequest.RequestNo}\n" +
+                         $"Type: {changeRequest.RequestType?.Name ?? "Unknown"}\n" +
+                         $"Ship: {changeRequest.Ship?.ShipName ?? "Not assigned"}\n" +
+                         $"Purpose: {changeRequest.Purpose ?? "No purpose specified"}\n" +
+                         $"Description: {changeRequest.Description ?? "No description"}\n" +
+                         $"Status: {changeRequest.Status?.Name ?? "Unknown"}\n" +
+                         $"Requested by: {changeRequest.RequestedBy?.FullName ?? "Unknown"}\n" +
+                         $"Requested at: {changeRequest.RequestedAt:yyyy-MM-dd HH:mm}\n";
+
+            if (!string.IsNullOrEmpty(changeRequest.Comments))
+            {
+                details += $"Comments: {changeRequest.Comments}\n";
+            }
+
+            System.Windows.MessageBox.Show(details, "Change Request Details", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
+        }
+
+        private async Task ApproveChangeRequestAsync(ChangeRequest? changeRequest)
+        {
+            if (changeRequest == null) return;
+
+            try
+            {
+                var result = System.Windows.MessageBox.Show(
+                    $"Are you sure you want to approve the change request '{changeRequest.RequestNo}'?",
+                    "Approve Change Request",
+                    System.Windows.MessageBoxButton.YesNo,
+                    System.Windows.MessageBoxImage.Question);
+
+                if (result == System.Windows.MessageBoxResult.Yes)
+                {
+                    await _changeRequestService.ApproveAsync(changeRequest.Id, _authenticationService.CurrentUser!.Id);
+                    await LoadDashboardDataAsync(); // Refresh the data
+                    System.Windows.MessageBox.Show("Change request approved successfully!", "Success", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error approving change request {ChangeRequestId}", changeRequest.Id);
+                System.Windows.MessageBox.Show($"Error approving change request: {ex.Message}", "Error", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+            }
+        }
+
+        private async Task RejectChangeRequestAsync(ChangeRequest? changeRequest)
+        {
+            if (changeRequest == null) return;
+
+            try
+            {
+                var result = System.Windows.MessageBox.Show(
+                    $"Are you sure you want to reject the change request '{changeRequest.RequestNo}'?",
+                    "Reject Change Request",
+                    System.Windows.MessageBoxButton.YesNo,
+                    System.Windows.MessageBoxImage.Warning);
+
+                if (result == System.Windows.MessageBoxResult.Yes)
+                {
+                    await _changeRequestService.RejectAsync(changeRequest.Id, _authenticationService.CurrentUser!.Id, "Rejected from dashboard");
+                    await LoadDashboardDataAsync(); // Refresh the data
+                    System.Windows.MessageBox.Show("Change request rejected successfully!", "Success", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error rejecting change request {ChangeRequestId}", changeRequest.Id);
+                System.Windows.MessageBox.Show($"Error rejecting change request: {ex.Message}", "Error", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
             }
         }
 
