@@ -220,7 +220,7 @@ namespace MaritimeERP.Desktop.ViewModels
         }
         
         // Status properties
-        public bool IsCreated
+        public bool IsInDraftStatus
         {
             get => !_isUnderReview && !_isApproved;
         }
@@ -233,7 +233,7 @@ namespace MaritimeERP.Desktop.ViewModels
             {
                 _isUnderReview = value;
                 OnPropertyChanged(nameof(IsUnderReview));
-                OnPropertyChanged(nameof(IsCreated));
+                OnPropertyChanged(nameof(IsInDraftStatus));
             }
         }
         
@@ -245,7 +245,7 @@ namespace MaritimeERP.Desktop.ViewModels
             {
                 _isApproved = value;
                 OnPropertyChanged(nameof(IsApproved));
-                OnPropertyChanged(nameof(IsCreated));
+                OnPropertyChanged(nameof(IsInDraftStatus));
             }
         }
 

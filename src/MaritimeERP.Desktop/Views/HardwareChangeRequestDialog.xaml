@@ -38,7 +38,7 @@
                 
                 <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="30,0">
                     <TextBlock Text="Created" Foreground="White" VerticalAlignment="Center" Margin="0,0,10,0" FontSize="14"/>
-                    <CheckBox IsChecked="{Binding IsCreated, Mode=OneWay}" IsEnabled="False" VerticalAlignment="Center"/>
+                    <CheckBox IsChecked="{Binding IsInDraftStatus, Mode=OneWay}" IsEnabled="False" VerticalAlignment="Center"/>
                 </StackPanel>
                 
                 <StackPanel Grid.Column="2" Orientation="Horizontal" Margin="30,0">

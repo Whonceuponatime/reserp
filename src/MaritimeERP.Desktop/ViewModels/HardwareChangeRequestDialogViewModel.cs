@@ -178,7 +178,7 @@ namespace MaritimeERP.Desktop.ViewModels
             set => SetProperty(ref _securityReviewComment, value);
         }
 
-        public bool IsCreated
+        public bool IsInDraftStatus
         {
             get => !_isUnderReview && !_isApproved;
         }
@@ -190,7 +190,7 @@ namespace MaritimeERP.Desktop.ViewModels
             set
             {
                 SetProperty(ref _isUnderReview, value);
-                OnPropertyChanged(nameof(IsCreated));
+                OnPropertyChanged(nameof(IsInDraftStatus));
             }
         }
 
@@ -201,7 +201,7 @@ namespace MaritimeERP.Desktop.ViewModels
             set
             {
                 SetProperty(ref _isApproved, value);
-                OnPropertyChanged(nameof(IsCreated));
+                OnPropertyChanged(nameof(IsInDraftStatus));
             }
         }
 
