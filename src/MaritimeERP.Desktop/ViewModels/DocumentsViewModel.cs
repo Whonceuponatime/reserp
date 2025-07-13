@@ -680,8 +680,42 @@ namespace MaritimeERP.Desktop.ViewModels
                     e.Operation == "DELETE" || e.Operation == "APPROVE" || e.Operation == "REJECT"))
                 {
                     _logger.LogInformation("DocumentsViewModel received document data change notification: {DataType} - {Operation}", e.DataType, e.Operation);
+                    _logger.LogInformation("Current document filters: ShowApprovedOnly={ShowApprovedOnly}, ShowPendingOnly={ShowPendingOnly}", ShowApprovedOnly, ShowPendingOnly);
+                    
                     await LoadDocumentsAsync();
                     await LoadStatisticsAsync();
+                    
+                    _logger.LogInformation("After refresh: Total Documents={TotalDocuments}, Filtered Documents={FilteredCount}", Documents.Count, FilteredDocuments.Count);
+                    
+                    // Clear conflicting filters when document status changes so users can see the updated status
+                    if (e.Operation == "APPROVE" && ShowPendingOnly)
+                    {
+                        var documentName = (e.Data as Document)?.Name ?? "Document";
+                        Application.Current.Dispatcher.Invoke(() =>
+                        {
+                            ShowPendingOnly = false;
+                            FilterDocuments();
+                        });
+                        StatusMessage = $"Document '{documentName}' approved successfully. Cleared 'Pending Only' filter to show updated status.";
+                    }
+                    else if (e.Operation == "REJECT" && ShowApprovedOnly)
+                    {
+                        var documentName = (e.Data as Document)?.Name ?? "Document";
+                        Application.Current.Dispatcher.Invoke(() =>
+                        {
+                            ShowApprovedOnly = false;
+                            FilterDocuments();
+                        });
+                        StatusMessage = $"Document '{documentName}' rejected successfully. Cleared 'Approved Only' filter to show updated status.";
+                    }
+                    else if (e.Operation == "APPROVE")
+                    {
+                        StatusMessage = "Document approved successfully";
+                    }
+                    else if (e.Operation == "REJECT")
+                    {
+                        StatusMessage = "Document rejected successfully";
+                    }
                 }
             }
             catch (Exception ex)
