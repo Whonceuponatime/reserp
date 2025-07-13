@@ -648,34 +648,20 @@ namespace MaritimeERP.Desktop.ViewModels
 
             try
             {
-                _logger.LogInformation("Opening document dialog for document ID: {DocumentId}", document.Id);
+                _logger.LogInformation("Opening document preview dialog for document ID: {DocumentId}", document.Id);
                 
-                var dialog = new DocumentUploadDialog
+                var dialog = new DocumentPreviewDialog(document, _documentService, _authenticationService)
                 {
                     Owner = System.Windows.Application.Current.MainWindow
                 };
                 
-                var dialogViewModel = new DocumentUploadDialogViewModel(
-                    _documentService,
-                    _authenticationService,
-                    _dataChangeNotificationService,
-                    _logger.CreateLogger<DocumentUploadDialogViewModel>(),
-                    document);
+                dialog.ShowDialog();
                 
-                dialog.DataContext = dialogViewModel;
-                
-                var result = dialog.ShowDialog();
-                
-                if (result == true)
-                {
-                    _logger.LogInformation("Document dialog closed successfully");
-                    // Refresh the dashboard data to reflect any changes
-                    await LoadDashboardDataAsync();
-                }
+                _logger.LogInformation("Document preview dialog closed");
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error opening document dialog for document ID: {DocumentId}", document.Id);
+                _logger.LogError(ex, "Error opening document preview dialog for document ID: {DocumentId}", document.Id);
                 System.Windows.MessageBox.Show($"Error opening document: {ex.Message}", "Error", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
             }
         }
@@ -697,24 +683,26 @@ namespace MaritimeERP.Desktop.ViewModels
             try
             {
                 _logger.LogInformation("Opening change request view for ID: {ChangeRequestId}, Type: {ChangeType}", 
-                    changeRequest.Id, changeRequest.ChangeType);
+                    changeRequest.Id, changeRequest.RequestType?.Name);
 
-                switch (changeRequest.ChangeType)
+                // Check the change type by name
+                var changeTypeName = changeRequest.RequestType?.Name ?? "";
+                switch (changeTypeName)
                 {
-                    case ChangeType.HardwareChange:
+                    case "Hardware Change":
                         await OpenHardwareChangeRequestViewAsync(changeRequest);
                         break;
-                    case ChangeType.SoftwareChange:
+                    case "Software Change":
                         await OpenSoftwareChangeRequestViewAsync(changeRequest);
                         break;
-                    case ChangeType.SystemChange:
+                    case "System Plan":
                         await OpenSystemChangePlanViewAsync(changeRequest);
                         break;
-                    case ChangeType.SecurityReview:
+                    case "Security Review Statement":
                         await OpenSecurityReviewStatementViewAsync(changeRequest);
                         break;
                     default:
-                        _logger.LogWarning("Unknown change type: {ChangeType}", changeRequest.ChangeType);
+                        _logger.LogWarning("Unknown change type: {ChangeType}", changeTypeName);
                         ShowBasicChangeRequestDetails(changeRequest);
                         break;
                 }
@@ -729,11 +717,11 @@ namespace MaritimeERP.Desktop.ViewModels
         private void ShowBasicChangeRequestDetails(ChangeRequest changeRequest)
         {
             var details = $"Change Request: {changeRequest.RequestNo}\n" +
-                         $"Ship: {changeRequest.Ship.ShipName}\n" +
-                         $"Type: {changeRequest.ChangeType}\n" +
-                         $"Status: {changeRequest.Status}\n" +
-                         $"Created: {changeRequest.CreatedDate:MM/dd/yyyy}\n" +
-                         $"Requested By: {changeRequest.RequestedByUser?.Username}";
+                         $"Ship: {changeRequest.Ship?.ShipName ?? "Not assigned"}\n" +
+                         $"Type: {changeRequest.RequestType?.Name ?? "Unknown"}\n" +
+                         $"Status: {changeRequest.Status?.Name ?? "Unknown"}\n" +
+                         $"Created: {changeRequest.CreatedAt:MM/dd/yyyy}\n" +
+                         $"Requested By: {changeRequest.RequestedBy?.Username ?? "Unknown"}";
 
             System.Windows.MessageBox.Show(details, "Change Request Details", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
         }
