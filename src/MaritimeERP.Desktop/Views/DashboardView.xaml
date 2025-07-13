@@ -31,7 +31,7 @@
                                FontSize="18" 
                                FontWeight="SemiBold"
                                Foreground="#1976D2"/>
-                        <TextBlock Text="Maritime ERP System Overview - Use refresh button or data automatically updates when changes occur"
+                        <TextBlock Text="SEACURE(CARE) Overview - Use refresh button or data automatically updates when changes occur"
                                FontSize="11"
                                Foreground="#757575"
                                Margin="0,1,0,0"/>

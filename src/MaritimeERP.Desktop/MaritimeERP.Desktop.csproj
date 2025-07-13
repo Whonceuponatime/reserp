@@ -6,7 +6,7 @@
     <Nullable>enable</Nullable>
     <UseWPF>true</UseWPF>
     <ImplicitUsings>enable</ImplicitUsings>
-    <AssemblyTitle>Maritime ERP System</AssemblyTitle>
+    <AssemblyTitle>SEACURE(CARE)</AssemblyTitle>
     <AssemblyDescription>Professional Maritime Enterprise Resource Planning System</AssemblyDescription>
     <AssemblyCompany>Maritime Solutions</AssemblyCompany>
     <AssemblyProduct>Maritime ERP</AssemblyProduct>

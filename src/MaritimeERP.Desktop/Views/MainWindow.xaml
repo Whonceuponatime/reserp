@@ -4,7 +4,7 @@
         xmlns:viewModels="clr-namespace:MaritimeERP.Desktop.ViewModels"
         xmlns:views="clr-namespace:MaritimeERP.Desktop.Views"
         xmlns:services="clr-namespace:MaritimeERP.Desktop.Services"
-        Title="Maritime ERP System" 
+        Title="SEACURE(CARE)" 
         Height="700" Width="1200"
         WindowStartupLocation="CenterScreen"
         WindowState="Maximized"
@@ -78,7 +78,7 @@
                 <!-- Compact Logo and Title -->
                 <StackPanel Grid.Column="0" Orientation="Horizontal">
                     <TextBlock Text="🚢" FontSize="18" VerticalAlignment="Center" Foreground="White"/>
-                    <TextBlock Text="Maritime ERP"
+                                            <TextBlock Text="SEACURE(CARE)"
                                FontSize="16" 
                                FontWeight="SemiBold"
                                Foreground="White"

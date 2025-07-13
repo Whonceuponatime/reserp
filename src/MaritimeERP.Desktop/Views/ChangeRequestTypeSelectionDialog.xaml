@@ -20,7 +20,7 @@
         <!-- Header -->
         <Border Grid.Row="0" Background="#2C3E50" Padding="20">
             <StackPanel>
-                <TextBlock Text="Maritime ERP Management System" 
+                <TextBlock Text="SEACURE(CARE) Management System" 
                           FontSize="22" FontWeight="Bold" 
                           Foreground="White" 
                           HorizontalAlignment="Center"/>
