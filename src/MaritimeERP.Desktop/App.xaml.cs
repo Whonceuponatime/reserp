@@ -67,28 +67,28 @@ namespace MaritimeERP.Desktop
                             Console.WriteLine($"No user config found at: {userConfigPath}");
                             
                             // Check source directory for development
-                            var sourceConfigPath = Path.Combine(Directory.GetCurrentDirectory(), "src", "MaritimeERP.Desktop", "appsettings.json");
-                            if (File.Exists(sourceConfigPath))
-                            {
+                        var sourceConfigPath = Path.Combine(Directory.GetCurrentDirectory(), "src", "MaritimeERP.Desktop", "appsettings.json");
+                        if (File.Exists(sourceConfigPath))
+                        {
                                 Console.WriteLine($"Found source config at: {sourceConfigPath}");
-                                config.AddJsonFile(sourceConfigPath, optional: false, reloadOnChange: true);
-                            }
-                            else
-                            {
+                            config.AddJsonFile(sourceConfigPath, optional: false, reloadOnChange: true);
+                        }
+                        else
+                        {
                                 Console.WriteLine($"No source config found at: {sourceConfigPath}");
                                 
                                 // Default configuration for first run
                                 var defaultDbPath = Path.Combine(userDataDirectory, "Database", "maritime_erp.db");
                                 var defaultDocPath = Path.Combine(userDataDirectory, "Documents");
                                 
-                                config.AddInMemoryCollection(new Dictionary<string, string?>
-                                {
+                            config.AddInMemoryCollection(new Dictionary<string, string?>
+                            {
                                     ["ConnectionStrings:DefaultConnection"] = $"Data Source={defaultDbPath}",
                                     ["Application:DocumentStoragePath"] = defaultDocPath,
                                     ["Application:Name"] = "SEACURE(CARE)",
                                     ["Application:Version"] = "1.0.0",
                                     ["Application:CompanyName"] = "Maritime Solutions"
-                                });
+                            });
                                 
                                 Console.WriteLine($"Using default database path: {defaultDbPath}");
                                 Console.WriteLine($"Using default document path: {defaultDocPath}");

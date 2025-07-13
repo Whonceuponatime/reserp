@@ -147,22 +147,22 @@ namespace MaritimeERP.Desktop.ViewModels
 
                 if (result == System.Windows.MessageBoxResult.Yes)
                 {
-                    // Clear current user
-                    CurrentUser = null;
-                    
-                    // Clear authentication service asynchronously
-                    _ = Task.Run(async () => await _authenticationService.LogoutAsync());
-                    
-                    // Clear cached ViewModels to prevent data leakage
-                    foreach (var viewModel in _viewModelCache.Values)
+                // Clear current user
+                CurrentUser = null;
+                
+                // Clear authentication service asynchronously
+                _ = Task.Run(async () => await _authenticationService.LogoutAsync());
+                
+                // Clear cached ViewModels to prevent data leakage
+                foreach (var viewModel in _viewModelCache.Values)
+                {
+                    if (viewModel is IDisposable disposable)
                     {
-                        if (viewModel is IDisposable disposable)
-                        {
-                            disposable.Dispose();
-                        }
+                        disposable.Dispose();
                     }
-                    _viewModelCache.Clear();
-
+                }
+                _viewModelCache.Clear();
+                
                     // Get the current executable path
                     var currentExecutable = System.Diagnostics.Process.GetCurrentProcess().MainModule?.FileName;
                     
@@ -177,7 +177,7 @@ namespace MaritimeERP.Desktop.ViewModels
                         
                         System.Diagnostics.Process.Start(startInfo);
                     }
-                    
+                
                     // Shutdown the current application
                     System.Windows.Application.Current.Shutdown();
                 }
