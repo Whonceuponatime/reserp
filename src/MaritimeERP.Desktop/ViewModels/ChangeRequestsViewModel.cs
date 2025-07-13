@@ -1236,7 +1236,6 @@ namespace MaritimeERP.Desktop.ViewModels
                 
                 // Pre-populate with existing data
                 viewModel.RequestNumber = changeRequest.RequestNo;
-                viewModel.Reason = changeRequest.Purpose;
                 
                 // Set the selected ship from the change request (ships are loaded in constructor)
                 if (changeRequest.ShipId.HasValue)
