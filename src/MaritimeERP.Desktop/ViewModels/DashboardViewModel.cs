@@ -673,12 +673,8 @@ namespace MaritimeERP.Desktop.ViewModels
 
                 if (result == System.Windows.MessageBoxResult.Yes)
                 {
-                    var reason = Microsoft.VisualBasic.Interaction.InputBox(
-                        "Please provide a reason for rejection (optional):",
-                        "Rejection Reason",
-                        "");
-
-                    await _documentService.RejectDocumentAsync(document.Id, _authenticationService.CurrentUser!.Id, reason);
+                    // For now, reject without asking for reason - can be enhanced later with custom dialog
+                    await _documentService.RejectDocumentAsync(document.Id, _authenticationService.CurrentUser!.Id, "Rejected from dashboard");
                     await LoadDashboardDataAsync(); // Refresh the data
                     System.Windows.MessageBox.Show("Document rejected successfully!", "Success", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
                 }
