@@ -168,7 +168,7 @@ namespace MaritimeERP.Desktop.ViewModels
                 {
                     try
                     {
-                        // Create main window on UI thread
+                        // Create new main window on UI thread
                         await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
                         {
                             var mainWindow = _serviceProvider.GetRequiredService<MainWindow>();
@@ -193,17 +193,27 @@ namespace MaritimeERP.Desktop.ViewModels
                     }
                 };
                 
-                // Set login window as the new main window BEFORE closing current window
-                System.Windows.Application.Current.MainWindow = loginWindow;
-                
-                // Close the current main window immediately
-                if (currentMainWindow != null && currentMainWindow != loginWindow)
+                // Hide the current main window first
+                if (currentMainWindow != null)
                 {
-                    currentMainWindow.Close();
+                    currentMainWindow.Hide();
                 }
+                
+                // Set login window as the new main window
+                System.Windows.Application.Current.MainWindow = loginWindow;
                 
                 // Show login window
                 loginWindow.Show();
+                
+                // Close the current main window after showing login window
+                if (currentMainWindow != null)
+                {
+                    // Use BeginInvoke to ensure this happens after the login window is shown
+                    System.Windows.Application.Current.Dispatcher.BeginInvoke(new Action(() =>
+                    {
+                        currentMainWindow.Close();
+                    }));
+                }
             }
             catch (Exception ex)
             {
