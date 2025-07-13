@@ -257,6 +257,7 @@ namespace MaritimeERP.Desktop.ViewModels
         public ICommand ClearFiltersCommand { get; }
         public ICommand ViewDetailsCommand { get; }
         public ICommand OpenHardwareChangeRequestCommand { get; }
+        public ICommand ViewChangeRequestCommand { get; }
 
         public ChangeRequestsViewModel(
             IChangeRequestService changeRequestService,
@@ -295,6 +296,7 @@ namespace MaritimeERP.Desktop.ViewModels
             ClearFiltersCommand = new RelayCommand(ClearFilters);
             ViewDetailsCommand = new RelayCommand(ViewDetails, () => SelectedChangeRequest != null);
             OpenHardwareChangeRequestCommand = new RelayCommand(OpenHardwareChangeRequest, () => SelectedChangeRequest != null && SelectedChangeRequest.RequestTypeId == 1); // Only for Hardware Change
+            ViewChangeRequestCommand = new RelayCommand<ChangeRequest>(ViewChangeRequest, (cr) => cr != null && !IsLoading);
 
             // Subscribe to ship data changes
             SubscribeToShipDataChanges();
@@ -941,65 +943,30 @@ namespace MaritimeERP.Desktop.ViewModels
                 
                 var viewModel = new HardwareChangeRequestDialogViewModel(_authenticationService, _hardwareChangeRequestService, _changeRequestService, _shipService);
                 
-                // Load hardware-specific data if found
+                // Always use view-only mode for this command
+                viewModel.IsViewMode = true;
+                viewModel.IsEditMode = false; // Disable editing completely
+                
+                // Pre-populate with existing data
+                viewModel.RequestNumber = SelectedChangeRequest.RequestNo;
+                viewModel.Reason = SelectedChangeRequest.Purpose;
+                
+                // Set the selected ship from the change request (ships are loaded in constructor)
+                if (SelectedChangeRequest.ShipId.HasValue)
+                {
+                    // Give time for ships to load in constructor
+                    await Task.Delay(100);
+                    viewModel.SelectedShip = viewModel.Ships.FirstOrDefault(s => s.Id == SelectedChangeRequest.ShipId.Value);
+                }
+                
+                // Load and populate hardware-specific data
                 if (hardwareRequest != null)
                 {
-                    // Set the selected ship from the main change request
-                    if (SelectedChangeRequest?.ShipId.HasValue == true)
-                    {
-                        var selectedShip = viewModel.Ships.FirstOrDefault(s => s.Id == SelectedChangeRequest.ShipId.Value);
-                        if (selectedShip != null)
-                        {
-                            viewModel.SelectedShip = selectedShip;
-                        }
-                    }
-                    
-                    viewModel.Department = hardwareRequest.Department ?? "";
-                    viewModel.PositionTitle = hardwareRequest.PositionTitle ?? "";
-                    viewModel.RequesterName = hardwareRequest.RequesterName ?? "";
-                    viewModel.InstalledCbs = hardwareRequest.InstalledCbs ?? "";
-                    viewModel.InstalledComponent = hardwareRequest.InstalledComponent ?? "";
-                    viewModel.BeforeHwManufacturerModel = hardwareRequest.BeforeHwManufacturerModel ?? "";
-                    viewModel.BeforeHwName = hardwareRequest.BeforeHwName ?? "";
-                    viewModel.BeforeHwOs = hardwareRequest.BeforeHwOs ?? "";
-                    viewModel.AfterHwManufacturerModel = hardwareRequest.AfterHwManufacturerModel ?? "";
-                    viewModel.AfterHwName = hardwareRequest.AfterHwName ?? "";
-                    viewModel.AfterHwOs = hardwareRequest.AfterHwOs ?? "";
-                    viewModel.WorkDescription = hardwareRequest.WorkDescription ?? "";
-                    viewModel.SecurityReviewComment = hardwareRequest.SecurityReviewComment ?? "";
-                    viewModel.Reason = hardwareRequest.Reason ?? "";
-                    viewModel.RequestNumber = hardwareRequest.RequestNumber;
-                    viewModel.CreatedDate = hardwareRequest.CreatedDate;
-                    viewModel.IsEditMode = true;
-                    
-                    // Set the internal hardware change request for editing
                     viewModel.SetExistingHardwareChangeRequest(hardwareRequest);
                 }
-                else
-                {
-                    // Pre-populate with existing data from the view model properties (fallback)
-                    viewModel.InstalledCbs = InstalledCbs;
-                    viewModel.InstalledComponent = InstalledComponent;
-                    viewModel.BeforeHwManufacturerModel = BeforeHwModel;
-                    viewModel.BeforeHwName = BeforeHwName;
-                    viewModel.BeforeHwOs = BeforeHwOs;
-                    viewModel.AfterHwManufacturerModel = AfterHwModel;
-                    viewModel.AfterHwName = AfterHwName;
-                    viewModel.AfterHwOs = AfterHwOs;
-                    viewModel.WorkDescription = WorkDescription;
-                    viewModel.SecurityReviewComment = SecurityReviewComment;
-                    viewModel.RequestNumber = SelectedChangeRequest.RequestNo;
-                    viewModel.Reason = SelectedChangeRequest.Purpose;
-                }
-
+                
                 var dialog = new HardwareChangeRequestDialog(viewModel);
-                var result = dialog.ShowDialog();
-
-                if (result == true)
-                {
-                    // Refresh the change requests list
-                    _ = LoadDataAsync();
-                }
+                dialog.ShowDialog();
             }
             catch (Exception ex)
             {
@@ -1085,6 +1052,7 @@ namespace MaritimeERP.Desktop.ViewModels
             ((RelayCommand)ImplementCommand).RaiseCanExecuteChanged();
             ((RelayCommand)ViewDetailsCommand).RaiseCanExecuteChanged();
             ((RelayCommand)OpenHardwareChangeRequestCommand).RaiseCanExecuteChanged();
+            ((RelayCommand)ViewChangeRequestCommand).RaiseCanExecuteChanged();
         }
 
         public event PropertyChangedEventHandler? PropertyChanged;
@@ -1102,6 +1070,195 @@ namespace MaritimeERP.Desktop.ViewModels
             field = value;
             OnPropertyChanged(propertyName);
             return true;
+        }
+
+        private void ViewChangeRequest(ChangeRequest? changeRequest)
+        {
+            if (changeRequest == null) return;
+
+            // Open the appropriate form based on the change request type in view-only mode
+            switch (changeRequest.RequestTypeId)
+            {
+                case 1: // Hardware Change
+                    ViewHardwareChangeRequest(changeRequest);
+                    break;
+                case 2: // Software Change
+                    ViewSoftwareChangeRequest(changeRequest);
+                    break;
+                case 3: // System Plan
+                    ViewSystemPlanChangeRequest(changeRequest);
+                    break;
+                case 4: // Security Review Statement
+                    ViewSecurityReviewStatement(changeRequest);
+                    break;
+                default:
+                    MessageBox.Show("Unknown change request type.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    break;
+            }
+        }
+
+        private async void ViewHardwareChangeRequest(ChangeRequest changeRequest)
+        {
+            try
+            {
+                // Load the detailed hardware change request data
+                var hardwareRequests = await _hardwareChangeRequestService.GetAllAsync();
+                var hardwareRequest = hardwareRequests.FirstOrDefault(hr => hr.RequestNumber == changeRequest.RequestNo);
+                
+                var viewModel = new HardwareChangeRequestDialogViewModel(_authenticationService, _hardwareChangeRequestService, _changeRequestService, _shipService);
+                
+                // Always use view-only mode for this command
+                viewModel.IsViewMode = true;
+                viewModel.IsEditMode = false; // Disable editing completely
+                
+                // Pre-populate with existing data
+                viewModel.RequestNumber = changeRequest.RequestNo;
+                viewModel.Reason = changeRequest.Purpose;
+                
+                // Set the selected ship from the change request (ships are loaded in constructor)
+                if (changeRequest.ShipId.HasValue)
+                {
+                    // Give time for ships to load in constructor
+                    await Task.Delay(100);
+                    viewModel.SelectedShip = viewModel.Ships.FirstOrDefault(s => s.Id == changeRequest.ShipId.Value);
+                }
+                
+                // Load and populate hardware-specific data
+                if (hardwareRequest != null)
+                {
+                    viewModel.SetExistingHardwareChangeRequest(hardwareRequest);
+                }
+                
+                var dialog = new HardwareChangeRequestDialog(viewModel);
+                dialog.ShowDialog();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error opening hardware change request: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private async void ViewSoftwareChangeRequest(ChangeRequest changeRequest)
+        {
+            try
+            {
+                // Load the detailed software change request data
+                var softwareRequests = await _softwareChangeRequestService.GetAllAsync();
+                var softwareRequest = softwareRequests.FirstOrDefault(sr => sr.RequestNumber == changeRequest.RequestNo);
+                
+                var viewModel = new SoftwareChangeRequestDialogViewModel(_softwareChangeRequestService, _authenticationService, _changeRequestService, _shipService);
+                
+                // Always use view-only mode for this command
+                viewModel.IsViewMode = true;
+                viewModel.IsEditMode = false; // Disable editing completely
+                
+                // Pre-populate with existing data
+                viewModel.RequestNumber = changeRequest.RequestNo;
+                viewModel.Reason = changeRequest.Purpose;
+                
+                // Set the selected ship from the change request (ships are loaded in constructor)
+                if (changeRequest.ShipId.HasValue)
+                {
+                    // Give time for ships to load in constructor
+                    await Task.Delay(100);
+                    viewModel.SelectedShip = viewModel.Ships.FirstOrDefault(s => s.Id == changeRequest.ShipId.Value);
+                }
+                
+                // Load and populate software-specific data
+                if (softwareRequest != null)
+                {
+                    viewModel.SetExistingSoftwareChangeRequest(softwareRequest);
+                }
+                
+                var dialog = new SoftwareChangeRequestDialog(viewModel);
+                dialog.ShowDialog();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error opening software change request: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private async void ViewSystemPlanChangeRequest(ChangeRequest changeRequest)
+        {
+            try
+            {
+                // Load the detailed system change plan data
+                var systemChangePlans = await _systemChangePlanService.GetAllSystemChangePlansAsync();
+                var systemChangePlan = systemChangePlans.FirstOrDefault(scp => scp.RequestNumber == changeRequest.RequestNo);
+                
+                var viewModel = new SystemChangePlanDialogViewModel(_systemChangePlanService, _authenticationService, _shipService, _changeRequestService);
+                
+                // Always use view-only mode for this command
+                viewModel.IsViewMode = true;
+                viewModel.IsEditMode = false; // Disable editing completely
+                
+                // Pre-populate with existing data
+                viewModel.RequestNumber = changeRequest.RequestNo;
+                viewModel.Reason = changeRequest.Purpose;
+                
+                // Set the selected ship from the change request (ships are loaded in constructor)
+                if (changeRequest.ShipId.HasValue)
+                {
+                    // Give time for ships to load in constructor
+                    await Task.Delay(100);
+                    viewModel.SelectedShip = viewModel.Ships.FirstOrDefault(s => s.Id == changeRequest.ShipId.Value);
+                }
+                
+                // Load and populate system plan-specific data
+                if (systemChangePlan != null)
+                {
+                    viewModel.SetExistingSystemChangePlan(systemChangePlan);
+                }
+                
+                var dialog = new SystemChangePlanDialog(viewModel);
+                dialog.ShowDialog();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error opening system change plan: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private async void ViewSecurityReviewStatement(ChangeRequest changeRequest)
+        {
+            try
+            {
+                // Load the detailed security review statement data
+                var securityReviewStatements = await _securityReviewStatementService.GetAllSecurityReviewStatementsAsync();
+                var securityReviewStatement = securityReviewStatements.FirstOrDefault(srs => srs.RequestNumber == changeRequest.RequestNo);
+                
+                var viewModel = new SecurityReviewStatementDialogViewModel(_securityReviewStatementService, _authenticationService, _shipService, _changeRequestService);
+                
+                // Always use view-only mode for this command
+                viewModel.IsViewMode = true;
+                viewModel.IsEditMode = false; // Disable editing completely
+                
+                // Pre-populate with existing data
+                viewModel.RequestNumber = changeRequest.RequestNo;
+                viewModel.Reason = changeRequest.Purpose;
+                
+                // Set the selected ship from the change request (ships are loaded in constructor)
+                if (changeRequest.ShipId.HasValue)
+                {
+                    // Give time for ships to load in constructor
+                    await Task.Delay(100);
+                    viewModel.SelectedShip = viewModel.Ships.FirstOrDefault(s => s.Id == changeRequest.ShipId.Value);
+                }
+                
+                // Load and populate security review statement-specific data
+                if (securityReviewStatement != null)
+                {
+                    viewModel.SetExistingSecurityReviewStatement(securityReviewStatement);
+                }
+                
+                var dialog = new SecurityReviewStatementDialog(viewModel);
+                dialog.ShowDialog();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error opening security review statement: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
         private void EditChangeRequest(ChangeRequest? changeRequest)
