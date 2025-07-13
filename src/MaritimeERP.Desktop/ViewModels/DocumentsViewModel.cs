@@ -680,6 +680,14 @@ namespace MaritimeERP.Desktop.ViewModels
                     e.Operation == "DELETE" || e.Operation == "APPROVE" || e.Operation == "REJECT"))
                 {
                     _logger.LogInformation("DocumentsViewModel received document data change notification: {DataType} - {Operation}", e.DataType, e.Operation);
+                    
+                    // Log document details if available
+                    if (e.Data is Document doc)
+                    {
+                        _logger.LogInformation("Notification document details: ID={DocumentId}, Name={DocumentName}, IsApproved={IsApproved}", 
+                            doc.Id, doc.Name, doc.IsApproved);
+                    }
+                    
                     _logger.LogInformation("Current document filters: ShowApprovedOnly={ShowApprovedOnly}, ShowPendingOnly={ShowPendingOnly}", ShowApprovedOnly, ShowPendingOnly);
                     
                     await LoadDocumentsAsync();
@@ -691,22 +699,26 @@ namespace MaritimeERP.Desktop.ViewModels
                     if (e.Operation == "APPROVE" && ShowPendingOnly)
                     {
                         var documentName = (e.Data as Document)?.Name ?? "Document";
+                        _logger.LogInformation("Document approved and ShowPendingOnly is active - clearing filter for document: {DocumentName}", documentName);
                         Application.Current.Dispatcher.Invoke(() =>
                         {
                             ShowPendingOnly = false;
                             FilterDocuments();
                         });
                         StatusMessage = $"Document '{documentName}' approved successfully. Cleared 'Pending Only' filter to show updated status.";
+                        _logger.LogInformation("Filter cleared. New FilteredDocuments count: {FilteredCount}", FilteredDocuments.Count);
                     }
                     else if (e.Operation == "REJECT" && ShowApprovedOnly)
                     {
                         var documentName = (e.Data as Document)?.Name ?? "Document";
+                        _logger.LogInformation("Document rejected and ShowApprovedOnly is active - clearing filter for document: {DocumentName}", documentName);
                         Application.Current.Dispatcher.Invoke(() =>
                         {
                             ShowApprovedOnly = false;
                             FilterDocuments();
                         });
                         StatusMessage = $"Document '{documentName}' rejected successfully. Cleared 'Approved Only' filter to show updated status.";
+                        _logger.LogInformation("Filter cleared. New FilteredDocuments count: {FilteredCount}", FilteredDocuments.Count);
                     }
                     else if (e.Operation == "APPROVE")
                     {
