@@ -22,7 +22,7 @@ namespace MaritimeERP.Desktop.ViewModels
         private readonly INavigationService _navigationService;
         private readonly IDataChangeNotificationService _dataChangeNotificationService;
         private readonly ILogger<DashboardViewModel> _logger;
-        private readonly System.Timers.Timer _refreshTimer;
+        // Timer removed to prevent automatic refresh and visible screen flickering
 
         // Statistics Properties
         private int _totalShips = 0;
@@ -75,8 +75,6 @@ namespace MaritimeERP.Desktop.ViewModels
             _navigationService = navigationService;
             _dataChangeNotificationService = dataChangeNotificationService;
             _logger = logger;
-            _refreshTimer = new System.Timers.Timer();
-
             // Check if current user is admin
             _isAdmin = _authenticationService.CurrentUser?.Role?.Name == "Administrator";
 
@@ -256,20 +254,10 @@ namespace MaritimeERP.Desktop.ViewModels
 
         private void InitializeRefreshTimer()
         {
-            // Refresh dashboard every 15 seconds for real-time updates
-            _refreshTimer.Interval = 15000; // 15 seconds
-            _refreshTimer.Elapsed += async (sender, e) =>
-            {
-                try
-                {
-                    await LoadDashboardDataAsync();
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Error during periodic dashboard refresh");
-                }
-            };
-            _refreshTimer.Start();
+            // Automatic refresh timer disabled to prevent visual flickering
+            // Dashboard will still refresh when data changes through data change notifications
+            // Users can manually refresh using the refresh button
+            _logger.LogInformation("Dashboard automatic refresh timer disabled - manual refresh and data change notifications still active");
         }
 
         private async void OnDataChanged(object? sender, MaritimeERP.Core.Interfaces.DataChangeEventArgs e)
@@ -586,8 +574,6 @@ namespace MaritimeERP.Desktop.ViewModels
 
         public void Dispose()
         {
-            _refreshTimer?.Stop();
-            _refreshTimer?.Dispose();
             _dataChangeNotificationService.DataChanged -= OnDataChanged;
         }
     }
