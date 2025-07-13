@@ -1,4 +1,4 @@
-# Maritime ERP System - Installer Guide
+# SEACURE(CARE) - Installer Guide
 
 ## Creating the Installer
 
@@ -17,7 +17,7 @@
    - Clean previous builds
    - Build the application in Release mode
    - Create the installer using Inno Setup
-   - Output the installer to `Installer/MaritimeERP_Setup_v1.0.0.exe`
+   - Output the installer to `Installer/SEACURE_CARE_Setup_v1.0.0.exe`
 
 2. **Manual Build**:
    ```bash
@@ -34,13 +34,13 @@
 
 ### File Structure After Installation
 ```
-Program Files/Maritime ERP System/          <- Application files
+Program Files/SEACURE(CARE)/                <- Application files
 ├── MaritimeERP.Desktop.exe                 <- Main executable
 ├── *.dll                                   <- Dependencies
 ├── runtimes/                               <- Runtime libraries
 └── Database/maritime_erp.db                <- Template database
 
-%APPDATA%/Maritime ERP System/              <- User data (auto-created)
+%APPDATA%/SEACURE(CARE)/                    <- User data (auto-created)
 ├── Database/                               <- User's database
 │   └── maritime_erp.db                     <- Active database
 ├── Documents/                              <- Document storage
@@ -50,8 +50,8 @@ Program Files/Maritime ERP System/          <- Application files
 
 ### Configuration Priority
 The application looks for configuration in this order:
-1. **User Config** - `%APPDATA%/Maritime ERP System/appsettings.json` (highest priority)
-2. **App Directory** - `Program Files/Maritime ERP System/appsettings.json`
+1. **User Config** - `%APPDATA%/SEACURE(CARE)/appsettings.json` (highest priority)
+2. **App Directory** - `Program Files/SEACURE(CARE)/appsettings.json`
 3. **Development** - `src/MaritimeERP.Desktop/appsettings.json`
 
 ## Database Management
@@ -59,11 +59,11 @@ The application looks for configuration in this order:
 ### Moving Databases
 
 1. **Copy Database File**:
-   - Source: `%APPDATA%/Maritime ERP System/Database/maritime_erp.db`
+   - Source: `%APPDATA%/SEACURE(CARE)/Database/maritime_erp.db`
    - Destination: Any location you prefer
 
 2. **Update Configuration**:
-   Edit `%APPDATA%/Maritime ERP System/appsettings.json`:
+   Edit `%APPDATA%/SEACURE(CARE)/appsettings.json`:
    ```json
    {
      "ConnectionStrings": {
@@ -84,12 +84,12 @@ The application looks for configuration in this order:
 ### Backup and Restore
 
 **Backup**:
-1. Close the Maritime ERP application
-2. Copy `%APPDATA%/Maritime ERP System/Database/maritime_erp.db` to your backup location
+1. Close the SEACURE(CARE) application
+2. Copy `%APPDATA%/SEACURE(CARE)/Database/maritime_erp.db` to your backup location
 
 **Restore**:
-1. Close the Maritime ERP application
-2. Replace `%APPDATA%/Maritime ERP System/Database/maritime_erp.db` with your backup
+1. Close the SEACURE(CARE) application
+2. Replace `%APPDATA%/SEACURE(CARE)/Database/maritime_erp.db` with your backup
 3. Or update the configuration to point to the backup location
 
 ### Multiple Database Support
@@ -113,13 +113,13 @@ You can maintain multiple databases by switching the configuration:
 
 ### Document Storage Location
 Edit the configuration to change where documents are stored:
-```json
-{
-  "Application": {
-    "DocumentStoragePath": "D:\\Documents\\Maritime ERP\\Files"
-  }
-}
-```
+   ```json
+   {
+     "Application": {
+       "DocumentStoragePath": "D:\\Documents\\SEACURE CARE\\Files"
+     }
+   }
+   ```
 
 ### Database Settings
 Advanced SQLite options:
@@ -150,6 +150,6 @@ Advanced SQLite options:
 ## Support
 
 For technical support or questions about the installer:
-- Check the application logs in `%APPDATA%/Maritime ERP System/Logs/`
+- Check the application logs in `%APPDATA%/SEACURE(CARE)/Logs/`
 - Verify database file permissions and accessibility
 - Ensure .NET 8.0 Desktop Runtime is installed on target machines 

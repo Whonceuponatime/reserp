@@ -1,6 +1,6 @@
 @echo off
-echo Building Maritime ERP System Installer
-echo =====================================
+echo Building SEACURE(CARE) Installer
+echo ================================
 
 :: Check if Inno Setup is installed
 where iscc >nul 2>nul
@@ -51,16 +51,16 @@ if %ERRORLEVEL% NEQ 0 (
 )
 
 echo.
-echo =====================================
+echo ================================
 echo Installer created successfully!
-echo Location: %CD%\Installer\MaritimeERP_Setup_v1.0.0.exe
-echo =====================================
+echo Location: %CD%\Installer\SEACURE_CARE_Setup_v1.0.0.exe
+echo ================================
 echo.
 
 :: Ask if user wants to test the installer
 set /p test="Do you want to run the installer now? (y/n): "
 if /i "%test%"=="y" (
-    start "" "%CD%\Installer\MaritimeERP_Setup_v1.0.0.exe"
+    start "" "%CD%\Installer\SEACURE_CARE_Setup_v1.0.0.exe"
 )
 
 pause 
