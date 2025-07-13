@@ -55,6 +55,10 @@ namespace MaritimeERP.Desktop.ViewModels
         private ObservableCollection<ShipTypeStatistic> _shipTypeStatistics = new();
         private ObservableCollection<FleetStatistic> _fleetStatistics = new();
 
+        // Admin-specific data
+        private ObservableCollection<Document> _pendingDocumentsList = new();
+        private ObservableCollection<ChangeRequest> _pendingChangeRequestsList = new();
+
         public DashboardViewModel(
             IShipService shipService, 
             ISystemService systemService, 
@@ -223,6 +227,18 @@ namespace MaritimeERP.Desktop.ViewModels
             set => SetProperty(ref _fleetStatistics, value);
         }
 
+        public ObservableCollection<Document> PendingDocumentsList
+        {
+            get => _pendingDocumentsList;
+            set => SetProperty(ref _pendingDocumentsList, value);
+        }
+
+        public ObservableCollection<ChangeRequest> PendingChangeRequestsList
+        {
+            get => _pendingChangeRequestsList;
+            set => SetProperty(ref _pendingChangeRequestsList, value);
+        }
+
         // Commands
         public ICommand RefreshCommand { get; private set; } = null!;
         public ICommand ViewShipsCommand { get; private set; } = null!;
@@ -233,6 +249,9 @@ namespace MaritimeERP.Desktop.ViewModels
         public ICommand AddComponentCommand { get; private set; } = null!;
         public ICommand ViewPendingDocumentsCommand { get; private set; } = null!;
         public ICommand ViewPendingChangeRequestsCommand { get; private set; } = null!;
+        public ICommand ViewDocumentCommand { get; private set; } = null!;
+        public ICommand ApproveDocumentCommand { get; private set; } = null!;
+        public ICommand RejectDocumentCommand { get; private set; } = null!;
 
         private void InitializeCommands()
         {
@@ -245,6 +264,9 @@ namespace MaritimeERP.Desktop.ViewModels
             AddComponentCommand = new RelayCommand(() => _navigationService.NavigateToPage("Components"));
             ViewPendingDocumentsCommand = new RelayCommand(() => _navigationService.NavigateToPage("Documents"));
             ViewPendingChangeRequestsCommand = new RelayCommand(() => _navigationService.NavigateToPage("ChangeRequests"));
+            ViewDocumentCommand = new RelayCommand<Document>(ViewDocument);
+            ApproveDocumentCommand = new RelayCommand<Document>(async (doc) => await ApproveDocumentAsync(doc));
+            RejectDocumentCommand = new RelayCommand<Document>(async (doc) => await RejectDocumentAsync(doc));
         }
 
         private void SubscribeToDataChanges()
@@ -368,6 +390,18 @@ namespace MaritimeERP.Desktop.ViewModels
 
                         // Calculate alerts (pending items that need attention)
                         alertsCount = pendingDocsCount + pendingChangeReqCount;
+
+                        // Update admin-specific collections on UI thread
+                        await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                        {
+                            PendingDocumentsList.Clear();
+                            foreach (var doc in pendingDocuments.Take(10)) // Show only first 10 for space
+                            {
+                                PendingDocumentsList.Add(doc);
+                            }
+                            
+                            _logger.LogInformation("Dashboard loaded {PendingDocsCount} pending documents for admin", pendingDocuments.Count);
+                        });
                     }
                     catch (Exception ex)
                     {
@@ -570,6 +604,90 @@ namespace MaritimeERP.Desktop.ViewModels
             field = value;
             OnPropertyChanged(propertyName);
             return true;
+        }
+
+        private void ViewDocument(Document? document)
+        {
+            if (document == null) return;
+
+            // Show document details
+            var details = $"Document: {document.Name}\n" +
+                         $"Category: {document.Category?.Name}\n" +
+                         $"Ship: {document.Ship?.ShipName ?? "Not assigned"}\n" +
+                         $"File Size: {document.FileSizeDisplay}\n" +
+                         $"Uploaded: {document.UploadedAtDisplay}\n" +
+                         $"Uploaded by: {document.UploaderDisplay}\n" +
+                         $"Status: {document.StatusDisplay}\n" +
+                         $"Version: {document.Version}\n";
+
+            if (!string.IsNullOrEmpty(document.Description))
+            {
+                details += $"Description: {document.Description}\n";
+            }
+
+            if (!string.IsNullOrEmpty(document.Comments))
+            {
+                details += $"Comments: {document.Comments}\n";
+            }
+
+            System.Windows.MessageBox.Show(details, "Document Details", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
+        }
+
+        private async Task ApproveDocumentAsync(Document? document)
+        {
+            if (document == null) return;
+
+            try
+            {
+                var result = System.Windows.MessageBox.Show(
+                    $"Are you sure you want to approve the document '{document.Name}'?",
+                    "Approve Document",
+                    System.Windows.MessageBoxButton.YesNo,
+                    System.Windows.MessageBoxImage.Question);
+
+                if (result == System.Windows.MessageBoxResult.Yes)
+                {
+                    await _documentService.ApproveDocumentAsync(document.Id, _authenticationService.CurrentUser!.Id);
+                    await LoadDashboardDataAsync(); // Refresh the data
+                    System.Windows.MessageBox.Show("Document approved successfully!", "Success", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error approving document {DocumentId}", document.Id);
+                System.Windows.MessageBox.Show($"Error approving document: {ex.Message}", "Error", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+            }
+        }
+
+        private async Task RejectDocumentAsync(Document? document)
+        {
+            if (document == null) return;
+
+            try
+            {
+                var result = System.Windows.MessageBox.Show(
+                    $"Are you sure you want to reject the document '{document.Name}'?",
+                    "Reject Document",
+                    System.Windows.MessageBoxButton.YesNo,
+                    System.Windows.MessageBoxImage.Warning);
+
+                if (result == System.Windows.MessageBoxResult.Yes)
+                {
+                    var reason = Microsoft.VisualBasic.Interaction.InputBox(
+                        "Please provide a reason for rejection (optional):",
+                        "Rejection Reason",
+                        "");
+
+                    await _documentService.RejectDocumentAsync(document.Id, _authenticationService.CurrentUser!.Id, reason);
+                    await LoadDashboardDataAsync(); // Refresh the data
+                    System.Windows.MessageBox.Show("Document rejected successfully!", "Success", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error rejecting document {DocumentId}", document.Id);
+                System.Windows.MessageBox.Show($"Error rejecting document: {ex.Message}", "Error", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
+            }
         }
 
         public void Dispose()
