@@ -49,7 +49,7 @@ namespace MaritimeERP.Desktop
                         // 3. Source directory (for development)
                         
                         var appDirectory = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location) ?? Directory.GetCurrentDirectory();
-                        var userDataDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Maritime ERP System");
+                        var userDataDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "SEACURE(CARE)");
                         
                         // Start with app directory
                         config.SetBasePath(appDirectory);
@@ -85,7 +85,7 @@ namespace MaritimeERP.Desktop
                                 {
                                     ["ConnectionStrings:DefaultConnection"] = $"Data Source={defaultDbPath}",
                                     ["Application:DocumentStoragePath"] = defaultDocPath,
-                                    ["Application:Name"] = "Maritime ERP System",
+                                    ["Application:Name"] = "SEACURE(CARE)",
                                     ["Application:Version"] = "1.0.0",
                                     ["Application:CompanyName"] = "Maritime Solutions"
                                 });
