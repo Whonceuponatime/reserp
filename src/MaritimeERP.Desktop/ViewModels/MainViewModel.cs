@@ -193,14 +193,14 @@ namespace MaritimeERP.Desktop.ViewModels
                     }
                 };
                 
-                // Set login window as main window temporarily
+                // Set login window as the new main window
                 System.Windows.Application.Current.MainWindow = loginWindow;
                 
-                // Close current window
-                currentWindow?.Close();
+                // Show login window first
+                loginWindow.Show();
                 
-                // Show login window as dialog
-                loginWindow.ShowDialog();
+                // Close current window after showing login window
+                currentWindow?.Close();
             }
             catch (Exception ex)
             {
