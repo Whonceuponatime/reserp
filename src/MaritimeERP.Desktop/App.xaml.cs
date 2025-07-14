@@ -65,6 +65,11 @@ namespace MaritimeERP.Desktop
                     Console.WriteLine("=================================================");
                 }
                 
+                if (_debugMode)
+                {
+                    Console.WriteLine("\n[CONSTRUCTOR] Starting host creation...");
+                }
+                
                 _host = Host.CreateDefaultBuilder()
                     .ConfigureAppConfiguration((context, config) =>
                     {
@@ -146,12 +151,30 @@ namespace MaritimeERP.Desktop
                     })
                     .Build();
                     
+                if (_debugMode)
+                {
+                    Console.WriteLine("[CONSTRUCTOR] Host created successfully");
+                    Console.WriteLine($"[CONSTRUCTOR] _host is null: {_host == null}");
+                }
+                
 #if DEBUG
                 Console.WriteLine("Host created successfully");
 #endif
             }
             catch (Exception ex)
             {
+                if (_debugMode)
+                {
+                    Console.WriteLine($"\n[CONSTRUCTOR ERROR] Exception in App constructor!");
+                    Console.WriteLine($"[CONSTRUCTOR ERROR] Exception: {ex.GetType().Name}");
+                    Console.WriteLine($"[CONSTRUCTOR ERROR] Message: {ex.Message}");
+                    Console.WriteLine($"[CONSTRUCTOR ERROR] Stack trace:\n{ex.StackTrace}");
+                    if (ex.InnerException != null)
+                    {
+                        Console.WriteLine($"[CONSTRUCTOR ERROR] Inner exception: {ex.InnerException.Message}");
+                    }
+                }
+                
 #if DEBUG
                 Console.WriteLine($"Error in App constructor: {ex}");
 #endif
@@ -159,7 +182,19 @@ namespace MaritimeERP.Desktop
                 throw;
             }
 
+            if (_debugMode)
+            {
+                Console.WriteLine("[CONSTRUCTOR] Getting logger service...");
+            }
+            
             _logger = _host.Services.GetRequiredService<ILogger<App>>();
+            
+            if (_debugMode)
+            {
+                Console.WriteLine("[CONSTRUCTOR] Logger service obtained successfully");
+                Console.WriteLine($"[CONSTRUCTOR] _logger is null: {_logger == null}");
+                Console.WriteLine("[CONSTRUCTOR] App constructor completed successfully");
+            }
         }
 
         private void ConfigureServices(IServiceCollection services, IConfiguration configuration)
@@ -274,6 +309,9 @@ namespace MaritimeERP.Desktop
                 if (_debugMode)
                 {
                     Console.WriteLine("\n[STARTUP] Starting application host...");
+                    Console.WriteLine($"[STARTUP] _host is null: {_host == null}");
+                    Console.WriteLine($"[STARTUP] _logger is null: {_logger == null}");
+                    Console.WriteLine($"[STARTUP] About to call _host.StartAsync()...");
                 }
 
                 // Start the host asynchronously
@@ -286,6 +324,11 @@ namespace MaritimeERP.Desktop
                 }
                     
                 // Initialize database asynchronously
+                if (_debugMode)
+                {
+                    Console.WriteLine("[STARTUP] About to initialize database...");
+                }
+                
                 await InitializeDatabaseAsync();
                 
                 if (_debugMode)
@@ -295,6 +338,11 @@ namespace MaritimeERP.Desktop
                 }
                     
                 // Show login window
+                if (_debugMode)
+                {
+                    Console.WriteLine("[STARTUP] About to show login window...");
+                }
+                
                 ShowLoginWindow();
 
                 if (_debugMode)
@@ -333,9 +381,38 @@ namespace MaritimeERP.Desktop
         {
             try
             {
+                if (_debugMode)
+                {
+                    Console.WriteLine("[SHOW_LOGIN] Getting authentication service...");
+                    Console.WriteLine($"[SHOW_LOGIN] _host is null: {_host == null}");
+                    Console.WriteLine($"[SHOW_LOGIN] _host.Services is null: {_host?.Services == null}");
+                }
+                
                 var authService = _host.Services.GetRequiredService<IAuthenticationService>();
+                
+                if (_debugMode)
+                {
+                    Console.WriteLine("[SHOW_LOGIN] Authentication service obtained successfully");
+                    Console.WriteLine($"[SHOW_LOGIN] authService is null: {authService == null}");
+                    Console.WriteLine("[SHOW_LOGIN] Creating login view model...");
+                }
                 var loginViewModel = new LoginViewModel(authService);
+                
+                if (_debugMode)
+                {
+                    Console.WriteLine("[SHOW_LOGIN] Login view model created successfully");
+                    Console.WriteLine($"[SHOW_LOGIN] loginViewModel is null: {loginViewModel == null}");
+                    Console.WriteLine("[SHOW_LOGIN] Creating login window...");
+                }
+                
                 var loginWindow = new LoginWindow(loginViewModel);
+                
+                if (_debugMode)
+                {
+                    Console.WriteLine("[SHOW_LOGIN] Login window created successfully");
+                    Console.WriteLine($"[SHOW_LOGIN] loginWindow is null: {loginWindow == null}");
+                    Console.WriteLine("[SHOW_LOGIN] Setting up login success event handler...");
+                }
                 
                 loginViewModel.LoginSuccess += async (s, _) => 
                 {
@@ -363,10 +440,33 @@ namespace MaritimeERP.Desktop
                     }
                 };
                 
+                if (_debugMode)
+                {
+                    Console.WriteLine("[SHOW_LOGIN] Event handler set up successfully");
+                    Console.WriteLine("[SHOW_LOGIN] About to show login dialog...");
+                }
+                
                 loginWindow.ShowDialog();
+                
+                if (_debugMode)
+                {
+                    Console.WriteLine("[SHOW_LOGIN] Login dialog closed");
+                }
             }
             catch (Exception ex)
             {
+                if (_debugMode)
+                {
+                    Console.WriteLine($"\n[SHOW_LOGIN ERROR] Exception in ShowLoginWindow!");
+                    Console.WriteLine($"[SHOW_LOGIN ERROR] Exception: {ex.GetType().Name}");
+                    Console.WriteLine($"[SHOW_LOGIN ERROR] Message: {ex.Message}");
+                    Console.WriteLine($"[SHOW_LOGIN ERROR] Stack trace:\n{ex.StackTrace}");
+                    if (ex.InnerException != null)
+                    {
+                        Console.WriteLine($"[SHOW_LOGIN ERROR] Inner exception: {ex.InnerException.Message}");
+                    }
+                }
+                
                 _logger.LogError(ex, "Error showing login window");
                 MessageBox.Show($"Error showing login window: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 Current.Shutdown();
