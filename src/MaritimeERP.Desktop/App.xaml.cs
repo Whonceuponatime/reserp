@@ -100,10 +100,52 @@ namespace MaritimeERP.Desktop
                         var userConfigPath = Path.Combine(userDataDirectory, "appsettings.json");
                         if (File.Exists(userConfigPath))
                         {
+                            try
+                            {
+                                if (_debugMode)
+                                {
+                                    Console.WriteLine($"[CONFIG] Found user config at: {userConfigPath}");
+                                    Console.WriteLine($"[CONFIG] Attempting to load user configuration...");
+                                }
 #if DEBUG
-                            Console.WriteLine($"Found user config at: {userConfigPath}");
+                                Console.WriteLine($"Found user config at: {userConfigPath}");
 #endif
-                            config.AddJsonFile(userConfigPath, optional: false, reloadOnChange: true);
+                                config.AddJsonFile(userConfigPath, optional: false, reloadOnChange: true);
+                                
+                                if (_debugMode)
+                                {
+                                    Console.WriteLine($"[CONFIG] User configuration loaded successfully");
+                                }
+                            }
+                            catch (Exception configEx)
+                            {
+                                if (_debugMode)
+                                {
+                                    Console.WriteLine($"[CONFIG ERROR] Failed to load user config: {configEx.Message}");
+                                    Console.WriteLine($"[CONFIG ERROR] Renaming corrupted config file and using defaults...");
+                                }
+                                
+                                // Rename the corrupted file so it doesn't interfere again
+                                try
+                                {
+                                    var backupPath = userConfigPath + $".corrupted.{DateTime.Now:yyyyMMdd_HHmmss}";
+                                    File.Move(userConfigPath, backupPath);
+                                    
+                                    if (_debugMode)
+                                    {
+                                        Console.WriteLine($"[CONFIG] Corrupted config moved to: {backupPath}");
+                                    }
+                                }
+                                catch (Exception moveEx)
+                                {
+                                    if (_debugMode)
+                                    {
+                                        Console.WriteLine($"[CONFIG ERROR] Could not move corrupted config: {moveEx.Message}");
+                                    }
+                                }
+                                
+                                // Continue with fallback configuration
+                            }
                         }
                         else
                         {
@@ -112,39 +154,78 @@ namespace MaritimeERP.Desktop
 #endif
                             
                             // Check source directory for development
-                        var sourceConfigPath = Path.Combine(Directory.GetCurrentDirectory(), "src", "MaritimeERP.Desktop", "appsettings.json");
-                        if (File.Exists(sourceConfigPath))
-                        {
+                            var sourceConfigPath = Path.Combine(Directory.GetCurrentDirectory(), "src", "MaritimeERP.Desktop", "appsettings.json");
+                            if (File.Exists(sourceConfigPath))
+                            {
+                                try
+                                {
+                                    if (_debugMode)
+                                    {
+                                        Console.WriteLine($"[CONFIG] Found source config at: {sourceConfigPath}");
+                                        Console.WriteLine($"[CONFIG] Attempting to load source configuration...");
+                                    }
 #if DEBUG
-                                Console.WriteLine($"Found source config at: {sourceConfigPath}");
+                                    Console.WriteLine($"Found source config at: {sourceConfigPath}");
 #endif
-                            config.AddJsonFile(sourceConfigPath, optional: false, reloadOnChange: true);
-                        }
-                        else
-                        {
+                                    config.AddJsonFile(sourceConfigPath, optional: false, reloadOnChange: true);
+                                    
+                                    if (_debugMode)
+                                    {
+                                        Console.WriteLine($"[CONFIG] Source configuration loaded successfully");
+                                    }
+                                }
+                                catch (Exception sourceConfigEx)
+                                {
+                                    if (_debugMode)
+                                    {
+                                        Console.WriteLine($"[CONFIG ERROR] Failed to load source config: {sourceConfigEx.Message}");
+                                        Console.WriteLine($"[CONFIG ERROR] Falling back to default configuration...");
+                                    }
+                                    
+                                    // Continue with fallback configuration
+                                }
+                            }
+                            else
+                            {
+                                if (_debugMode)
+                                {
+                                    Console.WriteLine($"[CONFIG] No source config found at: {sourceConfigPath}");
+                                }
 #if DEBUG
                                 Console.WriteLine($"No source config found at: {sourceConfigPath}");
 #endif
-                                
-                                // Default configuration for first run
-                                var defaultDbPath = Path.Combine(userDataDirectory, "Database", "maritime_erp.db");
-                                var defaultDocPath = Path.Combine(userDataDirectory, "Documents");
-                                
-                            config.AddInMemoryCollection(new Dictionary<string, string?>
-                            {
-                                    ["ConnectionStrings:DefaultConnection"] = $"Data Source={defaultDbPath}",
-                                    ["Application:DocumentStoragePath"] = defaultDocPath,
-                                    ["Application:Name"] = "SEACURE(CARE)",
-                                    ["Application:Version"] = "1.0.0",
-                                    ["Application:CompanyName"] = "Maritime Solutions"
-                            });
-                                
-#if DEBUG
-                                Console.WriteLine($"Using default database path: {defaultDbPath}");
-                                Console.WriteLine($"Using default document path: {defaultDocPath}");
-#endif
                             }
                         }
+                        
+                        // Always add default configuration as fallback
+                        if (_debugMode)
+                        {
+                            Console.WriteLine($"[CONFIG] Adding default configuration as fallback...");
+                        }
+                        
+                        var defaultDbPath = Path.Combine(userDataDirectory, "Database", "maritime_erp.db");
+                        var defaultDocPath = Path.Combine(userDataDirectory, "Documents");
+                        
+                        config.AddInMemoryCollection(new Dictionary<string, string?>
+                        {
+                            ["ConnectionStrings:DefaultConnection"] = $"Data Source={defaultDbPath}",
+                            ["Application:DocumentStoragePath"] = defaultDocPath,
+                            ["Application:Name"] = "SEACURE(CARE)",
+                            ["Application:Version"] = "1.0.0",
+                            ["Application:CompanyName"] = "Maritime Solutions"
+                        });
+                        
+                        if (_debugMode)
+                        {
+                            Console.WriteLine($"[CONFIG] Default database path: {defaultDbPath}");
+                            Console.WriteLine($"[CONFIG] Default document path: {defaultDocPath}");
+                            Console.WriteLine($"[CONFIG] Default configuration added successfully");
+                        }
+                        
+#if DEBUG
+                        Console.WriteLine($"Using default database path: {defaultDbPath}");
+                        Console.WriteLine($"Using default document path: {defaultDocPath}");
+#endif
                     })
                     .ConfigureServices((context, services) =>
                     {
