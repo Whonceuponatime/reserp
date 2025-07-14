@@ -51,18 +51,27 @@ namespace MaritimeERP.Desktop
 
                 if (_debugMode)
                 {
-                    // Allocate console for debugging
-                    AllocConsole();
-                    Console.Title = "SEACURE(CARE) Debug Console";
-                    Console.WriteLine("=================================================");
-                    Console.WriteLine("SEACURE(CARE) Maritime ERP - Debug Mode");
-                    Console.WriteLine("=================================================");
-                    Console.WriteLine($"Application started at: {DateTime.Now}");
-                    Console.WriteLine($"Command line args: {string.Join(" ", args)}");
-                    Console.WriteLine($"Working directory: {Environment.CurrentDirectory}");
-                    Console.WriteLine($"Application directory: {AppDomain.CurrentDomain.BaseDirectory}");
-                    Console.WriteLine($"User data directory: {Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData)}\\SEACURE(CARE)");
-                    Console.WriteLine("=================================================");
+                    try
+                    {
+                        // Allocate console for debugging
+                        AllocConsole();
+                        Console.Title = "SEACURE(CARE) Debug Console";
+                        Console.WriteLine("=================================================");
+                        Console.WriteLine("SEACURE(CARE) Maritime ERP - Debug Mode");
+                        Console.WriteLine("=================================================");
+                        Console.WriteLine($"Application started at: {DateTime.Now}");
+                        Console.WriteLine($"Command line args: {string.Join(" ", args)}");
+                        Console.WriteLine($"Working directory: {Environment.CurrentDirectory}");
+                        Console.WriteLine($"Application directory: {AppDomain.CurrentDomain.BaseDirectory}");
+                        Console.WriteLine($"User data directory: {Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData)}\\SEACURE(CARE)");
+                        Console.WriteLine("=================================================");
+                    }
+                    catch (Exception consoleEx)
+                    {
+                        // If console setup fails, continue without debug console
+                        _debugMode = false;
+                        MessageBox.Show($"Debug console setup failed: {consoleEx.Message}\nContinuing without debug console.", "Debug Setup Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    }
                 }
                 
                 if (_debugMode)
@@ -70,9 +79,11 @@ namespace MaritimeERP.Desktop
                     Console.WriteLine("\n[CONSTRUCTOR] Starting host creation...");
                 }
                 
-                _host = Host.CreateDefaultBuilder()
-                    .ConfigureAppConfiguration((context, config) =>
-                    {
+                try
+                {
+                    _host = Host.CreateDefaultBuilder()
+                        .ConfigureAppConfiguration((context, config) =>
+                        {
                         // Configuration hierarchy (highest priority first):
                         // 1. User data directory (for installed application)
                         // 2. Application directory (for portable/dev)
@@ -151,10 +162,26 @@ namespace MaritimeERP.Desktop
                     })
                     .Build();
                     
-                if (_debugMode)
+                    if (_debugMode)
+                    {
+                        Console.WriteLine("[CONSTRUCTOR] Host created successfully");
+                        Console.WriteLine($"[CONSTRUCTOR] _host is null: {_host == null}");
+                    }
+                }
+                catch (Exception hostEx)
                 {
-                    Console.WriteLine("[CONSTRUCTOR] Host created successfully");
-                    Console.WriteLine($"[CONSTRUCTOR] _host is null: {_host == null}");
+                    if (_debugMode)
+                    {
+                        Console.WriteLine($"\n[CONSTRUCTOR ERROR] Host creation failed!");
+                        Console.WriteLine($"[CONSTRUCTOR ERROR] Exception: {hostEx.GetType().Name}");
+                        Console.WriteLine($"[CONSTRUCTOR ERROR] Message: {hostEx.Message}");
+                        Console.WriteLine($"[CONSTRUCTOR ERROR] Stack trace:\n{hostEx.StackTrace}");
+                        if (hostEx.InnerException != null)
+                        {
+                            Console.WriteLine($"[CONSTRUCTOR ERROR] Inner exception: {hostEx.InnerException.Message}");
+                        }
+                    }
+                    throw; // Re-throw to maintain original error flow
                 }
                 
 #if DEBUG
@@ -187,13 +214,31 @@ namespace MaritimeERP.Desktop
                 Console.WriteLine("[CONSTRUCTOR] Getting logger service...");
             }
             
-            _logger = _host.Services.GetRequiredService<ILogger<App>>();
-            
-            if (_debugMode)
+            try
             {
-                Console.WriteLine("[CONSTRUCTOR] Logger service obtained successfully");
-                Console.WriteLine($"[CONSTRUCTOR] _logger is null: {_logger == null}");
-                Console.WriteLine("[CONSTRUCTOR] App constructor completed successfully");
+                _logger = _host.Services.GetRequiredService<ILogger<App>>();
+                
+                if (_debugMode)
+                {
+                    Console.WriteLine("[CONSTRUCTOR] Logger service obtained successfully");
+                    Console.WriteLine($"[CONSTRUCTOR] _logger is null: {_logger == null}");
+                    Console.WriteLine("[CONSTRUCTOR] App constructor completed successfully");
+                }
+            }
+            catch (Exception loggerEx)
+            {
+                if (_debugMode)
+                {
+                    Console.WriteLine($"\n[CONSTRUCTOR ERROR] Logger service creation failed!");
+                    Console.WriteLine($"[CONSTRUCTOR ERROR] Exception: {loggerEx.GetType().Name}");
+                    Console.WriteLine($"[CONSTRUCTOR ERROR] Message: {loggerEx.Message}");
+                    Console.WriteLine($"[CONSTRUCTOR ERROR] Stack trace:\n{loggerEx.StackTrace}");
+                    if (loggerEx.InnerException != null)
+                    {
+                        Console.WriteLine($"[CONSTRUCTOR ERROR] Inner exception: {loggerEx.InnerException.Message}");
+                    }
+                }
+                throw; // Re-throw to maintain original error flow
             }
         }
 
@@ -312,6 +357,12 @@ namespace MaritimeERP.Desktop
                     Console.WriteLine($"[STARTUP] _host is null: {_host == null}");
                     Console.WriteLine($"[STARTUP] _logger is null: {_logger == null}");
                     Console.WriteLine($"[STARTUP] About to call _host.StartAsync()...");
+                }
+
+                // Check if host is null before proceeding
+                if (_host == null)
+                {
+                    throw new InvalidOperationException("Host is null - application cannot start");
                 }
 
                 // Start the host asynchronously
@@ -1244,16 +1295,53 @@ namespace MaritimeERP.Desktop
                 Console.WriteLine("\n[EXIT] Application is shutting down...");
             }
 
-            Task.Run(async () =>
+            try
             {
-                await _host.StopAsync();
-                _host.Dispose();
-            }).Wait();
+                if (_host != null)
+                {
+                    Task.Run(async () =>
+                    {
+                        try
+                        {
+                            await _host.StopAsync();
+                            _host.Dispose();
+                        }
+                        catch (Exception ex)
+                        {
+                            if (_debugMode)
+                            {
+                                Console.WriteLine($"[EXIT ERROR] Error during host shutdown: {ex.Message}");
+                            }
+                        }
+                    }).Wait();
+                }
+                else
+                {
+                    if (_debugMode)
+                    {
+                        Console.WriteLine("[EXIT] Host is null, skipping shutdown");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                if (_debugMode)
+                {
+                    Console.WriteLine($"[EXIT ERROR] Error during exit: {ex.Message}");
+                }
+            }
 
             if (_debugMode)
             {
                 Console.WriteLine("[EXIT] Application shutdown completed");
-                FreeConsole();
+                try
+                {
+                    FreeConsole();
+                }
+                catch
+                {
+                    // Ignore console freeing errors
+                }
             }
 
             base.OnExit(e);
