@@ -1,7 +1,7 @@
-# 📋 Functional Design Specification - Maritime ERP System
+#  Functional Design Specification - Maritime ERP System
 ## CRUD Operations Focus
 
-## 🔍 Document Overview
+##  Document Overview
 
 **Document Title:** Maritime ERP System - CRUD Operations Functional Design Specification  
 **Version:** 2.0 - CRUD Focus  
@@ -11,7 +11,7 @@
 
 ---
 
-## 📖 Table of Contents
+##  Table of Contents
 
 1. [System Overview](#system-overview)
 2. [CRUD Architecture Overview](#crud-architecture-overview)
@@ -28,7 +28,7 @@
 
 ---
 
-## 🌊 System Overview
+##  System Overview
 
 ### Core Entities
 The Maritime ERP system manages eight core entities with full CRUD capabilities:
@@ -51,17 +51,17 @@ Each entity supports the following operations:
 
 ---
 
-## 🏗️ CRUD Architecture Overview
+##  CRUD Architecture Overview
 
 ### Three-Layer Architecture
 ```
-🎨 UI Layer (Views & ViewModels)
+ UI Layer (Views & ViewModels)
     ↓ CRUD Commands
-🔧 Business Logic Layer (Services)
+ Business Logic Layer (Services)
     ↓ Data Operations
-🗃️ Data Access Layer (Entity Framework Core)
+ Data Access Layer (Entity Framework Core)
     ↓ Database Operations
-💾 SQLite Database
+ SQLite Database
 ```
 
 ### CRUD Flow Pattern
@@ -72,7 +72,7 @@ Database Response → Entity Framework → Service Response → ViewModel Update
 
 ---
 
-## ⚓ Ships CRUD Operations
+##  Ships CRUD Operations
 
 ### Entity Definition
 ```csharp
@@ -136,7 +136,7 @@ public class Ship
 
 ---
 
-## ⚙️ Systems CRUD Operations
+##  Systems CRUD Operations
 
 ### Entity Definition
 ```csharp
@@ -198,7 +198,7 @@ public class ShipSystem
 
 ---
 
-## 🔧 Components CRUD Operations
+##  Components CRUD Operations
 
 ### Entity Definition
 ```csharp
@@ -264,7 +264,7 @@ public class Component
 
 ---
 
-## 💻 Software CRUD Operations
+##  Software CRUD Operations
 
 ### Entity Definition
 ```csharp
@@ -324,7 +324,7 @@ public class Software
 
 ---
 
-## 📋 Change Requests CRUD Operations
+##  Change Requests CRUD Operations
 
 ### Entity Definition
 ```csharp
@@ -394,7 +394,7 @@ public class ChangeRequest
 
 ---
 
-## 📄 Documents CRUD Operations
+##  Documents CRUD Operations
 
 ### Entity Definition
 ```csharp
@@ -469,7 +469,7 @@ public class Document
 
 ---
 
-## 👥 User Management CRUD Operations
+##  User Management CRUD Operations
 
 ### Entity Definition
 ```csharp
@@ -540,7 +540,7 @@ public class User
 
 ---
 
-## 📊 Audit Logs Operations
+##  Audit Logs Operations
 
 ### Entity Definition
 ```csharp
@@ -622,7 +622,7 @@ Ship (1) → (N) ChangeRequest
 
 ---
 
-## 🛠️ CRUD Implementation Patterns
+##  CRUD Implementation Patterns
 
 ### Service Layer Pattern
 ```csharp
@@ -791,7 +791,7 @@ public class MaritimeERPContext : DbContext
 
 ---
 
-## 🎯 Summary
+## Summary
 
 This CRUD-focused functional design specification provides:
 
@@ -807,7 +807,3 @@ This CRUD-focused functional design specification provides:
 The system implements a consistent CRUD pattern across all entities while respecting the hierarchical relationships and business rules specific to maritime operations.
 
 ---
-
-**Maritime ERP System** - *Professional Maritime Enterprise Resource Planning Solution*
-
-🚢 *"Navigate your maritime operations with confidence"* 
