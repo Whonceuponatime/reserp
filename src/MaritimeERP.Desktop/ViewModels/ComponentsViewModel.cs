@@ -451,10 +451,17 @@ namespace MaritimeERP.Desktop.ViewModels
                     _logger.LogInformation("ComponentsViewModel received ship data change notification: {DataType} - {Operation}", e.DataType, e.Operation);
                     await RefreshShipDataAsync();
                 }
+                
+                // Refresh system data when systems are created, updated, or deleted
+                if (e.DataType == "System" && (e.Operation == "CREATE" || e.Operation == "UPDATE" || e.Operation == "DELETE"))
+                {
+                    _logger.LogInformation("ComponentsViewModel received system data change notification: {DataType} - {Operation}", e.DataType, e.Operation);
+                    await RefreshSystemDataAsync();
+                }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error handling ship data change notification in ComponentsViewModel");
+                _logger.LogError(ex, "Error handling data change notification in ComponentsViewModel");
             }
         }
 
@@ -486,6 +493,61 @@ namespace MaritimeERP.Desktop.ViewModels
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error refreshing ship data in ComponentsViewModel");
+            }
+        }
+
+        private async Task RefreshSystemDataAsync()
+        {
+            try
+            {
+                var selectedSystemId = SelectedSystem?.Id;
+                
+                // If a ship is selected, get systems for that ship, otherwise get all systems
+                if (SelectedShip != null)
+                {
+                    var systems = await _systemService.GetSystemsByShipIdAsync(SelectedShip.Id);
+                    await Application.Current.Dispatcher.InvokeAsync(() =>
+                    {
+                        Systems.Clear();
+                        foreach (var system in systems)
+                        {
+                            Systems.Add(system);
+                        }
+                        
+                        // Restore selected system if it still exists
+                        if (selectedSystemId.HasValue)
+                        {
+                            SelectedSystem = Systems.FirstOrDefault(s => s.Id == selectedSystemId.Value);
+                        }
+                        
+                        _logger.LogInformation("ComponentsViewModel refreshed system data for ship {ShipId} - {SystemCount} systems loaded", SelectedShip.Id, Systems.Count);
+                    });
+                }
+                else
+                {
+                    // No ship selected, load all systems
+                    var allSystems = await _systemService.GetAllSystemsAsync();
+                    await Application.Current.Dispatcher.InvokeAsync(() =>
+                    {
+                        Systems.Clear();
+                        foreach (var system in allSystems)
+                        {
+                            Systems.Add(system);
+                        }
+                        
+                        // Restore selected system if it still exists
+                        if (selectedSystemId.HasValue)
+                        {
+                            SelectedSystem = Systems.FirstOrDefault(s => s.Id == selectedSystemId.Value);
+                        }
+                        
+                        _logger.LogInformation("ComponentsViewModel refreshed system data - {SystemCount} systems loaded", Systems.Count);
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error refreshing system data in ComponentsViewModel");
             }
         }
 
