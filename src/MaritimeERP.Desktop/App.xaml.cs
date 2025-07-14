@@ -32,15 +32,38 @@ namespace MaritimeERP.Desktop
         [DllImport("kernel32.dll")]
         private static extern bool AllocConsole();
 
+        [DllImport("kernel32.dll")]
+        private static extern bool FreeConsole();
+
+        private static bool _debugMode = false;
+
         public App()
         {
             try
             {
+                // Check for debug mode - either DEBUG build or --debug argument
+                var args = Environment.GetCommandLineArgs();
+                _debugMode = args.Contains("--debug") || args.Contains("-d");
+
 #if DEBUG
-                // Allocate console for debugging only in debug builds
-                AllocConsole();
-                Console.WriteLine("Maritime ERP Application Starting...");
+                _debugMode = true;
 #endif
+
+                if (_debugMode)
+                {
+                    // Allocate console for debugging
+                    AllocConsole();
+                    Console.Title = "SEACURE(CARE) Debug Console";
+                    Console.WriteLine("=================================================");
+                    Console.WriteLine("SEACURE(CARE) Maritime ERP - Debug Mode");
+                    Console.WriteLine("=================================================");
+                    Console.WriteLine($"Application started at: {DateTime.Now}");
+                    Console.WriteLine($"Command line args: {string.Join(" ", args)}");
+                    Console.WriteLine($"Working directory: {Environment.CurrentDirectory}");
+                    Console.WriteLine($"Application directory: {AppDomain.CurrentDomain.BaseDirectory}");
+                    Console.WriteLine($"User data directory: {Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData)}\\SEACURE(CARE)");
+                    Console.WriteLine("=================================================");
+                }
                 
                 _host = Host.CreateDefaultBuilder()
                     .ConfigureAppConfiguration((context, config) =>
@@ -248,21 +271,60 @@ namespace MaritimeERP.Desktop
         {
             try
             {
+                if (_debugMode)
+                {
+                    Console.WriteLine("\n[STARTUP] Starting application host...");
+                }
+
                 // Start the host asynchronously
-                    await _host.StartAsync();
+                await _host.StartAsync();
+                
+                if (_debugMode)
+                {
+                    Console.WriteLine("[STARTUP] Host started successfully");
+                    Console.WriteLine("[STARTUP] Initializing database...");
+                }
                     
                 // Initialize database asynchronously
-                    await InitializeDatabaseAsync();
+                await InitializeDatabaseAsync();
+                
+                if (_debugMode)
+                {
+                    Console.WriteLine("[STARTUP] Database initialized successfully");
+                    Console.WriteLine("[STARTUP] Showing login window...");
+                }
                     
                 // Show login window
                 ShowLoginWindow();
+
+                if (_debugMode)
+                {
+                    Console.WriteLine("[STARTUP] Application startup completed successfully");
+                    Console.WriteLine("Press Ctrl+C to close debug console (won't close app)");
+                    Console.WriteLine("=================================================\n");
+                }
 
                 base.OnStartup(e);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error during application startup");
-                MessageBox.Show($"Error during application startup: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                if (_debugMode)
+                {
+                    Console.WriteLine($"\n[ERROR] Application startup failed!");
+                    Console.WriteLine($"[ERROR] Exception: {ex.GetType().Name}");
+                    Console.WriteLine($"[ERROR] Message: {ex.Message}");
+                    Console.WriteLine($"[ERROR] Stack trace:\n{ex.StackTrace}");
+                    if (ex.InnerException != null)
+                    {
+                        Console.WriteLine($"[ERROR] Inner exception: {ex.InnerException.Message}");
+                    }
+                    Console.WriteLine("=================================================");
+                    Console.WriteLine("Press any key to continue...");
+                    Console.ReadKey();
+                }
+
+                _logger?.LogError(ex, "Error during application startup");
+                MessageBox.Show($"Error during application startup: {ex.Message}\n\nSee debug console for details.", "Startup Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 Current.Shutdown();
             }
         }
@@ -315,18 +377,35 @@ namespace MaritimeERP.Desktop
         {
             try
             {
-#if DEBUG
-                Console.WriteLine("Initializing database...");
-#endif
+                if (_debugMode)
+                {
+                    Console.WriteLine("[DATABASE] Initializing database...");
+                }
                 
                 using var scope = _host.Services.CreateScope();
                 var context = scope.ServiceProvider.GetRequiredService<MaritimeERPContext>();
                 
+                if (_debugMode)
+                {
+                    Console.WriteLine($"[DATABASE] Database connection string: {context.Database.GetDbConnection().ConnectionString}");
+                    Console.WriteLine("[DATABASE] Setting command timeout to 30 seconds...");
+                }
+                
                 // Set command timeout to prevent hanging
                 context.Database.SetCommandTimeout(30);
                 
+                if (_debugMode)
+                {
+                    Console.WriteLine("[DATABASE] Ensuring database is created...");
+                }
+                
                 // Ensure database is created
                 await context.Database.EnsureCreatedAsync();
+                
+                if (_debugMode)
+                {
+                    Console.WriteLine("[DATABASE] Database creation completed successfully");
+                }
                 
                 // Check if HardwareChangeRequests table exists, if not create it
                 var connection = context.Database.GetDbConnection();
@@ -338,7 +417,10 @@ namespace MaritimeERP.Desktop
                 
                 if (result == null)
                 {
-                    Console.WriteLine("Creating HardwareChangeRequests table...");
+                    if (_debugMode)
+                    {
+                        Console.WriteLine("[DATABASE] Creating HardwareChangeRequests table...");
+                    }
                     
                     // Create the table manually
                     command.CommandText = @"
@@ -1029,22 +1111,50 @@ namespace MaritimeERP.Desktop
                 }
                 
                 await connection.CloseAsync();
-                Console.WriteLine("Database initialization completed");
+                
+                if (_debugMode)
+                {
+                    Console.WriteLine("[DATABASE] Database initialization completed successfully");
+                }
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error initializing database: {ex.Message}");
-                _logger.LogError(ex, "Error initializing database");
+                if (_debugMode)
+                {
+                    Console.WriteLine($"\n[DATABASE ERROR] Database initialization failed!");
+                    Console.WriteLine($"[DATABASE ERROR] Exception: {ex.GetType().Name}");
+                    Console.WriteLine($"[DATABASE ERROR] Message: {ex.Message}");
+                    Console.WriteLine($"[DATABASE ERROR] Stack trace:\n{ex.StackTrace}");
+                    if (ex.InnerException != null)
+                    {
+                        Console.WriteLine($"[DATABASE ERROR] Inner exception: {ex.InnerException.Message}");
+                    }
+                    Console.WriteLine("=================================================");
+                }
+
+                _logger?.LogError(ex, "Error initializing database");
+                throw; // Re-throw to be caught by OnStartup
             }
         }
 
         protected override void OnExit(ExitEventArgs e)
         {
+            if (_debugMode)
+            {
+                Console.WriteLine("\n[EXIT] Application is shutting down...");
+            }
+
             Task.Run(async () =>
             {
                 await _host.StopAsync();
                 _host.Dispose();
             }).Wait();
+
+            if (_debugMode)
+            {
+                Console.WriteLine("[EXIT] Application shutdown completed");
+                FreeConsole();
+            }
 
             base.OnExit(e);
         }

@@ -10,10 +10,19 @@
     <ApplicationIcon>..\seacure_logo.ico</ApplicationIcon>
     <AssemblyTitle>SEACURE(CARE)</AssemblyTitle>
     <AssemblyDescription>Professional Maritime Enterprise Resource Planning System</AssemblyDescription>
-    <AssemblyCompany>Maritime Solutions</AssemblyCompany>
-    <AssemblyProduct>Maritime ERP</AssemblyProduct>
+    <AssemblyCompany>SEANET</AssemblyCompany>
+    <AssemblyProduct>SEACURE(CARE)</AssemblyProduct>
     <AssemblyVersion>1.0.0.0</AssemblyVersion>
     <FileVersion>1.0.0.0</FileVersion>
+  </PropertyGroup>
+
+  <!-- Single-File Deployment Configuration -->
+  <PropertyGroup Condition="'$(Configuration)'=='Release'">
+    <PublishSingleFile>true</PublishSingleFile>
+    <SelfContained>true</SelfContained>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <PublishReadyToRun>false</PublishReadyToRun>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
   </PropertyGroup>
 
   <ItemGroup>

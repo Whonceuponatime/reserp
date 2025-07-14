@@ -6,17 +6,17 @@ AppId={{A1B2C3D4-E5F6-7890-ABCD-123456789012}
 AppName=SEACURE(CARE)
 AppVersion=1.0.0
 AppVerName=SEACURE(CARE) 1.0.0
-AppPublisher=Maritime Solutions
-AppPublisherURL=https://www.maritimesolutions.com/
-AppSupportURL=https://www.maritimesolutions.com/support
-AppUpdatesURL=https://www.maritimesolutions.com/updates
+AppPublisher=SEANET
+AppPublisherURL=https://sea-net.co.kr
+AppSupportURL=https://sea-net.co.kr
+AppUpdatesURL=https://sea-net.co.kr
 DefaultDirName={autopf}\SEACURE(CARE)
 DisableProgramGroupPage=yes
 ; Uncomment the following line to run in non administrative install mode (install for current user only.)
 ;PrivilegesRequired=lowest
 OutputDir=Installer
 OutputBaseFilename=SEACURE_CARE_Setup_v1.0.0
-; SetupIconFile=src\logo.svg  ; SVG not supported by Inno Setup - commented out
+SetupIconFile=src\seacure_logo.ico
 Compression=lzma
 SolidCompression=yes
 WizardStyle=modern
@@ -35,6 +35,7 @@ Name: "quicklaunchicon"; Description: "{cm:CreateQuickLaunchIcon}"; GroupDescrip
 Source: "src\MaritimeERP.Desktop\bin\Release\net8.0-windows\MaritimeERP.Desktop.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "src\MaritimeERP.Desktop\bin\Release\net8.0-windows\*.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "src\MaritimeERP.Desktop\bin\Release\net8.0-windows\*.json"; DestDir: "{app}"; Flags: ignoreversion
+Source: "src\seacure_logo.ico"; DestDir: "{app}"; Flags: ignoreversion
 Source: "src\MaritimeERP.Desktop\bin\Release\net8.0-windows\runtimes\*"; DestDir: "{app}\runtimes"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "src\MaritimeERP.Desktop\bin\Release\net8.0-windows\cs\*"; DestDir: "{app}\cs"; Flags: ignoreversion recursesubdirs createallsubdirs; Languages: 
 Source: "src\MaritimeERP.Desktop\bin\Release\net8.0-windows\de\*"; DestDir: "{app}\de"; Flags: ignoreversion recursesubdirs createallsubdirs; Languages: 
@@ -50,8 +51,7 @@ Source: "src\MaritimeERP.Desktop\bin\Release\net8.0-windows\tr\*"; DestDir: "{ap
 Source: "src\MaritimeERP.Desktop\bin\Release\net8.0-windows\zh-Hans\*"; DestDir: "{app}\zh-Hans"; Flags: ignoreversion recursesubdirs createallsubdirs; Languages: 
 Source: "src\MaritimeERP.Desktop\bin\Release\net8.0-windows\zh-Hant\*"; DestDir: "{app}\zh-Hant"; Flags: ignoreversion recursesubdirs createallsubdirs; Languages: 
 
-; Sample database (will be copied to user data folder)
-Source: "maritime_erp.db"; DestDir: "{app}\Database"; Flags: ignoreversion; Check: not FileExists(ExpandConstant('{userappdata}\SEACURE(CARE)\Database\maritime_erp.db'))
+; Database will be created at runtime
 
 ; Documentation
 Source: "README.md"; DestDir: "{app}"; Flags: ignoreversion
@@ -60,9 +60,9 @@ Source: "Documents\*"; DestDir: "{app}\Documentation"; Flags: ignoreversion recu
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
 [Icons]
-Name: "{autoprograms}\SEACURE(CARE)"; Filename: "{app}\MaritimeERP.Desktop.exe"
-Name: "{autodesktop}\SEACURE(CARE)"; Filename: "{app}\MaritimeERP.Desktop.exe"; Tasks: desktopicon
-Name: "{userappdata}\Microsoft\Internet Explorer\Quick Launch\SEACURE(CARE)"; Filename: "{app}\MaritimeERP.Desktop.exe"; Tasks: quicklaunchicon
+Name: "{autoprograms}\SEACURE(CARE)"; Filename: "{app}\MaritimeERP.Desktop.exe"; IconFilename: "{app}\seacure_logo.ico"
+Name: "{autodesktop}\SEACURE(CARE)"; Filename: "{app}\MaritimeERP.Desktop.exe"; Tasks: desktopicon; IconFilename: "{app}\seacure_logo.ico"
+Name: "{userappdata}\Microsoft\Internet Explorer\Quick Launch\SEACURE(CARE)"; Filename: "{app}\MaritimeERP.Desktop.exe"; Tasks: quicklaunchicon; IconFilename: "{app}\seacure_logo.ico"
 
 [Run]
 Filename: "{app}\MaritimeERP.Desktop.exe"; Description: "{cm:LaunchProgram,SEACURE(CARE)}"; Flags: nowait postinstall skipifsilent
@@ -73,35 +73,6 @@ Name: "{userappdata}\SEACURE(CARE)\Documents"; Permissions: users-full
 Name: "{userappdata}\SEACURE(CARE)\Logs"; Permissions: users-full
 
 [Code]
-procedure CurStepChanged(CurStep: TSetupStep);
-var
-  SourcePath, DestPath: String;
-begin
-  if CurStep = ssPostInstall then
-  begin
-    // Copy database to user data folder if it doesn't exist
-    SourcePath := ExpandConstant('{app}\Database\maritime_erp.db');
-    DestPath := ExpandConstant('{userappdata}\SEACURE(CARE)\Database\maritime_erp.db');
-    
-    if not FileExists(DestPath) and FileExists(SourcePath) then
-    begin
-      if not ForceDirectories(ExtractFileDir(DestPath)) then
-      begin
-        MsgBox('Could not create database directory: ' + ExtractFileDir(DestPath), mbError, MB_OK);
-        Exit;
-      end;
-      
-      if not FileCopy(SourcePath, DestPath, False) then
-      begin
-        MsgBox('Could not copy database to user data folder.', mbError, MB_OK);
-      end;
-    end;
-    
-    // Create custom appsettings.json for user
-    CreateUserAppSettings();
-  end;
-end;
-
 procedure CreateUserAppSettings();
 var
   UserConfigPath: String;
@@ -125,7 +96,7 @@ begin
       '  "Application": {' + #13#10 +
       '    "Name": "SEACURE(CARE)",' + #13#10 +
       '    "Version": "1.0.0",' + #13#10 +
-      '    "CompanyName": "Maritime Solutions",' + #13#10 +
+      '    "CompanyName": "SEANET",' + #13#10 +
       '    "DocumentStoragePath": "' + ExpandConstant('{userappdata}\SEACURE(CARE)\Documents') + '",' + #13#10 +
       '    "MaxDocumentSizeMB": 50,' + #13#10 +
       '    "SupportedDocumentTypes": [ ".pdf", ".doc", ".docx", ".xls", ".xlsx", ".txt", ".jpg", ".png" ]' + #13#10 +
@@ -143,5 +114,14 @@ begin
     begin
       MsgBox('Could not create user configuration file.', mbError, MB_OK);
     end;
+  end;
+end;
+
+procedure CurStepChanged(CurStep: TSetupStep);
+begin
+  if CurStep = ssPostInstall then
+  begin
+    // Create custom appsettings.json for user
+    CreateUserAppSettings();
   end;
 end; 
