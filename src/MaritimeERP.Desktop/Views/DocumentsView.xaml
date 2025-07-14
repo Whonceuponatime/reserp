@@ -82,7 +82,8 @@
                     <ComboBox ItemsSource="{Binding Ships}"
                               SelectedItem="{Binding SelectedShip}"
                               DisplayMemberPath="ShipName"
-                              MinWidth="200" Height="30" VerticalAlignment="Center"/>
+                              MinWidth="200" Height="30" VerticalAlignment="Center"
+                              materialDesign:HintAssist.Hint="Select ship to filter documents"/>
                 </StackPanel>
             </Grid>
         </Border>
@@ -140,15 +141,16 @@
                     <!-- Search -->
                     <TextBox Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" 
                              Padding="8" Height="30" Margin="0,0,0,10"
-                             ToolTip="Search documents..."
-                             BorderBrush="#CCCCCC"/>
+                             BorderBrush="#CCCCCC"
+                             materialDesign:HintAssist.Hint="Search documents..."/>
 
                     <!-- Category Filter -->
                     <Label Content="Category" FontSize="12" FontWeight="SemiBold" Padding="0,5,0,2"/>
                     <ComboBox ItemsSource="{Binding DocumentCategories}"
                               SelectedItem="{Binding SelectedCategory}"
                               DisplayMemberPath="Name"
-                              Height="30" Margin="0,0,0,10"/>
+                              Height="30" Margin="0,0,0,10"
+                              materialDesign:HintAssist.Hint="Select category"/>
 
                     <!-- Status Filters -->
                     <Label Content="Status" FontSize="12" FontWeight="SemiBold" Padding="0,5,0,2"/>
@@ -162,8 +164,27 @@
                     <!-- Clear Filters -->
                     <Button Content="Clear Filters" 
                             Command="{Binding ClearFiltersCommand}"
-                            Background="#757575" Foreground="White"
-                            Padding="10,5" Height="30"/>
+                            Background="#FF9800" Foreground="White"
+                            Padding="10,5" Height="30" Cursor="Hand">
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Border Background="{TemplateBinding Background}" 
+                                        CornerRadius="4" 
+                                        Padding="{TemplateBinding Padding}">
+                                    <ContentPresenter HorizontalAlignment="Center" 
+                                                    VerticalAlignment="Center"/>
+                                </Border>
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter Property="Background" Value="#F57C00"/>
+                                    </Trigger>
+                                    <Trigger Property="IsPressed" Value="True">
+                                        <Setter Property="Background" Value="#EF6C00"/>
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Button.Template>
+                    </Button>
                 </StackPanel>
             </Border>
 

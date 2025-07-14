@@ -153,48 +153,113 @@
                     <!-- Search and Filter -->
                     <Border Grid.Row="0" 
                             Background="#F5F5F5" 
-                            Padding="12,8"
+                            Padding="12,12"
                             Margin="0,0,8,0">
                         <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="200"/>
-                                <ColumnDefinition Width="150"/>
-                                <ColumnDefinition Width="150"/>
-                                <ColumnDefinition Width="*"/>
-                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            
+                            <!-- Filter Labels -->
+                            <Grid Grid.Row="0" Margin="0,0,0,6">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="200"/>
+                                    <ColumnDefinition Width="150"/>
+                                    <ColumnDefinition Width="150"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
 
-                            <TextBox Grid.Column="0" 
-                                     Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
-                                     Height="24"
-                                     Padding="6,0"
-                                     FontSize="12"
-                                     Background="White"
-                                     BorderThickness="1"
-                                     BorderBrush="#E0E0E0"/>
-                            
-                            <ComboBox Grid.Column="1" 
-                                      ItemsSource="{Binding Ships}"
-                                      SelectedItem="{Binding SelectedShip}"
-                                      DisplayMemberPath="ShipName"
-                                      Height="24"
-                                      Padding="6,0"
-                                      FontSize="12"
-                                      Background="White"
-                                      BorderThickness="1"
-                                      BorderBrush="#E0E0E0"
-                                      Margin="8,0,0,0"/>
-                            
-                            <ComboBox Grid.Column="2" 
-                                      ItemsSource="{Binding Systems}"
-                                      SelectedItem="{Binding SelectedSystem}"
-                                      DisplayMemberPath="Name"
-                                      Height="24"
-                                      Padding="6,0"
-                                      FontSize="12"
-                                      Background="White"
-                                      BorderThickness="1"
-                                      BorderBrush="#E0E0E0"
-                                      Margin="8,0,0,0"/>
+                                <TextBlock Grid.Column="0" Text="Search Components" 
+                                          FontSize="11" FontWeight="SemiBold" 
+                                          Foreground="#424242"/>
+                                
+                                <TextBlock Grid.Column="1" Text="Filter by Ship" 
+                                          FontSize="11" FontWeight="SemiBold" 
+                                          Foreground="#424242" Margin="8,0,0,0"/>
+                                
+                                <TextBlock Grid.Column="2" Text="Filter by System" 
+                                          FontSize="11" FontWeight="SemiBold" 
+                                          Foreground="#424242" Margin="8,0,0,0"/>
+                            </Grid>
+
+                            <!-- Filter Controls -->
+                            <Grid Grid.Row="1">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="200"/>
+                                    <ColumnDefinition Width="150"/>
+                                    <ColumnDefinition Width="150"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+
+                                <TextBox Grid.Column="0" 
+                                         Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                                         Height="28"
+                                         Padding="8,0"
+                                         FontSize="12"
+                                         Background="White"
+                                         BorderThickness="1"
+                                         BorderBrush="#E0E0E0"
+                                         materialDesign:HintAssist.Hint="Type to search..."/>
+                                
+                                <ComboBox Grid.Column="1" 
+                                          ItemsSource="{Binding Ships}"
+                                          SelectedItem="{Binding SelectedShip}"
+                                          DisplayMemberPath="ShipName"
+                                          Height="28"
+                                          Padding="8,0"
+                                          FontSize="12"
+                                          Background="White"
+                                          BorderThickness="1"
+                                          BorderBrush="#E0E0E0"
+                                          Margin="8,0,0,0"
+                                          materialDesign:HintAssist.Hint="Select ship to view systems"/>
+                                
+                                <ComboBox Grid.Column="2" 
+                                          ItemsSource="{Binding Systems}"
+                                          SelectedItem="{Binding SelectedSystem}"
+                                          DisplayMemberPath="Name"
+                                          Height="28"
+                                          Padding="8,0"
+                                          FontSize="12"
+                                          Background="White"
+                                          BorderThickness="1"
+                                          BorderBrush="#E0E0E0"
+                                          Margin="8,0,0,0"
+                                          materialDesign:HintAssist.Hint="Select system to filter"/>
+
+                                <Button Grid.Column="3"
+                                        Content="Clear Filters"
+                                        Command="{Binding ClearFiltersCommand}"
+                                        Height="28"
+                                        Padding="12,0"
+                                        FontSize="11"
+                                        Background="#FF9800"
+                                        Foreground="White"
+                                        BorderThickness="0"
+                                        Margin="8,0,0,0"
+                                        Cursor="Hand">
+                                    <Button.Template>
+                                        <ControlTemplate TargetType="Button">
+                                            <Border Background="{TemplateBinding Background}" 
+                                                    CornerRadius="4" 
+                                                    Padding="{TemplateBinding Padding}">
+                                                <ContentPresenter HorizontalAlignment="Center" 
+                                                                VerticalAlignment="Center"/>
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter Property="Background" Value="#F57C00"/>
+                                                </Trigger>
+                                                <Trigger Property="IsPressed" Value="True">
+                                                    <Setter Property="Background" Value="#EF6C00"/>
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Button.Template>
+                                </Button>
+                            </Grid>
                         </Grid>
                     </Border>
 
