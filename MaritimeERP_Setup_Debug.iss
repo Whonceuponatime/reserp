@@ -22,8 +22,8 @@ ArchitecturesInstallIn64BitMode=x64
 Name: "english"; MessagesFile: "compiler:Default.isl"
 
 [Tasks]
-Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: checked
-Name: "debugicon"; Description: "Create debug shortcut (shows console)"; GroupDescription: "{cm:AdditionalIcons}"; Flags: checked
+Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: checkablealone
+Name: "debugicon"; Description: "Create debug shortcut (shows console)"; GroupDescription: "{cm:AdditionalIcons}"; Flags: checkablealone
 
 [Files]
 ; Single executable file (self-contained, includes appsettings.json embedded)
