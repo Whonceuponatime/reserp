@@ -28,7 +28,7 @@ Name: "quicklaunchicon"; Description: "{cm:CreateQuickLaunchIcon}"; GroupDescrip
 
 [Files]
 ; Single executable file (self-contained, includes appsettings.json embedded)
-Source: "src\MaritimeERP.Desktop\bin\Release\net8.0-windows\win-x64\publish\MaritimeERP.Desktop.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "src\MaritimeERP.Desktop\bin\Release\net8.0-windows\win-x64\publish\SEACURE_CARE.exe"; DestDir: "{app}"; Flags: ignoreversion
 ; Icon file for application and Programs and Features
 Source: "src\seacure_logo.ico"; DestDir: "{app}"; Flags: ignoreversion
 ; Documentation
@@ -36,12 +36,12 @@ Source: "README.md"; DestDir: "{app}"; Flags: ignoreversion
 Source: "Documents\*"; DestDir: "{app}\Documentation"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [Icons]
-Name: "{autoprograms}\SEACURE(CARE)"; Filename: "{app}\MaritimeERP.Desktop.exe"; IconFilename: "{app}\seacure_logo.ico"
-Name: "{autodesktop}\SEACURE(CARE)"; Filename: "{app}\MaritimeERP.Desktop.exe"; Tasks: desktopicon; IconFilename: "{app}\seacure_logo.ico"
-Name: "{userappdata}\Microsoft\Internet Explorer\Quick Launch\SEACURE(CARE)"; Filename: "{app}\MaritimeERP.Desktop.exe"; Tasks: quicklaunchicon; IconFilename: "{app}\seacure_logo.ico"
+Name: "{autoprograms}\SEACURE(CARE)"; Filename: "{app}\SEACURE_CARE.exe"; IconFilename: "{app}\seacure_logo.ico"
+Name: "{autodesktop}\SEACURE(CARE)"; Filename: "{app}\SEACURE_CARE.exe"; Tasks: desktopicon; IconFilename: "{app}\seacure_logo.ico"
+Name: "{userappdata}\Microsoft\Internet Explorer\Quick Launch\SEACURE(CARE)"; Filename: "{app}\SEACURE_CARE.exe"; Tasks: quicklaunchicon; IconFilename: "{app}\seacure_logo.ico"
 
 [Run]
-Filename: "{app}\MaritimeERP.Desktop.exe"; Description: "{cm:LaunchProgram,SEACURE(CARE)}"; Flags: nowait postinstall skipifsilent
+Filename: "{app}\SEACURE_CARE.exe"; Description: "{cm:LaunchProgram,SEACURE(CARE)}"; Flags: nowait postinstall skipifsilent
 
 [Dirs]
 Name: "{userappdata}\SEACURE(CARE)\Database"; Permissions: users-full

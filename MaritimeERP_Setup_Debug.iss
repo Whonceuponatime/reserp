@@ -28,7 +28,7 @@ Name: "debugicon"; Description: "Create debug shortcut (shows console)"; GroupDe
 
 [Files]
 ; Single executable file (self-contained, includes appsettings.json embedded)
-Source: "src\MaritimeERP.Desktop\bin\Release\net8.0-windows\win-x64\publish\MaritimeERP.Desktop.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "src\MaritimeERP.Desktop\bin\Release\net8.0-windows\win-x64\publish\SEACURE(CARE).exe"; DestDir: "{app}"; Flags: ignoreversion
 ; Icon file
 Source: "src\seacure_logo.ico"; DestDir: "{app}"; Flags: ignoreversion
 ; Documentation
@@ -36,12 +36,12 @@ Source: "README.md"; DestDir: "{app}"; Flags: ignoreversion
 Source: "Documents\*"; DestDir: "{app}\Documentation"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [Icons]
-Name: "{autoprograms}\SEACURE(CARE) Debug"; Filename: "{app}\MaritimeERP.Desktop.exe"; Parameters: "--debug"; IconFilename: "{app}\seacure_logo.ico"
-Name: "{autodesktop}\SEACURE(CARE)"; Filename: "{app}\MaritimeERP.Desktop.exe"; Tasks: desktopicon; IconFilename: "{app}\seacure_logo.ico"
-Name: "{autodesktop}\SEACURE(CARE) Debug"; Filename: "{app}\MaritimeERP.Desktop.exe"; Parameters: "--debug"; Tasks: debugicon; IconFilename: "{app}\seacure_logo.ico"; Comment: "Run with debug console"
+Name: "{autoprograms}\SEACURE(CARE) Debug"; Filename: "{app}\SEACURE(CARE).exe"; Parameters: "--debug"; IconFilename: "{app}\seacure_logo.ico"
+Name: "{autodesktop}\SEACURE(CARE)"; Filename: "{app}\SEACURE(CARE).exe"; Tasks: desktopicon; IconFilename: "{app}\seacure_logo.ico"
+Name: "{autodesktop}\SEACURE(CARE) Debug"; Filename: "{app}\SEACURE(CARE).exe"; Parameters: "--debug"; Tasks: debugicon; IconFilename: "{app}\seacure_logo.ico"; Comment: "Run with debug console"
 
 [Run]
-Filename: "{app}\MaritimeERP.Desktop.exe"; Parameters: "--debug"; Description: "Launch SEACURE(CARE) with debug console"; Flags: nowait postinstall skipifsilent
+Filename: "{app}\SEACURE(CARE).exe"; Parameters: "--debug"; Description: "Launch SEACURE(CARE) with debug console"; Flags: nowait postinstall skipifsilent
 
 [Dirs]
 Name: "{userappdata}\SEACURE(CARE)\Database"; Permissions: users-full

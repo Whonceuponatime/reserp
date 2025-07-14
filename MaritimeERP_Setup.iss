@@ -33,7 +33,7 @@ Name: "quicklaunchicon"; Description: "{cm:CreateQuickLaunchIcon}"; GroupDescrip
 
 [Files]
 ; Main application files
-Source: "src\MaritimeERP.Desktop\bin\Release\net8.0-windows\MaritimeERP.Desktop.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "src\MaritimeERP.Desktop\bin\Release\net8.0-windows\SEACURE(CARE).exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "src\MaritimeERP.Desktop\bin\Release\net8.0-windows\*.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "src\MaritimeERP.Desktop\bin\Release\net8.0-windows\*.json"; DestDir: "{app}"; Flags: ignoreversion
 Source: "src\seacure_logo.ico"; DestDir: "{app}"; Flags: ignoreversion
@@ -61,12 +61,12 @@ Source: "Documents\*"; DestDir: "{app}\Documentation"; Flags: ignoreversion recu
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
 [Icons]
-Name: "{autoprograms}\SEACURE(CARE)"; Filename: "{app}\MaritimeERP.Desktop.exe"; IconFilename: "{app}\seacure_logo.ico"
-Name: "{autodesktop}\SEACURE(CARE)"; Filename: "{app}\MaritimeERP.Desktop.exe"; Tasks: desktopicon; IconFilename: "{app}\seacure_logo.ico"
-Name: "{userappdata}\Microsoft\Internet Explorer\Quick Launch\SEACURE(CARE)"; Filename: "{app}\MaritimeERP.Desktop.exe"; Tasks: quicklaunchicon; IconFilename: "{app}\seacure_logo.ico"
+Name: "{autoprograms}\SEACURE(CARE)"; Filename: "{app}\SEACURE(CARE).exe"; IconFilename: "{app}\seacure_logo.ico"
+Name: "{autodesktop}\SEACURE(CARE)"; Filename: "{app}\SEACURE(CARE).exe"; Tasks: desktopicon; IconFilename: "{app}\seacure_logo.ico"
+Name: "{userappdata}\Microsoft\Internet Explorer\Quick Launch\SEACURE(CARE)"; Filename: "{app}\SEACURE(CARE).exe"; Tasks: quicklaunchicon; IconFilename: "{app}\seacure_logo.ico"
 
 [Run]
-Filename: "{app}\MaritimeERP.Desktop.exe"; Description: "{cm:LaunchProgram,SEACURE(CARE)}"; Flags: nowait postinstall skipifsilent
+Filename: "{app}\SEACURE(CARE).exe"; Description: "{cm:LaunchProgram,SEACURE(CARE)}"; Flags: nowait postinstall skipifsilent
 
 [Dirs]
 Name: "{userappdata}\SEACURE(CARE)\Database"; Permissions: users-full
