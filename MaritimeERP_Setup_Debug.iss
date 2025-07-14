@@ -12,6 +12,7 @@ DisableProgramGroupPage=yes
 OutputDir=Installer
 OutputBaseFilename=SEACURE_CARE_Setup_v1.0.0_DEBUG
 SetupIconFile=src\seacure_logo.ico
+UninstallDisplayIcon={app}\seacure_logo.ico
 Compression=lzma
 SolidCompression=yes
 WizardStyle=modern

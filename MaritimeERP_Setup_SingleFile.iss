@@ -12,6 +12,7 @@ DisableProgramGroupPage=yes
 OutputDir=Installer
 OutputBaseFilename=SEACURE_CARE_Setup_v1.0.0_SingleFile
 SetupIconFile=src\seacure_logo.ico
+UninstallDisplayIcon={app}\seacure_logo.ico
 Compression=lzma
 SolidCompression=yes
 WizardStyle=modern
@@ -28,7 +29,7 @@ Name: "quicklaunchicon"; Description: "{cm:CreateQuickLaunchIcon}"; GroupDescrip
 [Files]
 ; Single executable file (self-contained, includes appsettings.json embedded)
 Source: "src\MaritimeERP.Desktop\bin\Release\net8.0-windows\win-x64\publish\MaritimeERP.Desktop.exe"; DestDir: "{app}"; Flags: ignoreversion
-; Icon file
+; Icon file for application and Programs and Features
 Source: "src\seacure_logo.ico"; DestDir: "{app}"; Flags: ignoreversion
 ; Documentation
 Source: "README.md"; DestDir: "{app}"; Flags: ignoreversion

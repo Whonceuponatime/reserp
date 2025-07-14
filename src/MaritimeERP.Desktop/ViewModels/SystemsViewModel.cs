@@ -456,10 +456,17 @@ namespace MaritimeERP.Desktop.ViewModels
                     _logger.LogInformation("SystemsViewModel received ship data change notification: {DataType} - {Operation}", e.DataType, e.Operation);
                     await RefreshShipDataAsync();
                 }
+                
+                // Refresh system data when systems are created, updated, or deleted
+                if (e.DataType == "System" && (e.Operation == "CREATE" || e.Operation == "UPDATE" || e.Operation == "DELETE"))
+                {
+                    _logger.LogInformation("SystemsViewModel received system data change notification: {DataType} - {Operation}", e.DataType, e.Operation);
+                    await RefreshSystemDataAsync();
+                }
                 }
                 catch (Exception ex)
                 {
-                _logger.LogError(ex, "Error handling ship data change notification in SystemsViewModel");
+                _logger.LogError(ex, "Error handling data change notification in SystemsViewModel");
             }
         }
 
@@ -491,6 +498,40 @@ namespace MaritimeERP.Desktop.ViewModels
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error refreshing ship data in SystemsViewModel");
+            }
+        }
+
+        private async Task RefreshSystemDataAsync()
+        {
+            try
+            {
+                var systems = await _systemService.GetAllSystemsAsync();
+                
+                await Application.Current.Dispatcher.InvokeAsync(() =>
+                {
+                    var selectedSystemId = SelectedSystem?.Id;
+                    
+                    Systems.Clear();
+                    foreach (var system in systems)
+                    {
+                        Systems.Add(system);
+                    }
+                    
+                    // Restore selected system if it still exists
+                    if (selectedSystemId.HasValue)
+                    {
+                        SelectedSystem = Systems.FirstOrDefault(s => s.Id == selectedSystemId.Value);
+                    }
+                    
+                    // Reapply filters to update the filtered collection
+                    ApplyFilters();
+                    
+                    _logger.LogInformation("SystemsViewModel refreshed system data - {SystemCount} systems loaded", Systems.Count);
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error refreshing system data in SystemsViewModel");
             }
         }
 
