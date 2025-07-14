@@ -193,7 +193,7 @@
                                          Background="White"
                                          BorderThickness="1"
                                          BorderBrush="#E0E0E0"
-                                         materialDesign:HintAssist.Hint="Type to search..."/>
+                                         ToolTip="Type to search systems..."/>
                                 
                                 <ComboBox Grid.Column="1" 
                                           ItemsSource="{Binding Ships}"
@@ -206,7 +206,7 @@
                                           BorderThickness="1"
                                           BorderBrush="#E0E0E0"
                                           Margin="8,0,0,0"
-                                          materialDesign:HintAssist.Hint="Select ship to filter systems">
+                                          ToolTip="Select ship to filter systems">
                                     <ComboBox.Style>
                                         <Style TargetType="ComboBox">
                                             <Style.Triggers>

@@ -83,7 +83,7 @@
                               SelectedItem="{Binding SelectedShip}"
                               DisplayMemberPath="ShipName"
                               MinWidth="200" Height="30" VerticalAlignment="Center"
-                              materialDesign:HintAssist.Hint="Select ship to filter documents"/>
+                              ToolTip="Select ship to filter documents"/>
                 </StackPanel>
             </Grid>
         </Border>
@@ -142,7 +142,7 @@
                     <TextBox Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" 
                              Padding="8" Height="30" Margin="0,0,0,10"
                              BorderBrush="#CCCCCC"
-                             materialDesign:HintAssist.Hint="Search documents..."/>
+                             ToolTip="Search documents..."/>
 
                     <!-- Category Filter -->
                     <Label Content="Category" FontSize="12" FontWeight="SemiBold" Padding="0,5,0,2"/>
@@ -150,7 +150,7 @@
                               SelectedItem="{Binding SelectedCategory}"
                               DisplayMemberPath="Name"
                               Height="30" Margin="0,0,0,10"
-                              materialDesign:HintAssist.Hint="Select category"/>
+                              ToolTip="Select category"/>
 
                     <!-- Status Filters -->
                     <Label Content="Status" FontSize="12" FontWeight="SemiBold" Padding="0,5,0,2"/>

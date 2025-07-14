@@ -69,57 +69,126 @@
             </Grid>
         </Border>
 
-        <!-- Compact Filters -->
+        <!-- Search and Filter -->
         <Border Grid.Row="1" 
-                Background="White" 
-                Padding="16,8"
+                Background="#F5F5F5" 
+                Padding="12,12"
                 BorderThickness="0,0,0,1"
                 BorderBrush="#E0E0E0">
             <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="200"/>
-                    <ColumnDefinition Width="150"/>
-                    <ColumnDefinition Width="150"/>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
-
-                <TextBox Grid.Column="0" 
-                         Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
-                         Height="26"
-                         Padding="8,0"
-                         FontSize="12"
-                         Background="#F5F5F5"
-                         BorderThickness="0"/>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
                 
-                <ComboBox Grid.Column="1" 
-                          ItemsSource="{Binding ShipTypes}"
-                          SelectedItem="{Binding SelectedShipType}"
-                          Height="26"
-                          Padding="8,0"
-                          FontSize="12"
-                          Background="#F5F5F5"
-                          BorderThickness="0"
-                          Margin="8,0,0,0"/>
-                
-                <ComboBox Grid.Column="2" 
-                          ItemsSource="{Binding Flags}"
-                          SelectedItem="{Binding SelectedFlag}"
-                          Height="26"
-                          Padding="8,0"
-                          FontSize="12"
-                          Background="#F5F5F5"
-                          BorderThickness="0"
-                          Margin="8,0,0,0"/>
+                <!-- Filter Labels -->
+                <Grid Grid.Row="0" Margin="0,0,0,6">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="200"/>
+                        <ColumnDefinition Width="150"/>
+                        <ColumnDefinition Width="150"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
 
-                <StackPanel Grid.Column="4" Orientation="Horizontal" VerticalAlignment="Center">
-                    <TextBlock Text="Active Only" 
-                               FontSize="11"
-                               Foreground="#757575"
-                               VerticalAlignment="Center"/>
-                    <CheckBox IsChecked="{Binding ShowActiveOnly}"
-                              Margin="6,0,0,0"/>
-                </StackPanel>
+                    <TextBlock Grid.Column="0" Text="Search Ships" 
+                              FontSize="11" FontWeight="SemiBold" 
+                              Foreground="#424242"/>
+                    
+                    <TextBlock Grid.Column="1" Text="Filter by Type" 
+                              FontSize="11" FontWeight="SemiBold" 
+                              Foreground="#424242" Margin="8,0,0,0"/>
+                    
+                    <TextBlock Grid.Column="2" Text="Filter by Flag" 
+                              FontSize="11" FontWeight="SemiBold" 
+                              Foreground="#424242" Margin="8,0,0,0"/>
+                    
+                    <TextBlock Grid.Column="4" Text="Show Active Only" 
+                              FontSize="11" FontWeight="SemiBold" 
+                              Foreground="#424242"/>
+                </Grid>
+
+                <!-- Filter Controls -->
+                <Grid Grid.Row="1">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="200"/>
+                        <ColumnDefinition Width="150"/>
+                        <ColumnDefinition Width="150"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <TextBox Grid.Column="0" 
+                             Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                             Height="28"
+                             Padding="8,0"
+                             FontSize="12"
+                             Background="White"
+                             BorderThickness="1"
+                             BorderBrush="#E0E0E0"
+                             ToolTip="Type to search ships..."/>
+                    
+                    <ComboBox Grid.Column="1" 
+                              ItemsSource="{Binding ShipTypes}"
+                              SelectedItem="{Binding SelectedShipType}"
+                              Height="28"
+                              Padding="8,0"
+                              FontSize="12"
+                              Background="White"
+                              BorderThickness="1"
+                              BorderBrush="#E0E0E0"
+                              Margin="8,0,0,0"
+                              ToolTip="Select ship type to filter"/>
+                    
+                    <ComboBox Grid.Column="2" 
+                              ItemsSource="{Binding Flags}"
+                              SelectedItem="{Binding SelectedFlag}"
+                              Height="28"
+                              Padding="8,0"
+                              FontSize="12"
+                              Background="White"
+                              BorderThickness="1"
+                              BorderBrush="#E0E0E0"
+                              Margin="8,0,0,0"
+                              ToolTip="Select flag to filter"/>
+
+                    <Button Grid.Column="3"
+                            Content="Clear Filters"
+                            Command="{Binding ClearFiltersCommand}"
+                            Height="28"
+                            Padding="12,0"
+                            FontSize="11"
+                            Background="#FF9800"
+                            Foreground="White"
+                            BorderThickness="0"
+                            Margin="8,0,0,0"
+                            Cursor="Hand">
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Border Background="{TemplateBinding Background}" 
+                                        CornerRadius="4" 
+                                        Padding="{TemplateBinding Padding}">
+                                    <ContentPresenter HorizontalAlignment="Center" 
+                                                    VerticalAlignment="Center"/>
+                                </Border>
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter Property="Background" Value="#F57C00"/>
+                                    </Trigger>
+                                    <Trigger Property="IsPressed" Value="True">
+                                        <Setter Property="Background" Value="#EF6C00"/>
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Button.Template>
+                    </Button>
+
+                    <StackPanel Grid.Column="5" Orientation="Horizontal" VerticalAlignment="Center">
+                        <CheckBox IsChecked="{Binding ShowActiveOnly}"
+                                  VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Grid>
             </Grid>
         </Border>
 

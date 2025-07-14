@@ -201,7 +201,7 @@
                                          Background="White"
                                          BorderThickness="1"
                                          BorderBrush="#E0E0E0"
-                                         materialDesign:HintAssist.Hint="Type to search..."/>
+                                         ToolTip="Type to search components..."/>
                                 
                                 <ComboBox Grid.Column="1" 
                                           ItemsSource="{Binding Ships}"
@@ -214,7 +214,7 @@
                                           BorderThickness="1"
                                           BorderBrush="#E0E0E0"
                                           Margin="8,0,0,0"
-                                          materialDesign:HintAssist.Hint="Select ship to view systems"/>
+                                          ToolTip="Select ship to view systems"/>
                                 
                                 <ComboBox Grid.Column="2" 
                                           ItemsSource="{Binding Systems}"
@@ -227,7 +227,7 @@
                                           BorderThickness="1"
                                           BorderBrush="#E0E0E0"
                                           Margin="8,0,0,0"
-                                          materialDesign:HintAssist.Hint="Select system to filter"/>
+                                          ToolTip="Select system to filter"/>
 
                                 <Button Grid.Column="3"
                                         Content="Clear Filters"
