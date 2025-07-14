@@ -248,21 +248,18 @@ namespace MaritimeERP.Desktop.ViewModels
 
             // Classification Societies
             Classes.Clear();
+            Classes.Add("RINA");
             Classes.Add("DNV");
-            Classes.Add("Lloyd's Register");
             Classes.Add("American Bureau of Shipping");
             Classes.Add("Bureau Veritas");
-            Classes.Add("Class NK");
             Classes.Add("Korean Register");
-            Classes.Add("China Classification Society");
-            Classes.Add("Russian Maritime Register");
-            Classes.Add("RINA");
+            Classes.Add("Lloyd's Register");
             Classes.Add("Other");
             
             // Set default classification society for new ships
             if (!IsEditing && string.IsNullOrEmpty(Class))
             {
-                Class = "DNV"; // Set DNV as default
+                Class = "RINA"; // Set RINA as default
             }
         }
 
@@ -272,6 +269,12 @@ namespace MaritimeERP.Desktop.ViewModels
 
             switch (Class)
             {
+                case "RINA":
+                    ClassNotations.Add("CYRES");
+                    ClassNotations.Add("CYRES-IT");
+                    ClassNotations.Add("CYRES-OT");
+                    break;
+
                 case "DNV":
                     ClassNotations.Add("Cyber Secure");
                     ClassNotations.Add("Cyber Secure (Essential)");
@@ -280,36 +283,27 @@ namespace MaritimeERP.Desktop.ViewModels
                     ClassNotations.Add("Cyber Secure (Advanced) +");
                     break;
 
-                case "Lloyd's Register":
-                    ClassNotations.Add("ShipRight");
-                    ClassNotations.Add("ShipRight (CCS)");
-                    ClassNotations.Add("ShipRight (FDA)");
-                    ClassNotations.Add("ShipRight (CM)");
-                    ClassNotations.Add("ShipRight (SDA)");
-                    break;
-
                 case "American Bureau of Shipping":
-                    ClassNotations.Add("A1");
-                    ClassNotations.Add("A1 (E)");
-                    ClassNotations.Add("A1 (CCS)");
-                    ClassNotations.Add("A1 (HSE)");
-                    ClassNotations.Add("A1 (ACCU)");
+                    ClassNotations.Add("CS-System");
+                    ClassNotations.Add("CS-Ready");
+                    ClassNotations.Add("CS-1");
+                    ClassNotations.Add("CS-2");
+                    ClassNotations.Add("CR-Ex");
                     break;
 
                 case "Bureau Veritas":
-                    ClassNotations.Add("I");
-                    ClassNotations.Add("I (CCS)");
-                    ClassNotations.Add("I (CYBER)");
-                    ClassNotations.Add("I (GREEN)");
-                    ClassNotations.Add("I (SMART)");
+                    ClassNotations.Add("CYBER MANAGED");
+                    ClassNotations.Add("CYBER RESILIENT");
+                    ClassNotations.Add("CYBER SECURE");
                     break;
 
-                case "Class NK":
-                    ClassNotations.Add("NS");
-                    ClassNotations.Add("NS (CCS)");
-                    ClassNotations.Add("NS (CYBER)");
-                    ClassNotations.Add("NS (ENVIRO)");
-                    ClassNotations.Add("NS (ECO)");
+                case "Korean Register":
+                    ClassNotations.Add("Cyber Resilience");
+                    ClassNotations.Add("Cyber Resiliience(Managed)");
+                    break;
+
+                case "Lloyd's Register":
+                    ClassNotations.Add("Cyber Security ShipRight");
                     break;
 
                 default:
