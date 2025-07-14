@@ -27,28 +27,10 @@ namespace MaritimeERP.Desktop.Services
                 dashboardView.DataContext = viewModel;
                 return dashboardView;
             }
-            else if (viewModelType == typeof(PlaceholderViewModel))
-            {
-                // Use the DataTemplate from MainWindow.xaml
-                return new ContentControl { Content = viewModel };
-            }
-            else if (viewModelType == typeof(SoftwareViewModel))
-            {
-                return (ContentControl)ActivatorUtilities.CreateInstance(_serviceProvider, typeof(SoftwareView), viewModel);
-            }
-
-            // For all other views
-            var viewName = viewModelType.Name.Replace("ViewModel", "View");
-            var viewType = Type.GetType($"MaritimeERP.Desktop.Views.{viewName}, MaritimeERP.Desktop");
-
-            if (viewType == null)
-            {
-                throw new ArgumentException($"View not found for ViewModel: {viewModelType.Name}");
-            }
-
-            var view = (ContentControl)Activator.CreateInstance(viewType)!;
-            view.DataContext = viewModel;
-            return view;
+            
+            // For all other ViewModels, use ContentControl with DataTemplate
+            // This allows WPF to automatically resolve ViewModels to Views using DataTemplates
+            return new ContentControl { Content = viewModel };
         }
     }
 } 

@@ -32,6 +32,26 @@
             <views:DocumentsView />
         </DataTemplate>
         
+        <DataTemplate DataType="{x:Type viewModels:ShipsViewModel}">
+            <views:ShipsView />
+        </DataTemplate>
+        
+        <DataTemplate DataType="{x:Type viewModels:SystemsViewModel}">
+            <views:SystemsView />
+        </DataTemplate>
+        
+        <DataTemplate DataType="{x:Type viewModels:ComponentsViewModel}">
+            <views:ComponentsView />
+        </DataTemplate>
+        
+        <DataTemplate DataType="{x:Type viewModels:ChangeRequestsViewModel}">
+            <views:ChangeRequestsView />
+        </DataTemplate>
+        
+        <DataTemplate DataType="{x:Type viewModels:SoftwareViewModel}">
+            <views:SoftwareView />
+        </DataTemplate>
+        
         <DataTemplate DataType="{x:Type viewModels:PlaceholderViewModel}">
             <Border Background="White" Padding="40" CornerRadius="8" HorizontalAlignment="Center" VerticalAlignment="Center">
                 <Border.Effect>
