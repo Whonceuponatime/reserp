@@ -105,8 +105,20 @@ namespace MaritimeERP.Desktop
                                 if (_debugMode)
                                 {
                                     Console.WriteLine($"[CONFIG] Found user config at: {userConfigPath}");
-                                    Console.WriteLine($"[CONFIG] Attempting to load user configuration...");
+                                    Console.WriteLine($"[CONFIG] Validating JSON format...");
                                 }
+                                
+                                // Validate JSON before adding to configuration
+                                var jsonContent = File.ReadAllText(userConfigPath);
+                                using (var doc = System.Text.Json.JsonDocument.Parse(jsonContent))
+                                {
+                                    // JSON is valid, proceed with loading
+                                    if (_debugMode)
+                                    {
+                                        Console.WriteLine($"[CONFIG] JSON validation successful, attempting to load user configuration...");
+                                    }
+                                }
+                                
 #if DEBUG
                                 Console.WriteLine($"Found user config at: {userConfigPath}");
 #endif
