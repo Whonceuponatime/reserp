@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Windows.Input;
 using MaritimeERP.Core.Entities;
@@ -37,6 +38,10 @@ namespace MaritimeERP.Desktop.ViewModels
                 IsActive = true;
                 BuildYear = (short)DateTime.Now.Year;
             }
+            
+            // Initialize validation
+            ValidateImoNumber();
+            ValidateGrossTonnage();
         }
 
         #region Properties
@@ -60,8 +65,21 @@ namespace MaritimeERP.Desktop.ViewModels
         public string ImoNumber
         {
             get => _imoNumber;
-            set => SetProperty(ref _imoNumber, value);
+            set 
+            { 
+                SetProperty(ref _imoNumber, value);
+                ValidateImoNumber();
+            }
         }
+
+        private string _imoNumberError = string.Empty;
+        public string ImoNumberError
+        {
+            get => _imoNumberError;
+            set => SetProperty(ref _imoNumberError, value);
+        }
+
+        public bool HasImoNumberError => !string.IsNullOrEmpty(ImoNumberError);
 
         private string _shipType = string.Empty;
         public string ShipType
@@ -118,8 +136,21 @@ namespace MaritimeERP.Desktop.ViewModels
         public decimal? GrossTonnage
         {
             get => _grossTonnage;
-            set => SetProperty(ref _grossTonnage, value);
+            set 
+            { 
+                SetProperty(ref _grossTonnage, value);
+                ValidateGrossTonnage();
+            }
         }
+
+        private string _grossTonnageError = string.Empty;
+        public string GrossTonnageError
+        {
+            get => _grossTonnageError;
+            set => SetProperty(ref _grossTonnageError, value);
+        }
+
+        public bool HasGrossTonnageError => !string.IsNullOrEmpty(GrossTonnageError);
 
         private decimal? _netTonnage;
         public decimal? NetTonnage
@@ -363,7 +394,45 @@ namespace MaritimeERP.Desktop.ViewModels
                    !string.IsNullOrWhiteSpace(ShipName) && 
                    !string.IsNullOrWhiteSpace(ImoNumber) && 
                    ImoNumber.Length == 7 &&
-                   !string.IsNullOrWhiteSpace(Class);
+                   !string.IsNullOrWhiteSpace(Class) &&
+                   !HasImoNumberError &&
+                   !HasGrossTonnageError;
+        }
+
+        private void ValidateImoNumber()
+        {
+            if (string.IsNullOrWhiteSpace(ImoNumber))
+            {
+                ImoNumberError = "IMO Number is required";
+            }
+            else if (ImoNumber.Length != 7)
+            {
+                ImoNumberError = "IMO Number must be exactly 7 characters";
+            }
+            else if (!ImoNumber.All(char.IsDigit))
+            {
+                ImoNumberError = "IMO Number must contain only digits";
+            }
+            else
+            {
+                ImoNumberError = string.Empty;
+            }
+            
+            OnPropertyChanged(nameof(HasImoNumberError));
+        }
+
+        private void ValidateGrossTonnage()
+        {
+            if (GrossTonnage.HasValue && GrossTonnage.Value <= 0)
+            {
+                GrossTonnageError = "Gross Tonnage must be greater than 0";
+            }
+            else
+            {
+                GrossTonnageError = string.Empty;
+            }
+            
+            OnPropertyChanged(nameof(HasGrossTonnageError));
         }
 
         private async Task SaveAsync()

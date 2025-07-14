@@ -20,6 +20,24 @@
             <Setter Property="VerticalContentAlignment" Value="Center"/>
         </Style>
         
+        <!-- Error Input Field Style -->
+        <Style x:Key="ErrorInputFieldStyle" TargetType="TextBox">
+            <Setter Property="Height" Value="32"/>
+            <Setter Property="Padding" Value="8"/>
+            <Setter Property="BorderBrush" Value="#F44336"/>
+            <Setter Property="BorderThickness" Value="2"/>
+            <Setter Property="Background" Value="#FFEBEE"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+        </Style>
+        
+        <!-- Error Text Style -->
+        <Style x:Key="ErrorTextStyle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="Foreground" Value="#F44336"/>
+            <Setter Property="Margin" Value="0,2,0,0"/>
+            <Setter Property="FontWeight" Value="Medium"/>
+        </Style>
+        
         <!-- ComboBox Style -->
         <Style x:Key="ComboBoxStyle" TargetType="ComboBox">
             <Setter Property="Height" Value="32"/>
@@ -109,8 +127,22 @@
                         <StackPanel Grid.Row="0" Grid.Column="2" Margin="0,0,0,16">
                             <TextBlock Text="IMO Number *" Style="{StaticResource LabelStyle}"/>
                             <TextBox Text="{Binding ImoNumber, UpdateSourceTrigger=PropertyChanged}" 
-                                     Style="{StaticResource InputFieldStyle}"
-                                     MaxLength="7"/>
+                                     MaxLength="7">
+                                <TextBox.Style>
+                                    <Style TargetType="TextBox" BasedOn="{StaticResource InputFieldStyle}">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding HasImoNumberError}" Value="True">
+                                                <Setter Property="BorderBrush" Value="#F44336"/>
+                                                <Setter Property="BorderThickness" Value="2"/>
+                                                <Setter Property="Background" Value="#FFEBEE"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBox.Style>
+                            </TextBox>
+                            <TextBlock Text="{Binding ImoNumberError}" 
+                                       Style="{StaticResource ErrorTextStyle}"
+                                       Visibility="{Binding HasImoNumberError, Converter={StaticResource BooleanToVisibilityConverter}}"/>
                         </StackPanel>
 
                         <!-- Ship Type -->
@@ -199,8 +231,22 @@
                         <!-- Gross Tonnage -->
                         <StackPanel Grid.Column="0" Margin="0,0,0,16">
                             <TextBlock Text="Gross Tonnage (GT)" Style="{StaticResource LabelStyle}"/>
-                            <TextBox Text="{Binding GrossTonnage}" 
-                                     Style="{StaticResource InputFieldStyle}"/>
+                            <TextBox Text="{Binding GrossTonnage}">
+                                <TextBox.Style>
+                                    <Style TargetType="TextBox" BasedOn="{StaticResource InputFieldStyle}">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding HasGrossTonnageError}" Value="True">
+                                                <Setter Property="BorderBrush" Value="#F44336"/>
+                                                <Setter Property="BorderThickness" Value="2"/>
+                                                <Setter Property="Background" Value="#FFEBEE"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBox.Style>
+                            </TextBox>
+                            <TextBlock Text="{Binding GrossTonnageError}" 
+                                       Style="{StaticResource ErrorTextStyle}"
+                                       Visibility="{Binding HasGrossTonnageError, Converter={StaticResource BooleanToVisibilityConverter}}"/>
                         </StackPanel>
 
                         <!-- Net Tonnage -->
